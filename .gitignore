@@ -5,6 +5,8 @@ node_modules/
 
 # compilado
 /dist
+# archivos de la app
+eas.json
 
 # Expo
 .expo/
