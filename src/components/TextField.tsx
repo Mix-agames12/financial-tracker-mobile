@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, TextInput, StyleSheet, TextInputProps } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 
@@ -9,7 +9,26 @@ interface TextFieldProps extends TextInputProps {
 
 export const TextField: React.FC<TextFieldProps> = ({ label, error, style, ...rest }) => {
   const { colors } = useTheme();
-  const [isFocused, setIsFocused] = useState(false);
+  const [isFocused, setIsFocused] = React.useState(false);
+
+  const handleChangeText = (text: string) => {
+    if (rest.keyboardType === 'decimal-pad' || rest.keyboardType === 'numeric') {
+      let formatted = text.replace(/[^0-9.,]/g, '').replace(',', '.');
+      
+      const parts = formatted.split('.');
+      if (parts.length > 2) {
+        formatted = parts[0] + '.' + parts.slice(1).join('');
+      }
+
+      if (parts.length === 2 && parts[1].length > 2) {
+        formatted = parts[0] + '.' + parts[1].substring(0, 2);
+      }
+      
+      rest.onChangeText?.(formatted);
+    } else {
+      rest.onChangeText?.(text);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -43,6 +62,7 @@ export const TextField: React.FC<TextFieldProps> = ({ label, error, style, ...re
           rest.onBlur?.(e);
         }}
         {...rest}
+        onChangeText={handleChangeText}
       />
       {error && (
         <Text style={[styles.errorText, { color: colors.error }]}>
