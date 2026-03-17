@@ -169,11 +169,13 @@ financial-tracker-mobile/
 ## Proximos pasos (Features)
 
 - [ ] Desarrollar un módulo de exportación y serialización de datos para la generación de reportes financieros locales en formatos estandarizados (PDF y CSV).
-- [ ] Integrar un servicio de notificaciones Push (ej. Expo Notifications o FCM) para la calendarización y emisión de alertas sobre pagos próximos.
+- [ ] Integrar un servicio de notificaciones Push (ej. Expo Notifications) para la calendarización y emisión de alertas sobre pagos próximos.
 - [ ] Implementar detección del Locale o geolocalización del dispositivo durante el flujo de Onboarding (primer inicio) para configurar automáticamente el tipo de moneda por defecto.
 - [ ] Ampliar la lógica del motor de búsqueda en el listado de gastos para soportar el filtrado condicional por parámetros de categoría.
 - [ ] Implementar tematización dinámica en la UI para asignar y renderizar colores personalizables según la categoría del gasto.
 - [ ] Implementar gestos de arrastre (PanResponder o componente Swipeable Bottom Sheet) en la tarjeta de ingreso de gastos para mejorar la ergonomía de la interfaz.
 - [ ] Aplicar renderizado condicional en los estilos (Conditional Styling) del balance de ahorros para aplicar feedback visual (cambio de color) cuando el valor sea negativo.
+
 ---
+
 <p align="center">Construido con ❤️ para tu tranquilidad financiera</p>
