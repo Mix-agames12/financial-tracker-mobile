@@ -10,6 +10,9 @@ export interface Expense {
   isDeferred?: boolean;
   deferredMonths?: number;
   monthlyQuota?: number;
+  isRecurring?: boolean;
+  recurringFrequency?: 'monthly' | 'specific' | string;
+  recurringDay?: number;
 }
 
 export interface Category {
