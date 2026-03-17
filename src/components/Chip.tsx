@@ -7,12 +7,14 @@ interface ChipProps extends TouchableOpacityProps {
   label: string;
   active?: boolean;
   icon?: keyof typeof Ionicons.glyphMap;
+  color?: string;
 }
 
 export const Chip: React.FC<ChipProps> = ({ 
   label, 
   active, 
-  icon, 
+  icon,
+  color: customColor, 
   style, 
   ...rest 
 }) => {
@@ -23,8 +25,8 @@ export const Chip: React.FC<ChipProps> = ({
       style={[
         styles.chip,
         { 
-          borderColor: active ? colors.primary : colors.outline,
-          backgroundColor: active ? colors.primary : 'transparent',
+          borderColor: active ? (customColor || colors.primary) : (customColor ? customColor + '40' : colors.outline),
+          backgroundColor: active ? (customColor || colors.primary) : (customColor ? customColor + '10' : 'transparent'),
         },
         style
       ]}
@@ -34,13 +36,13 @@ export const Chip: React.FC<ChipProps> = ({
         <Ionicons 
           name={icon} 
           size={16} 
-          color={active ? colors.onPrimary : colors.onSurfaceVariant} 
+          color={active ? colors.onPrimary : (customColor || colors.onSurfaceVariant)} 
           style={{ marginRight: 4 }}
         />
       )}
       <Text style={[
         styles.text,
-        { color: active ? colors.onPrimary : colors.onSurfaceVariant }
+        { color: active ? colors.onPrimary : (customColor || colors.onSurfaceVariant) }
       ]}>
         {label}
       </Text>
