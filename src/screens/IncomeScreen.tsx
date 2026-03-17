@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -19,6 +20,7 @@ import { Salary, Income, Account, CreditCard, Investment } from '../types';
 
 export default function IncomeScreen() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   const [refreshing, setRefreshing] = useState(false);
   const [salary, setSalary] = useState<Salary | null>(null);
@@ -276,7 +278,7 @@ export default function IncomeScreen() {
   const totalExtraIncome = useMemo(() => incomes.reduce((s, i) => s + i.amount, 0), [incomes]);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.onSurface }]}>Ingresos</Text>
       </View>
@@ -386,7 +388,7 @@ export default function IncomeScreen() {
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
                     <Text style={[styles.cardTitle, { color: colors.primary }]}>{formatCurrency(inv.monthlyDeposit)}/mes</Text>
-                    <Text style={[styles.cardSubtitle, { color: colors.onSurfaceVariant }]}>{inv.remainingMonths} meses est.</Text>
+                    <Text style={[styles.cardSubtitle, { color: colors.onSurfaceVariant }]}>{inv.remainingMonths} Meses restantes.</Text>
                   </View>
                 </View>
                 {inv.remainingMonths > 0 && (
@@ -481,7 +483,7 @@ export default function IncomeScreen() {
           </View>
 
           {payDateType === 'specific' && (
-            <TextField label="Día de pago (1-28)" keyboardType="number-pad" value={payDate} onChangeText={setPayDate} />
+            <TextField label="Día de pago (1-28)" placeholder="Ej. 15" keyboardType="number-pad" value={payDate} onChangeText={setPayDate} />
           )}
 
           <View>
@@ -500,8 +502,8 @@ export default function IncomeScreen() {
 
       <BottomSheet visible={sheetCurrent === 'account'} onClose={closeCurrentSheet} title={editingData ? 'Editar cuenta' : 'Nueva cuenta'}>
         <View style={{ gap: 16 }}>
-          <TextField label="Nombre de cuenta *" value={formName} onChangeText={setFormName} />
-          <TextField label="Número de referencia" value={refNumber} onChangeText={setRefNumber} />
+          <TextField label="Nombre de cuenta *" placeholder="Ej. Ahorros Principales" value={formName} onChangeText={setFormName} />
+          <TextField label="Número de referencia" placeholder="Ej. 123456789" value={refNumber} onChangeText={setRefNumber} />
           
           <View>
             <Text style={{ fontSize: 12, color: colors.onSurfaceVariant, marginBottom: 8, fontFamily: 'sans-serif-medium' }}>Tipo</Text>
@@ -519,37 +521,37 @@ export default function IncomeScreen() {
 
       <BottomSheet visible={sheetCurrent === 'creditCard'} onClose={closeCurrentSheet} title={editingData ? 'Editar tarjeta' : 'Nueva tarjeta'}>
         <View style={{ gap: 16 }}>
-          <TextField label="Nombre o Alias *" value={formName} onChangeText={setFormName} />
-          <TextField label="Banco *" value={bankName} onChangeText={setBankName} />
+          <TextField label="Nombre o Alias *" placeholder="Ej. Visa Oro" value={formName} onChangeText={setFormName} />
+          <TextField label="Banco *" placeholder="Ej. Santander" value={bankName} onChangeText={setBankName} />
           <View style={{ flexDirection: 'row', gap: 16 }}>
-            <View style={{ flex: 1 }}><TextField label="Día corte" keyboardType="numeric" value={cutOffDay} onChangeText={setCutOffDay} /></View>
-            <View style={{ flex: 1 }}><TextField label="Día pago" keyboardType="numeric" value={paymentDay} onChangeText={setPaymentDay} /></View>
+            <View style={{ flex: 1 }}><TextField label="Día corte" placeholder="Ej. 15" keyboardType="numeric" value={cutOffDay} onChangeText={setCutOffDay} /></View>
+            <View style={{ flex: 1 }}><TextField label="Día pago" placeholder="Ej. 5" keyboardType="numeric" value={paymentDay} onChangeText={setPaymentDay} /></View>
           </View>
-          <TextField label="Límite crédito" keyboardType="decimal-pad" value={creditLimit} onChangeText={setCreditLimit} />
-          <TextField label="Saldo actual" keyboardType="decimal-pad" value={formAmount} onChangeText={setFormAmount} />
+          <TextField label="Límite crédito" placeholder="Ej. 5000" keyboardType="decimal-pad" value={creditLimit} onChangeText={setCreditLimit} />
+          <TextField label="Saldo actual" placeholder="Ej. 1250.50" keyboardType="decimal-pad" value={formAmount} onChangeText={setFormAmount} />
           <Button title="Guardar tarjeta" onPress={handleSaveCreditCard} icon="save" />
         </View>
       </BottomSheet>
 
       <BottomSheet visible={sheetCurrent === 'investment'} onClose={closeCurrentSheet} title={editingData ? 'Editar fondo' : 'Nuevo fondo'}>
         <View style={{ gap: 16 }}>
-          <TextField label="Entidad *" value={formName} onChangeText={setFormName} />
-          <TextField label="Depósito mensual *" keyboardType="decimal-pad" value={formAmount} onChangeText={setFormAmount} />
+          <TextField label="Entidad *" placeholder="Ej. GBM+" value={formName} onChangeText={setFormName} />
+          <TextField label="Depósito mensual *" placeholder="Ej. 200.00" keyboardType="decimal-pad" value={formAmount} onChangeText={setFormAmount} />
           <View style={{ flexDirection: 'row', gap: 16 }}>
-            <View style={{ flex: 1 }}><TextField label="Meses est" keyboardType="numeric" value={remainingMonths} onChangeText={setRemainingMonths} /></View>
-            <View style={{ flex: 1 }}><TextField label="Meses tot" keyboardType="numeric" value={totalMonths} onChangeText={setTotalMonths} /></View>
+            <View style={{ flex: 1 }}><TextField label="Meses restantes" placeholder="Ej. 12" keyboardType="numeric" value={remainingMonths} onChangeText={setRemainingMonths} /></View>
+            <View style={{ flex: 1 }}><TextField label="Meses totales" placeholder="Ej. 24" keyboardType="numeric" value={totalMonths} onChangeText={setTotalMonths} /></View>
           </View>
-          <TextField label="Detalle" value={formDetail} onChangeText={setFormDetail} />
-          <TextField label="Depositado hasta ahora" keyboardType="decimal-pad" value={totalDeposited} onChangeText={setTotalDeposited} />
+          <TextField label="Detalle" placeholder="Ej. Fondo para retiro" value={formDetail} onChangeText={setFormDetail} />
+          <TextField label="Depositado hasta ahora" placeholder="Ej. 2400.00" keyboardType="decimal-pad" value={totalDeposited} onChangeText={setTotalDeposited} />
           <Button title="Guardar fondo" onPress={handleSaveInvestment} icon="save" />
         </View>
       </BottomSheet>
 
       <BottomSheet visible={sheetCurrent === 'income'} onClose={closeCurrentSheet} title={editingData ? 'Editar ingreso' : 'Nuevo ingreso'}>
         <View style={{ gap: 16 }}>
-          <TextField label="Monto *" keyboardType="decimal-pad" value={formAmount} onChangeText={setFormAmount} />
-          <TextField label="Fuente" value={incomeSource} onChangeText={setIncomeSource} />
-          <TextField label="Detalle *" value={formDetail} onChangeText={setFormDetail} />
+          <TextField label="Monto *" placeholder="Ej. 550.00" keyboardType="decimal-pad" value={formAmount} onChangeText={setFormAmount} />
+          <TextField label="Fuente" placeholder="Ej. Venta garaje" value={incomeSource} onChangeText={setIncomeSource} />
+          <TextField label="Detalle *" placeholder="Ej. Venta bicicleta" value={formDetail} onChangeText={setFormDetail} />
           
           <View>
             <Text style={{ fontSize: 12, color: colors.onSurfaceVariant, marginBottom: 8, fontFamily: 'sans-serif-medium' }}>Cuenta destino *</Text>

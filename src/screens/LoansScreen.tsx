@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -16,6 +17,7 @@ import { Loan } from '../types';
 
 export default function LoansScreen() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   const [refreshing, setRefreshing] = useState(false);
   const [loans, setLoans] = useState<Loan[]>([]);
@@ -179,7 +181,7 @@ export default function LoansScreen() {
   const totalDebt = activeLoans.reduce((s, l) => s + ((l.installments - l.paidInstallments) * l.monthlyQuota), 0);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       
       {/* Header */}
       <View style={styles.header}>
@@ -348,10 +350,11 @@ export default function LoansScreen() {
       {/* ==== FORM MODAL ==== */}
       <BottomSheet visible={isFormOpen} onClose={() => setFormOpen(false)} title={editingData ? 'Editar préstamo' : 'Nuevo préstamo'}>
         <View style={{ gap: 16 }}>
-          <TextField label="Nombre / Descripción *" value={name} onChangeText={setName} />
+          <TextField label="Nombre / Descripción *" placeholder="Ej. Préstamo Auto" value={name} onChangeText={setName} />
           
           <TextField 
             label="Monto total original *" 
+            placeholder="Ej. 15000"
             keyboardType="decimal-pad" 
             value={totalAmount} 
             onChangeText={setTotalAmount} 
@@ -359,10 +362,10 @@ export default function LoansScreen() {
 
           <View style={{ flexDirection: 'row', gap: 16 }}>
             <View style={{ flex: 1 }}>
-              <TextField label="Interés (%)" keyboardType="decimal-pad" value={interestRate} onChangeText={setInterestRate} />
+              <TextField label="Interés (%)" placeholder="Ej. 10.5" keyboardType="decimal-pad" value={interestRate} onChangeText={setInterestRate} />
             </View>
             <View style={{ flex: 1 }}>
-              <TextField label="N° Cuotas *" keyboardType="number-pad" value={installments} onChangeText={setInstallments} />
+              <TextField label="N° Cuotas *" placeholder="Ej. 24" keyboardType="number-pad" value={installments} onChangeText={setInstallments} />
             </View>
           </View>
 
@@ -378,6 +381,7 @@ export default function LoansScreen() {
 
           <TextField 
             label="Cuotas ya pagadas" 
+            placeholder="Ej. 5"
             keyboardType="number-pad" 
             value={paidInstallments} 
             onChangeText={setPaidInstallments} 

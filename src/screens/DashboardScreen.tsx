@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -21,6 +22,7 @@ import { MainTabNavigationProp } from '../navigation/types';
 export default function DashboardScreen() {
   const { colors } = useTheme();
   const navigation = useNavigation<MainTabNavigationProp>();
+  const insets = useSafeAreaInsets();
   
   const [refreshing, setRefreshing] = useState(false);
   const [data, setData] = useState({
@@ -99,7 +101,7 @@ export default function DashboardScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       
       {/* Header */}
       <View style={styles.header}>

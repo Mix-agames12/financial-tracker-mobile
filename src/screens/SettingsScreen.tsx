@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
@@ -23,6 +24,7 @@ import { BottomSheet } from '../components/BottomSheet';
 
 export default function SettingsScreen() {
   const { colors, isDark, setTheme } = useTheme();
+  const insets = useSafeAreaInsets();
   
   const [settings, setLocalSettings] = useState<Settings>({ 
     id: 'default', appName: 'Mi Dinero', monthlyGoal: 0, theme: 'dark' 
@@ -73,8 +75,9 @@ export default function SettingsScreen() {
       const data = await exportAllData();
       const jsonStr = JSON.stringify(data, null, 2);
       const fileName = `tracker-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      // @ts-ignore
       const fileUri = `${FileSystem.documentDirectory}${fileName}`;
-      
+      // @ts-ignore
       await FileSystem.writeAsStringAsync(fileUri, jsonStr, { encoding: FileSystem.EncodingType.UTF8 });
       
       const canShare = await Sharing.isAvailableAsync();
@@ -99,6 +102,7 @@ export default function SettingsScreen() {
       if (result.canceled || !result.assets || result.assets.length === 0) return;
 
       const file = result.assets[0];
+      // @ts-ignore
       const contents = await FileSystem.readAsStringAsync(file.uri);
       const parsed = JSON.parse(contents);
 
@@ -146,7 +150,7 @@ export default function SettingsScreen() {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       
       {/* PREFERENCES */}
       <View style={styles.section}>
@@ -268,6 +272,7 @@ export default function SettingsScreen() {
       <BottomSheet visible={isNameSheetOpen} onClose={() => setNameSheetOpen(false)} title="Nombre de la app">
         <TextField
           label="Nombre (máx. 30 caracteres)"
+          placeholder="Ej. Mi Dinero"
           value={tempName}
           onChangeText={setTempName}
           maxLength={30}
@@ -279,6 +284,7 @@ export default function SettingsScreen() {
       <BottomSheet visible={isGoalSheetOpen} onClose={() => setGoalSheetOpen(false)} title="Meta mensual">
         <TextField
           label="Monto máximo ($)"
+          placeholder="Ej. 1000.00"
           value={tempGoal}
           onChangeText={setTempGoal}
           keyboardType="numeric"

@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
@@ -14,6 +15,7 @@ import { Expense, Category, Account, CreditCard } from '../types';
 
 export default function ExpensesScreen() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -50,6 +52,7 @@ export default function ExpensesScreen() {
   const [tags, setTags] = useState('');
   
   const [isRecurring, setIsRecurring] = useState(false);
+  const [recurringFrequency, setRecurringFrequency] = useState<'monthly' | 'specific'>('monthly');
   const [recurringDay, setRecurringDay] = useState('');
   const [subscriptionType, setSubscriptionType] = useState('');
 
@@ -121,6 +124,7 @@ export default function ExpensesScreen() {
     setTimeStr(getNow());
     setTags('');
     setIsRecurring(false);
+    setRecurringFrequency('monthly');
     setRecurringDay('');
     setSubscriptionType('');
     setDetailOpen(false);
@@ -140,8 +144,9 @@ export default function ExpensesScreen() {
     setDateStr(exp.date);
     setTimeStr((exp as any).time || getNow());
     setTags((exp as any).tags?.join(', ') || '');
-    setIsRecurring((exp as any).isRecurring || false);
-    setRecurringDay((exp as any).recurringDay?.toString() || '');
+    setIsRecurring(exp.isRecurring || false);
+    setRecurringFrequency((exp.recurringFrequency as 'monthly' | 'specific') || 'monthly');
+    setRecurringDay(exp.recurringDay?.toString() || '');
     setSubscriptionType((exp as any).subscriptionType || '');
     setDetailOpen(false);
     setFormOpen(true);
@@ -176,7 +181,8 @@ export default function ExpensesScreen() {
         time: timeStr, 
         tags: tags.split(',').map(t => t.trim()).filter(Boolean),
         isRecurring,
-        recurringDay: isRecurring ? parseInt(recurringDay) || 0 : 0,
+        recurringFrequency: isRecurring ? recurringFrequency : undefined,
+        recurringDay: isRecurring && recurringFrequency === 'specific' ? parseInt(recurringDay) || 1 : undefined,
         subscriptionType: categoryType === 'Suscripción' ? subscriptionType : '',
       } as any )
     };
@@ -233,7 +239,7 @@ export default function ExpensesScreen() {
   let lastDateRendered = '';
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       
       {/* Header */}
       <View style={styles.header}>
@@ -278,6 +284,11 @@ export default function ExpensesScreen() {
             const showDateHeader = exp.date !== lastDateRendered;
             if (showDateHeader) lastDateRendered = exp.date;
 
+            const cat = categories.find(c => c.name === exp.category);
+            const iconName = cat?.icon || 'receipt';
+            const iconColor = cat?.color || colors.error;
+            const iconBgColor = cat?.color ? cat.color + '20' : colors.errorContainer;
+
             return (
               <React.Fragment key={exp.id}>
                 {showDateHeader && (
@@ -290,8 +301,8 @@ export default function ExpensesScreen() {
                     setDetailOpen(true);
                   }}
                 >
-                  <View style={[styles.listIcon, { backgroundColor: colors.errorContainer }]}>
-                    <Ionicons name="receipt" size={20} color={colors.error} />
+                  <View style={[styles.listIcon, { backgroundColor: iconBgColor }]}>
+                    <Ionicons name={iconName as any} size={20} color={iconColor} />
                   </View>
                   <View style={styles.listContent}>
                     <Text style={[styles.listTitle, { color: colors.onSurface }]} numberOfLines={1}>{exp.detail}</Text>
@@ -358,10 +369,12 @@ export default function ExpensesScreen() {
                   <Text style={{ fontSize: 16, color: colors.onSurface }}>{selectedExpense.deferredMonths} meses</Text>
                 </View>
               )}
-              {(selectedExpense as any).isRecurring && (
+              {selectedExpense.isRecurring && (
                 <View style={styles.detailItem}>
                   <Text style={{ fontSize: 12, color: colors.onSurfaceVariant }}>Recurrente</Text>
-                  <Text style={{ fontSize: 16, color: colors.onSurface }}>Día {(selectedExpense as any).recurringDay}</Text>
+                  <Text style={{ fontSize: 16, color: colors.onSurface }}>
+                    {selectedExpense.recurringFrequency === 'specific' ? `Día ${selectedExpense.recurringDay}` : 'Mensual'}
+                  </Text>
                 </View>
               )}
             </View>
@@ -385,10 +398,10 @@ export default function ExpensesScreen() {
         <View style={{ gap: 16 }}>
           <View style={{ flexDirection: 'row', gap: 16 }}>
             <View style={{ flex: 1 }}>
-              <TextField label="Desde (YYYY-MM-DD)" placeholder="YYYY-MM-DD" value={filterFrom} onChangeText={setFilterFrom} />
+              <TextField label="Desde (YYYY-MM-DD)" placeholder="Ej. 2024-01-01" value={filterFrom} onChangeText={setFilterFrom} />
             </View>
             <View style={{ flex: 1 }}>
-              <TextField label="Hasta (YYYY-MM-DD)" placeholder="YYYY-MM-DD" value={filterTo} onChangeText={setFilterTo} />
+              <TextField label="Hasta (YYYY-MM-DD)" placeholder="Ej. 2024-12-31" value={filterTo} onChangeText={setFilterTo} />
             </View>
           </View>
 
@@ -406,7 +419,7 @@ export default function ExpensesScreen() {
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
               <Chip label="Todas" active={filterCat === ''} onPress={() => setFilterCat('')} />
               {categories.map((c) => (
-                <Chip key={c.name} label={c.name} active={filterCat === c.name} onPress={() => setFilterCat(c.name)} />
+                <Chip key={c.name} label={c.name} active={filterCat === c.name} onPress={() => setFilterCat(c.name)} color={c.color} />
               ))}
             </View>
           </View>
@@ -424,7 +437,7 @@ export default function ExpensesScreen() {
         <View style={{ gap: 16 }}>
           <TextField 
             label="Monto *" 
-            placeholder="0.00" 
+            placeholder="Ej. 25.50" 
             keyboardType="decimal-pad" 
             value={amountStr} 
             onChangeText={setAmountStr} 
@@ -434,14 +447,14 @@ export default function ExpensesScreen() {
             <Text style={{ fontSize: 12, color: colors.onSurfaceVariant, marginBottom: 8, fontFamily: 'sans-serif-medium' }}>Categoría *</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
               {categories.map((c) => (
-                <Chip key={c.name} label={c.name} active={categoryType === c.name} onPress={() => setCategoryType(c.name)} icon={c.icon as any} />
+                <Chip key={c.name} label={c.name} active={categoryType === c.name} onPress={() => setCategoryType(c.name)} icon={c.icon as any} color={c.color} />
               ))}
             </View>
           </View>
 
           <TextField 
             label="Detalle *" 
-            placeholder="Descripción del gasto" 
+            placeholder="Ej. Compra supermercado" 
             value={detail} 
             onChangeText={setDetail} 
           />
@@ -486,19 +499,42 @@ export default function ExpensesScreen() {
                </View>
 
                {isDeferred && (
-                 <TextField label="Meses diferidos" placeholder="3" keyboardType="number-pad" value={deferredMonths} onChangeText={setDeferredMonths} />
+                 <TextField label="Meses diferidos" placeholder="Ej. 3" keyboardType="number-pad" value={deferredMonths} onChangeText={setDeferredMonths} />
                )}
             </View>
           )}
 
           <View style={{ flexDirection: 'row', gap: 16 }}>
             <View style={{ flex: 1 }}>
-              <TextField label="Fecha" placeholder="YYYY-MM-DD" value={dateStr} onChangeText={setDateStr} />
+              <TextField label="Fecha" placeholder="Ej. 2024-03-12" value={dateStr} onChangeText={setDateStr} />
             </View>
             <View style={{ flex: 1 }}>
-              <TextField label="Hora (Opcional)" placeholder="HH:MM" value={timeStr} onChangeText={setTimeStr} />
+              <TextField label="Hora (Opcional)" placeholder="Ej. 14:30" value={timeStr} onChangeText={setTimeStr} />
             </View>
           </View>
+
+          <View style={{ paddingTop: 8, borderTopWidth: 1, borderTopColor: colors.outlineVariant }}>
+            <Text style={{ fontSize: 12, color: colors.onSurfaceVariant, marginBottom: 8, fontFamily: 'sans-serif-medium' }}>¿Es un gasto recurrente / suscripción?</Text>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <Chip label="Sí" active={isRecurring} onPress={() => setIsRecurring(true)} />
+              <Chip label="No" active={!isRecurring} onPress={() => setIsRecurring(false)} />
+            </View>
+          </View>
+
+          {isRecurring && (
+            <View style={{ gap: 16 }}>
+              <View>
+                <Text style={{ fontSize: 12, color: colors.onSurfaceVariant, marginBottom: 8, fontFamily: 'sans-serif-medium' }}>Frecuencia</Text>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <Chip label="Mensual" active={recurringFrequency === 'monthly'} onPress={() => setRecurringFrequency('monthly')} />
+                  <Chip label="Día específico" active={recurringFrequency === 'specific'} onPress={() => setRecurringFrequency('specific')} />
+                </View>
+              </View>
+              {recurringFrequency === 'specific' && (
+                <TextField label="Día de cobro (1-31)" placeholder="Ej. 15" keyboardType="number-pad" value={recurringDay} onChangeText={setRecurringDay} />
+              )}
+            </View>
+          )}
 
           <Button title={editingId ? 'Actualizar gasto' : 'Guardar gasto'} onPress={handleSaveExpense} />
         </View>
