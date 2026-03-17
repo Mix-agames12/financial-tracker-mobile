@@ -27,7 +27,7 @@ export interface Account {
   id: string;
   name: string;
   referenceNumber?: string;
-  accountType: 'Ahorro' | 'Corriente' | 'Nómina' | string;
+  accountType: 'Ahorro' | 'Corriente' | string;
   bankName: string;
 }
 
