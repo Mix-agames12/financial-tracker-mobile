@@ -2,6 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer, DefaultTheme, DarkTheme as NavDarkTheme } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '../theme/ThemeContext';
@@ -19,6 +20,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function MainTabs() {
   const { colors, isDark } = useTheme();
+  const insets = useSafeAreaInsets();
 
   return (
     <Tab.Navigator
@@ -27,8 +29,8 @@ function MainTabs() {
         tabBarStyle: {
           backgroundColor: colors.surfaceContainerLowest,
           borderTopColor: colors.outlineVariant,
-          height: 64,
-          paddingBottom: 8,
+          height: 64 + insets.bottom,
+          paddingBottom: Math.max(8, insets.bottom),
           paddingTop: 8,
         },
         tabBarActiveTintColor: colors.primary,
