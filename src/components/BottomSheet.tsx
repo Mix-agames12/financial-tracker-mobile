@@ -180,7 +180,9 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({ visible, onClose, titl
       statusBarTranslucent
       navigationBarTranslucent
     >
-      <KeyboardAvoidingView style={styles.flex} behavior="padding">
+      {/* Sólo con el teclado visible: en Android, al ocultarse, RN envía un screenY sin las barras del
+          sistema y KeyboardAvoidingView dejaba una franja vacía bajo la hoja. */}
+      <KeyboardAvoidingView style={styles.flex} behavior="padding" enabled={keyboardVisible}>
         <View style={styles.overlay} onLayout={(e) => setAvailableHeight(e.nativeEvent.layout.height)}>
           <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
           <Animated.View
