@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
-import * as Notifications from 'expo-notifications';
+import * as Notifications from '../utils/localNotifications';
 import { ExpenseRepo, SettingsRepo } from '../db/storage';
 import { formatCurrency, formatDate, toLocalDateStr } from '../utils/formatters';
 import { getUpcomingPayments, UpcomingPayment } from '../utils/paymentReminders';
