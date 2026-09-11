@@ -1,6 +1,6 @@
 import { CreditCardRepo, ExpenseRepo, LoanRepo } from '../db/storage';
 import { CreditCard, Expense, Loan } from '../types';
-import { roundMoney } from './formatters';
+import { lastDateForDay, nextDateForDay, roundMoney, toLocalDateStr } from './formatters';
 
 /** Sufijo del gasto adicional que registra los impuestos/comisiones de una compra. */
 export const TAX_DETAIL_SUFFIX = ' (Impuestos/Comisiones)';
@@ -241,4 +241,91 @@ export async function linkLegacyCardLoans(): Promise<void> {
       && e.detail === `${match.detail}${TAX_DETAIL_SUFFIX}`);
     for (const row of taxRows) await ExpenseRepo.update({ ...row, parentExpenseId: match.id });
   }
+}
+
+/** Lo que queda por pagar de un préstamo según sus cuotas (0 si ya está pagado). */
+export function loanRemainingDebt(loan: Loan): number {
+  if (loan.status === 'paid') return 0;
+  return Math.max(0, roundMoney((loan.installments - loan.paidInstallments) * loan.monthlyQuota));
+}
+
+/** Nivel del cupo disponible: más de 30 % verde, entre 10 % y 30 % ámbar, menos de 10 % rojo. */
+export function availabilityLevel(availableRatio: number): 'success' | 'warning' | 'danger' {
+  if (availableRatio > 0.3) return 'success';
+  if (availableRatio >= 0.1) return 'warning';
+  return 'danger';
+}
+
+export interface CardPurchaseItem {
+  loan: Loan;
+  expense?: Expense;
+  title: string;
+  pending: number;
+  isPaid: boolean;
+}
+
+export interface CardCycleSummary {
+  lastCutOff: string | null; // último corte (null si la tarjeta no tiene día de corte)
+  nextDueDate: string | null; // próximo día de pago de la tarjeta
+  dueAmount: number; // vence en el próximo pago: compras hasta el último corte y cuotas atrasadas
+  activeDebt: number; // resto pendiente: compras después del corte y cuotas siguientes
+  totalPending: number;
+  available: number | null; // cupo disponible (null si la tarjeta no tiene límite)
+  hasOverdue: boolean;
+  purchases: CardPurchaseItem[]; // pendientes por vencimiento, luego las pagadas
+}
+
+function purchaseTitle(loan: Loan, card: CreditCard, expense?: Expense): string {
+  if (expense?.detail) return expense.detail;
+  const prefix = loan.name.startsWith('Diferido: ') ? 'Diferido: ' : `TC ${card.name}: `;
+  return loan.name.startsWith(prefix) ? loan.name.slice(prefix.length) : loan.name;
+}
+
+/**
+ * Resume las compras de una tarjeta por ciclo de facturación. La fecha de pago de cada compra ya
+ * refleja el corte (las posteriores al corte vencen un mes después), así que lo que vence hasta el
+ * próximo día de pago es "por pagar" y el resto es deuda activa.
+ */
+export function getCardCycleSummary(
+  card: CreditCard,
+  loans: Loan[],
+  expensesById: Map<string, Expense>,
+  today: Date = new Date()
+): CardCycleSummary {
+  const nextDueDate = card.paymentDueDay ? nextDateForDay(card.paymentDueDay, today) : null;
+  const todayStr = toLocalDateStr(today);
+  let dueAmount = 0;
+  let totalPending = 0;
+  let hasOverdue = false;
+
+  const purchases = loans
+    .filter((loan) => loan.cardId === card.id)
+    .map((loan) => {
+      const expense = loan.sourceExpenseId ? expensesById.get(loan.sourceExpenseId) : undefined;
+      const pending = loanRemainingDebt(loan);
+      const isPaid = pending <= 0;
+      if (!isPaid) {
+        totalPending += pending;
+        const due = loan.nextPaymentDate;
+        if (due && due < todayStr) hasOverdue = true;
+        if (due && nextDueDate && due <= nextDueDate) dueAmount += Math.min(roundMoney(loan.monthlyQuota), pending);
+      }
+      return { loan, expense, title: purchaseTitle(loan, card, expense), pending, isPaid };
+    })
+    .sort((a, b) => {
+      if (a.isPaid !== b.isPaid) return a.isPaid ? 1 : -1;
+      if (!a.isPaid) return (a.loan.nextPaymentDate || '9999').localeCompare(b.loan.nextPaymentDate || '9999');
+      return (b.expense?.date || '').localeCompare(a.expense?.date || '');
+    });
+
+  return {
+    lastCutOff: card.cutOffDay ? lastDateForDay(card.cutOffDay, today) : null,
+    nextDueDate,
+    dueAmount: roundMoney(dueAmount),
+    activeDebt: roundMoney(totalPending - dueAmount),
+    totalPending: roundMoney(totalPending),
+    available: card.creditLimit > 0 ? Math.max(0, roundMoney(card.creditLimit - (Number(card.currentBalance) || 0))) : null,
+    hasOverdue,
+    purchases,
+  };
 }

@@ -14,11 +14,13 @@ import { ToastManager } from '../components/ActionFeedback';
 import { Chip } from '../components/Chip';
 import { DatePickerModal } from '../components/DatePickerModal';
 
-import { formatCurrency, formatDate, daysUntil, getToday, roundMoney, toAmountInput } from '../utils/formatters';
+import { formatCurrency, formatDate, formatDateShort, daysUntil, getToday, roundMoney, toAmountInput } from '../utils/formatters';
 import { syncAfterDataChange } from '../utils/dataSync';
-import { applyLoanPaymentToCard, releaseLoanFromCard, syncLoanEditWithCard } from '../utils/cardPurchases';
-import { LoanRepo, ExpenseRepo, AccountRepo, getAccountBalances, getTotalBalance, SettingsRepo } from '../db/storage';
-import { Loan, Account, TaxesConfig } from '../types';
+import {
+  applyLoanPaymentToCard, availabilityLevel, CardCycleSummary, getCardCycleSummary, releaseLoanFromCard, syncLoanEditWithCard,
+} from '../utils/cardPurchases';
+import { LoanRepo, ExpenseRepo, AccountRepo, CreditCardRepo, getAccountBalances, getTotalBalance, SettingsRepo } from '../db/storage';
+import { Loan, Account, CreditCard, Expense, TaxesConfig } from '../types';
 
 export default function LoansScreen() {
   const { colors } = useTheme();
@@ -48,6 +50,11 @@ export default function LoansScreen() {
   // Selected for Details
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
 
+  // Tarjetas: sus compras se agrupan y se abren desde la vista de cada tarjeta.
+  const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
+  const [expensesById, setExpensesById] = useState<Map<string, Expense>>(new Map());
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+
   const loadData = async () => {
     try {
       const data = await LoanRepo.getAll();
@@ -58,6 +65,8 @@ export default function LoansScreen() {
       });
       setLoans(data);
       setAccounts(await AccountRepo.getAll());
+      setCreditCards(await CreditCardRepo.getAll());
+      setExpensesById(new Map((await ExpenseRepo.getAll()).map((e) => [e.id, e] as const)));
       setAccountBalances(await getAccountBalances());
       const s = await SettingsRepo.get();
       setTaxesConfig(s.taxes || null);
@@ -155,7 +164,8 @@ export default function LoansScreen() {
         onPress: async () => {
           await releaseLoanFromCard(selectedLoan);
           await LoanRepo.delete(selectedLoan.id);
-          setDetailOpen(false);
+          // Desde una tarjeta se vuelve a su lista de compras.
+          if (selectedCardId) setSelectedLoan(null); else setDetailOpen(false);
           loadData();
           syncAfterDataChange();
         } 
@@ -247,7 +257,7 @@ export default function LoansScreen() {
         });
       }
 
-      setDetailOpen(false);
+      if (selectedCardId) setSelectedLoan(null); else setDetailOpen(false);
       Alert.alert('Éxito', selectedLoan.cardId
         ? `Cuota de ${formatCurrency(selectedLoan.monthlyQuota)} descontada del balance general y del saldo de la tarjeta`
         : `Cuota de ${formatCurrency(selectedLoan.monthlyQuota)} descontada del balance general`);
@@ -272,6 +282,147 @@ export default function LoansScreen() {
   const activeLoans = loans.filter(l => (l as any).status !== 'paid');
   const totalDebt = activeLoans.reduce((s, l) => s + ((l.installments - l.paidInstallments) * l.monthlyQuota), 0);
 
+  // Compras con tarjeta: una tarjeta por TC; el resto de préstamos se lista como siempre.
+  const cardIds = new Set(creditCards.map(c => c.id));
+  const cardGroups = creditCards
+    .map(card => ({ card, summary: getCardCycleSummary(card, loans, expensesById) }))
+    .filter(group => group.summary.purchases.length > 0);
+  const otherLoans = loans.filter(l => !l.cardId || !cardIds.has(l.cardId));
+  const activeCount = otherLoans.filter(l => (l as any).status !== 'paid').length
+    + cardGroups.filter(group => group.summary.totalPending > 0).length;
+  const selectedCard = creditCards.find(c => c.id === selectedCardId) || null;
+  const selectedSummary = selectedCard ? getCardCycleSummary(selectedCard, loans, expensesById) : null;
+
+  const openLoanDetail = (loan: Loan) => {
+    setSelectedCardId(null);
+    setSelectedLoan(loan);
+    setDetailOpen(true);
+  };
+
+  const openCardDetail = (cardId: string) => {
+    setSelectedLoan(null);
+    setSelectedCardId(cardId);
+    setDetailOpen(true);
+  };
+
+  const renderCardGroup = (card: CreditCard, summary: CardCycleSummary) => {
+    const pendingCount = summary.purchases.filter(p => !p.isPaid).length;
+    const dueDays = summary.nextDueDate ? daysUntil(summary.nextDueDate) : null;
+    let statusColor = colors.secondary;
+    let statusText = summary.totalPending > 0 ? 'Al día' : 'Sin deuda';
+    if (summary.hasOverdue) {
+      statusColor = colors.error;
+      statusText = 'Vencido';
+    } else if (summary.dueAmount > 0 && dueDays !== null && dueDays <= 5) {
+      statusColor = colors.tertiary;
+      statusText = 'Próximo a vencer';
+    }
+    const availableRatio = summary.available !== null ? summary.available / card.creditLimit : null;
+
+    return (
+      <TouchableOpacity key={card.id} onPress={() => openCardDetail(card.id)}>
+        <Card style={[styles.cardOverrides, { opacity: summary.totalPending > 0 ? 1 : 0.6 }]}>
+          <View style={styles.cardHeaderRow}>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Ionicons name="card" size={18} color={colors.primary} />
+                <Text style={[styles.loanName, { color: colors.onSurface, flexShrink: 1 }]} numberOfLines={1}>{card.name}</Text>
+              </View>
+              <Text style={{ fontSize: 12, color: colors.onSurfaceVariant }}>
+                {card.bankName} · {pendingCount === 1 ? '1 compra pendiente' : `${pendingCount} compras pendientes`}
+              </Text>
+            </View>
+            <View style={[styles.badge, { backgroundColor: statusColor + '20' }]}>
+              <Text style={[styles.badgeText, { color: statusColor }]}>{statusText}</Text>
+            </View>
+          </View>
+
+          <View style={styles.grid2}>
+            <View>
+              <Text style={{ fontSize: 12, color: colors.onSurfaceVariant }}>
+                {summary.nextDueDate ? `Por pagar el ${formatDateShort(summary.nextDueDate)}` : 'Por pagar'}
+              </Text>
+              <Text style={{ fontSize: 14, fontWeight: 'bold', color: colors.error }}>{formatCurrency(summary.dueAmount)}</Text>
+            </View>
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text style={{ fontSize: 12, color: colors.onSurfaceVariant }}>Deuda activa</Text>
+              <Text style={{ fontSize: 14, fontWeight: 'bold', color: colors.tertiary }}>{formatCurrency(summary.activeDebt)}</Text>
+            </View>
+          </View>
+
+          {availableRatio !== null && (
+            <View style={{ marginTop: 12, gap: 4 }}>
+              <ProgressBar progress={availableRatio} colorVariant={availabilityLevel(availableRatio)} />
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Text style={{ fontSize: 11, color: colors.onSurfaceVariant }}>Cupo disponible: {formatCurrency(summary.available ?? 0)}</Text>
+                <Text style={{ fontSize: 11, color: colors.onSurfaceVariant }}>Límite: {formatCurrency(card.creditLimit)}</Text>
+              </View>
+            </View>
+          )}
+        </Card>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderCardDetail = (card: CreditCard, summary: CardCycleSummary) => (
+    <View>
+      <View style={[styles.detailGrid, { borderTopColor: colors.outlineVariant, borderTopWidth: 1, paddingTop: 16 }]}>
+        <View style={styles.detailItem}>
+          <Text style={{ fontSize: 12, color: colors.onSurfaceVariant }}>
+            {summary.nextDueDate ? `Por pagar el ${formatDateShort(summary.nextDueDate)}` : 'Por pagar'}
+          </Text>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: colors.error }}>{formatCurrency(summary.dueAmount)}</Text>
+        </View>
+        <View style={styles.detailItem}>
+          <Text style={{ fontSize: 12, color: colors.onSurfaceVariant }}>Deuda activa</Text>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: colors.tertiary }}>{formatCurrency(summary.activeDebt)}</Text>
+        </View>
+        <View style={styles.detailItem}>
+          <Text style={{ fontSize: 12, color: colors.onSurfaceVariant }}>Último corte</Text>
+          <Text style={{ fontSize: 16, color: colors.onSurface }}>{summary.lastCutOff ? formatDate(summary.lastCutOff) : '-'}</Text>
+        </View>
+        <View style={styles.detailItem}>
+          <Text style={{ fontSize: 12, color: colors.onSurfaceVariant }}>Cupo disponible</Text>
+          <Text style={{ fontSize: 16, color: colors.onSurface }}>{summary.available !== null ? formatCurrency(summary.available) : '-'}</Text>
+        </View>
+      </View>
+      <Text style={{ fontSize: 12, color: colors.onSurfaceVariant, marginTop: 16 }}>
+        "Por pagar" son las compras hasta el último corte; "Deuda activa", las posteriores al corte y las cuotas siguientes.
+      </Text>
+
+      <Text style={[styles.sectionLabel, { color: colors.onSurfaceVariant, marginTop: 24 }]}>COMPRAS</Text>
+      {summary.purchases.length === 0 ? (
+        <Text style={{ color: colors.onSurfaceVariant, textAlign: 'center', paddingVertical: 16 }}>Sin compras registradas</Text>
+      ) : summary.purchases.map(p => (
+        <TouchableOpacity
+          key={p.loan.id}
+          style={[styles.purchaseRow, { borderBottomColor: colors.outlineVariant, opacity: p.isPaid ? 0.6 : 1 }]}
+          onPress={() => setSelectedLoan(p.loan)}
+        >
+          <View style={{ flex: 1, marginRight: 8 }}>
+            <Text style={{ fontSize: 15, fontWeight: '500', color: colors.onSurface }} numberOfLines={1}>{p.title}</Text>
+            <Text style={{ fontSize: 12, color: colors.onSurfaceVariant }} numberOfLines={1}>
+              {[
+                p.expense?.date ? formatDate(p.expense.date) : null,
+                p.expense?.category,
+                `${p.loan.paidInstallments}/${p.loan.installments} ${p.loan.installments === 1 ? 'cuota' : 'cuotas'}`,
+              ].filter(Boolean).join(' · ')}
+            </Text>
+          </View>
+          <View style={{ alignItems: 'flex-end', marginRight: 4 }}>
+            <Text style={{ fontSize: 15, fontWeight: 'bold', color: p.isPaid ? colors.secondary : colors.error }}>
+              {p.isPaid ? 'Pagada' : formatCurrency(p.pending)}
+            </Text>
+            {!p.isPaid && p.loan.nextPaymentDate ? (
+              <Text style={{ fontSize: 11, color: colors.onSurfaceVariant }}>Vence {formatDateShort(p.loan.nextPaymentDate)}</Text>
+            ) : null}
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.onSurfaceVariant} />
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       
@@ -288,8 +439,8 @@ export default function LoansScreen() {
               <Text style={{ fontSize: 24, fontWeight: 'bold', color: colors.tertiary }}>{formatCurrency(totalDebt)}</Text>
             </View>
             <View style={{ alignItems: 'flex-end' }}>
-              <Text style={{ fontSize: 12, color: colors.onSurfaceVariant }}>Préstamos activos</Text>
-              <Text style={{ fontSize: 24, fontWeight: 'bold', color: colors.onSurface }}>{activeLoans.length}</Text>
+              <Text style={{ fontSize: 12, color: colors.onSurfaceVariant }}>Activos</Text>
+              <Text style={{ fontSize: 24, fontWeight: 'bold', color: colors.onSurface }}>{activeCount}</Text>
             </View>
           </View>
         </Card>
@@ -306,7 +457,15 @@ export default function LoansScreen() {
             <Text style={[styles.emptySubtitle, { color: colors.onSurfaceVariant }]}>Toca el botón + para registrar uno</Text>
           </View>
         ) : (
-          loans.map(loan => {
+          <>
+            {cardGroups.length > 0 && (
+              <Text style={[styles.sectionLabel, { color: colors.onSurfaceVariant }]}>TARJETAS DE CRÉDITO</Text>
+            )}
+            {cardGroups.map(({ card, summary }) => renderCardGroup(card, summary))}
+            {cardGroups.length > 0 && otherLoans.length > 0 && (
+              <Text style={[styles.sectionLabel, { color: colors.onSurfaceVariant }]}>PRÉSTAMOS</Text>
+            )}
+          {otherLoans.map(loan => {
             const progress = loan.installments > 0 ? (loan.paidInstallments / loan.installments) : 0;
             const remaining = (loan.installments - loan.paidInstallments) * loan.monthlyQuota;
             
@@ -330,7 +489,7 @@ export default function LoansScreen() {
             return (
               <TouchableOpacity
                 key={loan.id}
-                onPress={() => { setSelectedLoan(loan); setDetailOpen(true); }}
+                onPress={() => openLoanDetail(loan)}
               >
                 <Card style={[styles.cardOverrides, { opacity: isPaid ? 0.6 : 1 }]}>
                   
@@ -377,7 +536,8 @@ export default function LoansScreen() {
                 </Card>
               </TouchableOpacity>
             )
-          })
+          })}
+          </>
         )}
       </ScrollView>
 
@@ -392,9 +552,19 @@ export default function LoansScreen() {
 
 
       {/* ==== DETAILS MODAL ==== */}
-      <BottomSheet visible={isDetailOpen} onClose={() => setDetailOpen(false)} title={selectedLoan?.name || 'Detalle'}>
-        {selectedLoan && (
+      <BottomSheet
+        visible={isDetailOpen}
+        onClose={() => setDetailOpen(false)}
+        title={selectedLoan ? selectedLoan.name : selectedCard ? `${selectedCard.name} · ${selectedCard.bankName}` : 'Detalle'}
+      >
+        {selectedLoan ? (
           <View>
+            {selectedCard && (
+              <TouchableOpacity style={styles.backRow} onPress={() => setSelectedLoan(null)}>
+                <Ionicons name="chevron-back" size={18} color={colors.primary} />
+                <Text style={{ color: colors.primary, fontWeight: '600' }}>Volver a {selectedCard.name}</Text>
+              </TouchableOpacity>
+            )}
             <View style={{ alignItems: 'center', marginBottom: 24 }}>
               <Text style={{ color: colors.onSurfaceVariant }}>Monto Original</Text>
               <Text style={{ fontSize: 32, fontWeight: 'bold', color: colors.primary }}>
@@ -490,7 +660,9 @@ export default function LoansScreen() {
               <Button style={{ flex: 1 }} variant="danger" title="Eliminar" icon="trash" onPress={handleDelete} />
             </View>
           </View>
-        )}
+        ) : selectedCard && selectedSummary ? (
+          renderCardDetail(selectedCard, selectedSummary)
+        ) : null}
       </BottomSheet>
 
 
@@ -589,4 +761,8 @@ const styles = StyleSheet.create({
 
   detailGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, rowGap: 24 },
   detailItem: { width: '45%' },
+  sectionLabel: { fontSize: 12, fontWeight: 'bold', letterSpacing: 0.5, marginBottom: 8, marginTop: 4 },
+  cardHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  purchaseRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1 },
+  backRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 12 },
 });
