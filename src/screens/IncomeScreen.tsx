@@ -16,10 +16,14 @@ import { DatePickerModal } from '../components/DatePickerModal';
 
 import { formatCurrency, formatDate, formatMonths, getToday, roundMoney, toAmountInput } from '../utils/formatters';
 import { syncAfterDataChange } from '../utils/dataSync';
+import { availabilityLevel } from '../utils/cardPurchases';
 import { 
   SalaryRepo, IncomeRepo, AccountRepo, CreditCardRepo, InvestmentRepo, ExpenseRepo, getAccountBalances, SettingsRepo 
 } from '../db/storage';
 import { Salary, Income, Account, CreditCard, Investment, TaxesConfig } from '../types';
+
+// "Nómina" ya no se ofrece como tipo de cuenta.
+const ACCOUNT_TYPES = ['Ahorro', 'Corriente'];
 
 export default function IncomeScreen() {
   const { colors } = useTheme();
@@ -132,7 +136,7 @@ export default function IncomeScreen() {
     } else if (type === 'account') {
       setFormName(data?.name || '');
       setBankName(data?.bankName || '');
-      setAccountType(data?.accountType || 'Ahorro');
+      setAccountType(ACCOUNT_TYPES.includes(data?.accountType) ? data.accountType : 'Ahorro');
       setRefNumber(data?.referenceNumber || '');
       setInitialBalanceForm(toAmountInput(data?.initialBalance));
     } else if (type === 'creditCard') {
@@ -141,7 +145,8 @@ export default function IncomeScreen() {
       setCutOffDay(data?.cutOffDay?.toString() || '');
       setPaymentDay(data?.paymentDueDay?.toString() || '');
       setCreditLimit(toAmountInput(data?.creditLimit));
-      setFormAmount(toAmountInput(data?.currentBalance));
+      // El formulario pide el cupo disponible; internamente se guarda lo usado.
+      setFormAmount(data?.creditLimit > 0 ? toAmountInput(Math.max(0, data.creditLimit - (Number(data.currentBalance) || 0))) : '');
     } else if (type === 'investment') {
       setFormName(data?.entity || '');
       setFormAmount(toAmountInput(data?.monthlyDeposit));
@@ -202,12 +207,22 @@ export default function IncomeScreen() {
 
   const handleSaveCreditCard = async () => {
     if (!formName.trim() || !bankName.trim()) return Alert.alert('Error', 'Nombre y banco son obligatorios');
+    const limit = parseFloat(creditLimit) || 0;
+    const available = parseFloat(formAmount);
+    if (limit <= 0) return Alert.alert('Error', 'Ingresa el límite de crédito de la tarjeta');
+    if (isNaN(available) || available < 0) return Alert.alert('Error', 'Ingresa el cupo disponible (0 si ya no te queda cupo)');
+    if (available > limit) return Alert.alert('Error', 'El cupo disponible no puede ser mayor al límite de crédito');
+    const cutOff = parseInt(cutOffDay) || 0;
+    const dueDay = parseInt(paymentDay) || 0;
+    if (cutOff > 31 || dueDay > 31) return Alert.alert('Error', 'Los días de corte y de pago deben estar entre 1 y 31');
+
     const payload = {
       name: formName.trim(), bankName: bankName.trim(),
-      cutOffDay: parseInt(cutOffDay) || 0,
-      paymentDueDay: parseInt(paymentDay) || 0,
-      creditLimit: parseFloat(creditLimit.replace(',', '.')) || 0,
-      currentBalance: parseFloat(formAmount.replace(',', '.')) || 0,
+      cutOffDay: cutOff,
+      paymentDueDay: dueDay,
+      creditLimit: roundMoney(limit),
+      // Se guarda lo usado (deuda): compras, pagos y validaciones trabajan con ese valor.
+      currentBalance: roundMoney(limit - available),
     };
     if (editingData) await CreditCardRepo.update({ ...editingData, ...payload });
     else await CreditCardRepo.add(payload);
@@ -421,25 +436,33 @@ export default function IncomeScreen() {
           <Text style={[styles.emptyText, { color: colors.onSurfaceVariant }]}>Sin tarjetas registradas</Text>
         ) : (
           creditCards.map(cc => {
-            const ratio = cc.creditLimit > 0 ? (cc.currentBalance / cc.creditLimit) : 0;
-            const isDanger = ratio >= 0.9;
+            // Se destaca el cupo disponible: verde con cupo de sobra, rojo cuando casi no queda.
+            const hasLimit = cc.creditLimit > 0;
+            const available = hasLimit ? Math.max(0, cc.creditLimit - cc.currentBalance) : 0;
+            const level = hasLimit ? availabilityLevel(available / cc.creditLimit) : 'success';
+            const levelColor = level === 'danger' ? colors.error : level === 'warning' ? colors.tertiary : colors.secondary;
             return (
               <TouchableOpacity key={cc.id} onPress={() => openDetail('creditCard', cc)}>
-                <Card style={[styles.smallCard, isDanger && { backgroundColor: `${colors.error}15`, borderColor: colors.error, borderWidth: 1 }]}>
-                  <View style={[styles.rowBetween, { marginBottom: cc.creditLimit > 0 ? 8 : 0 }]}>
-                    <View>
-                      <Text style={[styles.cardTitle, { color: colors.onSurface }]}>{cc.name}</Text>
+                <Card style={[styles.smallCard, hasLimit && level === 'danger' && { backgroundColor: `${colors.error}15`, borderColor: colors.error, borderWidth: 1 }]}>
+                  <View style={[styles.rowBetween, { marginBottom: hasLimit ? 8 : 0 }]}>
+                    <View style={{ flex: 1, paddingRight: 8 }}>
+                      <Text style={[styles.cardTitle, { color: colors.onSurface }]} numberOfLines={1}>{cc.name}</Text>
                       <Text style={[styles.cardSubtitle, { color: colors.onSurfaceVariant }]}>{cc.bankName}</Text>
                     </View>
-                    <Text style={[styles.cardTitle, { color: isDanger ? colors.error : colors.onSurface }]}>{formatCurrency(cc.currentBalance)}</Text>
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <Text style={{ fontSize: 10, color: colors.onSurfaceVariant }}>{hasLimit ? 'Disponible' : 'Usado'}</Text>
+                      <Text style={[styles.cardTitle, { color: hasLimit ? levelColor : colors.onSurface }]}>
+                        {formatCurrency(hasLimit ? available : cc.currentBalance)}
+                      </Text>
+                    </View>
                   </View>
-                  {cc.creditLimit > 0 && (
+                  {hasLimit && (
                     <View style={{ gap: 4 }}>
-                       <View style={styles.rowBetween}>
-                         <Text style={{ fontSize: 10, color: colors.onSurfaceVariant }}>Disp: {formatCurrency(Math.max(0, cc.creditLimit - cc.currentBalance))}</Text>
-                         <Text style={{ fontSize: 10, color: colors.onSurfaceVariant }}>Límite: {formatCurrency(cc.creditLimit)}</Text>
-                       </View>
-                       <ProgressBar progress={Math.min(1, ratio)} colorVariant={isDanger ? 'danger' : 'primary'} />
+                      <ProgressBar progress={available / cc.creditLimit} colorVariant={level} />
+                      <View style={styles.rowBetween}>
+                        <Text style={{ fontSize: 10, color: colors.onSurfaceVariant }}>Usado: {formatCurrency(cc.currentBalance)}</Text>
+                        <Text style={{ fontSize: 10, color: colors.onSurfaceVariant }}>Límite: {formatCurrency(cc.creditLimit)}</Text>
+                      </View>
                     </View>
                   )}
                 </Card>
@@ -628,7 +651,7 @@ export default function IncomeScreen() {
           <View>
             <Text style={{ fontSize: 12, color: colors.onSurfaceVariant, marginBottom: 8, fontFamily: 'sans-serif-medium' }}>Tipo</Text>
             <View style={{ flexDirection: 'row', gap: 8 }}>
-              {['Ahorro', 'Corriente', 'Nómina'].map(t => (
+              {ACCOUNT_TYPES.map(t => (
                 <Chip key={t} label={t} active={accountType === t} onPress={() => setAccountType(t)} />
               ))}
             </View>
@@ -647,12 +670,54 @@ export default function IncomeScreen() {
         <View style={{ gap: 16 }}>
           <TextField label="Nombre o Alias *" placeholder="Ej. Visa Oro" value={formName} onChangeText={setFormName} />
           <TextField label="Banco *" placeholder="Ej. Santander" value={bankName} onChangeText={setBankName} />
+          <TextField
+            label="Límite de crédito *"
+            placeholder="Ej. 5000"
+            keyboardType="decimal-pad"
+            value={creditLimit}
+            onChangeText={setCreditLimit}
+            help="Monto máximo que el banco te permite usar con esta tarjeta."
+          />
+          <TextField
+            label="Cupo disponible *"
+            placeholder="Ej. 3750.50"
+            keyboardType="decimal-pad"
+            value={formAmount}
+            onChangeText={setFormAmount}
+            help="Lo que aún puedes gastar hoy. Si no has usado la tarjeta es igual al límite; si ya no te queda cupo, escribe 0. No puede ser mayor al límite."
+          />
+          {(() => {
+            const limit = parseFloat(creditLimit) || 0;
+            const available = parseFloat(formAmount);
+            if (limit <= 0 || isNaN(available) || available > limit) return null;
+            return (
+              <Text style={{ fontSize: 12, color: colors.onSurfaceVariant }}>
+                Usado actualmente: {formatCurrency(limit - available)}
+              </Text>
+            );
+          })()}
           <View style={{ flexDirection: 'row', gap: 16 }}>
-            <View style={{ flex: 1 }}><TextField label="Día corte" placeholder="Ej. 15" keyboardType="number-pad" value={cutOffDay} onChangeText={setCutOffDay} /></View>
-            <View style={{ flex: 1 }}><TextField label="Día pago" placeholder="Ej. 5" keyboardType="number-pad" value={paymentDay} onChangeText={setPaymentDay} /></View>
+            <View style={{ flex: 1 }}>
+              <TextField
+                label="Día de corte"
+                placeholder="Ej. 15"
+                keyboardType="number-pad"
+                value={cutOffDay}
+                onChangeText={setCutOffDay}
+                help="Día del mes en que el banco cierra tu estado de cuenta. Las compras posteriores se cobran en el pago siguiente."
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <TextField
+                label="Día de pago"
+                placeholder="Ej. 5"
+                keyboardType="number-pad"
+                value={paymentDay}
+                onChangeText={setPaymentDay}
+                help="Fecha máxima del mes para pagar lo facturado al corte."
+              />
+            </View>
           </View>
-          <TextField label="Límite crédito" placeholder="Ej. 5000" keyboardType="decimal-pad" value={creditLimit} onChangeText={setCreditLimit} />
-          <TextField label="Saldo actual" placeholder="Ej. 1250.50" keyboardType="decimal-pad" value={formAmount} onChangeText={setFormAmount} />
           <View style={{ flexDirection: 'row', gap: 12 }}>
              <Button style={{ flex: 1 }} variant="outlined" title="Cancelar" onPress={closeCurrentSheet} />
              <Button style={{ flex: 1 }} title="Guardar tarjeta" onPress={handleSaveCreditCard} icon="save" />
@@ -732,6 +797,8 @@ export default function IncomeScreen() {
                   <View style={styles.detailItem}><Text style={{ fontSize: 12, color: colors.onSurfaceVariant }}>Límite</Text><Text style={{ fontSize: 16, color: colors.onSurface }}>{formatCurrency(detailData.creditLimit)}</Text></View>
                   <View style={styles.detailItem}><Text style={{ fontSize: 12, color: colors.onSurfaceVariant }}>Día corte</Text><Text style={{ fontSize: 16, color: colors.onSurface }}>{detailData.cutOffDay || '-'}</Text></View>
                   <View style={styles.detailItem}><Text style={{ fontSize: 12, color: colors.onSurfaceVariant }}>Día pago</Text><Text style={{ fontSize: 16, color: colors.onSurface }}>{detailData.paymentDueDay || '-'}</Text></View>
+                  <View style={styles.detailItem}><Text style={{ fontSize: 12, color: colors.onSurfaceVariant }}>Cupo disponible</Text><Text style={{ fontSize: 16, color: colors.secondary, fontWeight: 'bold' }}>{detailData.creditLimit > 0 ? formatCurrency(Math.max(0, detailData.creditLimit - (Number(detailData.currentBalance) || 0))) : '-'}</Text></View>
+                  <View style={styles.detailItem}><Text style={{ fontSize: 12, color: colors.onSurfaceVariant }}>Usado</Text><Text style={{ fontSize: 16, color: colors.onSurface }}>{formatCurrency(detailData.currentBalance || 0)}</Text></View>
                 </>
               )}
               {detailType === 'investment' && (
