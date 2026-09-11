@@ -9,9 +9,41 @@ import { Button } from '../components/Button';
 import { TextField } from '../components/TextField';
 import { Chip } from '../components/Chip';
 import { BottomSheet } from '../components/BottomSheet';
-import { formatCurrency, formatDate, getToday, getNow } from '../utils/formatters';
-import { ExpenseRepo, CategoryRepo, AccountRepo, CreditCardRepo, LoanRepo } from '../db/storage';
-import { Expense, Category, Account, CreditCard } from '../types';
+import { ToastManager } from '../components/ActionFeedback';
+import { DatePickerModal } from '../components/DatePickerModal';
+import { formatCurrency, formatDate, getToday, getNow, roundMoney, toAmountInput } from '../utils/formatters';
+import { syncAfterDataChange } from '../utils/dataSync';
+
+// Heuristic H7: State Memory
+let memoryPaymentMethod: 'Efectivo' | 'Débito' | 'Crédito' = 'Débito';
+let memoryDebitAcc = '';
+let memoryCreditAcc = '';
+import { ExpenseRepo, CategoryRepo, AccountRepo, CreditCardRepo, SettingsRepo, getTotalBalance, getAccountBalances } from '../db/storage';
+import { deleteExpenseWithCardSync, registerCardPurchase, updateCardPurchase } from '../utils/cardPurchases';
+import { Expense, Category, Account, CreditCard, TaxesConfig } from '../types';
+
+interface ExpenseFilters {
+  from: string;
+  to: string;
+  categories: string[];
+  method: string;
+}
+
+const EMPTY_FILTERS: ExpenseFilters = { from: '', to: '', categories: [], method: '' };
+
+function hasActiveFilters(f: ExpenseFilters): boolean {
+  return !!(f.from || f.to || f.categories.length || f.method);
+}
+
+/** Cada criterio es opcional: rango de fechas abierto, varias categorías y método de pago. */
+function applyExpenseFilters(expenses: Expense[], f: ExpenseFilters): Expense[] {
+  return expenses.filter(e =>
+    (!f.from || e.date >= f.from) &&
+    (!f.to || e.date <= f.to) &&
+    (f.categories.length === 0 || f.categories.includes(e.category)) &&
+    (!f.method || e.paymentMethod === f.method)
+  );
+}
 
 export default function ExpensesScreen() {
   const { colors } = useTheme();
@@ -22,14 +54,17 @@ export default function ExpensesScreen() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [taxesConfig, setTaxesConfig] = useState<TaxesConfig | null>(null);
 
-  // Filters State
+  // Filters State: borrador en la hoja; sólo se aplica al pulsar "Aplicar filtros".
   const [isFilterOpen, setFilterOpen] = useState(false);
   const [filterFrom, setFilterFrom] = useState('');
   const [filterTo, setFilterTo] = useState('');
-  const [filterCat, setFilterCat] = useState('');
+  const [filterCats, setFilterCats] = useState<string[]>([]);
   const [filterMethod, setFilterMethod] = useState('');
-  const [activeFilters, setActiveFilters] = useState(false);
+  const [appliedFilters, setAppliedFilters] = useState<ExpenseFilters>(EMPTY_FILTERS);
+  const [expenseCategoryNames, setExpenseCategoryNames] = useState<string[]>([]);
+  const activeFilters = hasActiveFilters(appliedFilters);
 
   // Detail State
   const [isDetailOpen, setDetailOpen] = useState(false);
@@ -48,6 +83,7 @@ export default function ExpensesScreen() {
   const [isDeferred, setIsDeferred] = useState(false);
   const [deferredMonths, setDeferredMonths] = useState('');
   const [dateStr, setDateStr] = useState(getToday());
+  const [isDatePickerOpen, setDatePickerOpen] = useState(false);
   const [timeStr, setTimeStr] = useState(getNow());
   const [tags, setTags] = useState('');
   
@@ -56,23 +92,24 @@ export default function ExpensesScreen() {
   const [recurringDay, setRecurringDay] = useState('');
   const [subscriptionType, setSubscriptionType] = useState('');
 
-  const loadData = async (applyFilters = activeFilters) => {
+  const loadData = async (filters: ExpenseFilters = appliedFilters) => {
     try {
       let data = await ExpenseRepo.getAll();
       
-      if (applyFilters && filterFrom && filterTo) {
-        data = data.filter(e => e.date >= filterFrom && e.date <= filterTo);
-        if (filterCat) data = data.filter(e => e.category === filterCat);
-        if (filterMethod) data = data.filter(e => e.paymentMethod === filterMethod);
-      }
+      // Categorías presentes en los gastos (incluye "Préstamo" o "Inversión", que genera la app).
+      setExpenseCategoryNames(Array.from(new Set(data.map(e => e.category).filter(Boolean))));
+      data = applyExpenseFilters(data, filters);
 
       data.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
       setExpenses(data);
 
+      await CategoryRepo.seedDefaults();
       const cats = await CategoryRepo.getAll();
       setCategories(cats.filter(c => c.type === 'expense'));
       setAccounts(await AccountRepo.getAll());
       setCreditCards(await CreditCardRepo.getAll());
+      const s = await SettingsRepo.get();
+      setTaxesConfig(s.taxes || null);
     } catch (e) {
       console.error(e);
     }
@@ -81,7 +118,7 @@ export default function ExpensesScreen() {
   useFocusEffect(
     useCallback(() => {
       loadData();
-    }, [activeFilters, filterFrom, filterTo, filterCat, filterMethod])
+    }, [appliedFilters])
   );
 
   const onRefresh = async () => {
@@ -90,24 +127,40 @@ export default function ExpensesScreen() {
     setRefreshing(false);
   };
 
+  const openFilters = () => {
+    // El borrador parte de los filtros aplicados.
+    setFilterFrom(appliedFilters.from);
+    setFilterTo(appliedFilters.to);
+    setFilterCats(appliedFilters.categories);
+    setFilterMethod(appliedFilters.method);
+    setFilterOpen(true);
+  };
+
+  const toggleFilterCat = (name: string) => {
+    setFilterCats(prev => prev.includes(name) ? prev.filter(c => c !== name) : [...prev, name]);
+  };
+
   const handleApplyFilters = () => {
-    if (!filterFrom || !filterTo) {
-      Alert.alert('Aviso', 'Las fechas Desde y Hasta son obligatorias para filtrar.');
+    const next: ExpenseFilters = { from: filterFrom, to: filterTo, categories: filterCats, method: filterMethod };
+    if (!hasActiveFilters(next)) {
+      Alert.alert('Aviso', 'Elige al menos un criterio: fechas, categorías o método de pago.');
       return;
     }
-    setActiveFilters(true);
+    if (next.from && next.to && next.from > next.to) {
+      Alert.alert('Aviso', 'La fecha "Desde" no puede ser posterior a "Hasta".');
+      return;
+    }
+    setAppliedFilters(next);
     setFilterOpen(false);
-    loadData(true);
   };
 
   const clearFilters = () => {
     setFilterFrom('');
     setFilterTo('');
-    setFilterCat('');
+    setFilterCats([]);
     setFilterMethod('');
-    setActiveFilters(false);
+    setAppliedFilters(EMPTY_FILTERS);
     setFilterOpen(false);
-    loadData(false);
   };
 
   const openNewForm = () => {
@@ -115,9 +168,9 @@ export default function ExpensesScreen() {
     setAmountStr('');
     setCategoryType('');
     setDetail('');
-    setPaymentMethod('Débito');
-    setSelectedDebit('');
-    setSelectedCredit('');
+    setPaymentMethod(memoryPaymentMethod);
+    setSelectedDebit(memoryDebitAcc);
+    setSelectedCredit(memoryCreditAcc);
     setIsDeferred(false);
     setDeferredMonths('');
     setDateStr(getToday());
@@ -133,7 +186,7 @@ export default function ExpensesScreen() {
 
   const openEditForm = (exp: Expense) => {
     setEditingId(exp.id);
-    setAmountStr(exp.amount.toString());
+    setAmountStr(toAmountInput(exp.amount));
     setCategoryType(exp.category);
     setDetail(exp.detail);
     setPaymentMethod((exp.paymentMethod as any) || 'Efectivo');
@@ -152,6 +205,30 @@ export default function ExpensesScreen() {
     setFormOpen(true);
   };
 
+  const calculateCreditCardNextPaymentDate = (expenseDateStr: string, cutOffDay: number, paymentDueDay: number): string => {
+    if (!expenseDateStr || !cutOffDay || !paymentDueDay) return '';
+    const expDate = new Date(expenseDateStr + 'T12:00:00Z');
+    const expDay = expDate.getUTCDate();
+    const expMonth = expDate.getUTCMonth(); 
+    const expYear = expDate.getUTCFullYear();
+
+    let dueMonth = expMonth + 1;
+    let dueYear = expYear;
+
+    if (expDay > cutOffDay) {
+      dueMonth += 1;
+    }
+
+    if (dueMonth > 11) {
+      dueMonth -= 12;
+      dueYear += 1;
+    }
+
+    const mStr = String(dueMonth + 1).padStart(2, '0');
+    const dStr = String(paymentDueDay).padStart(2, '0');
+    return `${dueYear}-${mStr}-${dStr}`;
+  };
+
   const handleSaveExpense = async () => {
     const amount = parseFloat(amountStr.replace(',', '.'));
     if (isNaN(amount) || amount <= 0) {
@@ -167,12 +244,26 @@ export default function ExpensesScreen() {
       return;
     }
 
+    let taxComision = 0;
+    let taxIva = 0;
+    let taxIsd = 0;
+    let appliesTaxes = false;
+
+    if (taxesConfig?.enabled && taxesConfig.applyTo.includes(`Gastos:${categoryType}`)) {
+      appliesTaxes = true;
+      taxComision = (amount * taxesConfig.comisionRate) / 100;
+      taxIva = (taxComision * taxesConfig.ivaRate) / 100;
+      taxIsd = (amount * taxesConfig.isdRate) / 100;
+    }
+    const totalTax = taxComision + taxIva + taxIsd;
+    const totalCharge = amount + totalTax;
+
     const payload: Omit<Expense, 'id'> = {
       amount: Math.round(amount * 100) / 100,
       category: categoryType,
       detail: detail.trim(),
       paymentMethod,
-      accountName: paymentMethod === 'Débito' ? selectedDebit : '',
+      accountName: (paymentMethod === 'Débito' || paymentMethod === 'Efectivo') ? selectedDebit : '',
       cardName: paymentMethod === 'Crédito' ? selectedCredit : '',
       isDeferred: paymentMethod === 'Crédito' ? isDeferred : false,
       deferredMonths: paymentMethod === 'Crédito' && isDeferred ? parseInt(deferredMonths) || 0 : 0,
@@ -188,32 +279,82 @@ export default function ExpensesScreen() {
     };
 
     try {
-      if (editingId) {
-        await ExpenseRepo.update({ id: editingId, ...payload });
-      } else {
-        await ExpenseRepo.add(payload);
-
-        if (payload.paymentMethod === 'Crédito' && payload.cardName) {
-          const card = creditCards.find(c => c.name === payload.cardName);
-          if (card) {
-            await CreditCardRepo.update({ ...card, currentBalance: (card.currentBalance || 0) + payload.amount });
-            if (payload.isDeferred && payload.deferredMonths! > 0) {
-              await LoanRepo.add({
-                name: `Diferido: ${payload.detail}`,
-                totalAmount: payload.amount,
-                installments: payload.deferredMonths,
-                paidInstallments: 0,
-                monthlyQuota: Math.round((payload.amount / payload.deferredMonths!) * 100) / 100,
-                interestRate: 0,
-                ...( { nextPaymentDate: '', status: 'active' } as any )
-              });
-            }
+      if (payload.paymentMethod === 'Crédito' && payload.cardName) {
+        const card = creditCards.find(c => c.name === payload.cardName);
+        if (card && card.creditLimit > 0) {
+          let balanceAfter = card.currentBalance + totalCharge;
+          let available = card.creditLimit - card.currentBalance;
+          // Al editar una compra de esta misma tarjeta, su monto anterior ya está en el saldo.
+          if (editingId && selectedExpense?.paymentMethod === 'Crédito' && selectedExpense.cardName === card.name) {
+            balanceAfter = card.currentBalance - selectedExpense.amount + payload.amount;
+            available += selectedExpense.amount;
+          }
+          if (balanceAfter > card.creditLimit) {
+            Alert.alert('Cupo excedido', `El gasto supera el límite. Disponible estimado: ${formatCurrency(Math.max(0, available))}`);
+            return;
+          }
+        }
+      } else if ((payload.paymentMethod === 'Débito' || payload.paymentMethod === 'Efectivo') && payload.accountName) {
+        const accBals = await getAccountBalances();
+        const acc = accounts.find(a => a.name === payload.accountName);
+        if (acc) {
+          let balanceAfter = accBals[acc.id] || 0;
+          if (editingId && selectedExpense) balanceAfter += selectedExpense.amount;
+          if (balanceAfter < totalCharge) {
+            Alert.alert('Saldo Insuficiente', `La cuenta ${payload.accountName} no tiene fondos suficientes. Disponible estimado: ${formatCurrency(balanceAfter)}`);
+            return;
           }
         }
       }
 
+      const chargeToDeductGlobal = editingId ? payload.amount : totalCharge;
+      if (payload.paymentMethod !== 'Crédito') {
+        const tb = await getTotalBalance();
+        let globalAfter = tb.balance;
+        if (editingId && selectedExpense) globalAfter += selectedExpense.amount;
+        if (globalAfter < chargeToDeductGlobal) {
+          Alert.alert('Balance Negativo', `No se permite un balance total negativo. Disponible global estimado: ${formatCurrency(globalAfter)}`);
+          return;
+        }
+      }
+
+      // Compras con tarjeta: saldo de la tarjeta y préstamo quedan vinculados al gasto.
+      const card = payload.paymentMethod === 'Crédito' && payload.cardName
+        ? creditCards.find(c => c.name === payload.cardName)
+        : undefined;
+      const nextPaymentDate = card
+        ? calculateCreditCardNextPaymentDate(payload.date, card.cutOffDay, card.paymentDueDay)
+        : '';
+
+      if (editingId) {
+        const before = await ExpenseRepo.get(editingId);
+        const updated = await ExpenseRepo.update({ id: editingId, ...payload });
+        if (before) await updateCardPurchase(before, updated, card, nextPaymentDate);
+      } else {
+        const expense = await ExpenseRepo.add(payload);
+        if (appliesTaxes && totalTax > 0) {
+           await ExpenseRepo.add({ 
+              ...payload, 
+              detail: `${payload.detail} (Impuestos/Comisiones)`, 
+              amount: roundMoney(totalTax),
+              parentExpenseId: expense.id 
+           });
+        }
+
+        if (card) {
+          await registerCardPurchase(expense, card, totalCharge, nextPaymentDate);
+        }
+      }
+
+      // Memorize choices for the next entry
+      memoryPaymentMethod = payload.paymentMethod as any;
+      if (payload.accountName) memoryDebitAcc = payload.accountName;
+      if (payload.cardName) memoryCreditAcc = payload.cardName;
+
       setFormOpen(false);
+      ToastManager.show('Gasto guardado con éxito');
       loadData();
+      syncAfterDataChange();
     } catch (e) {
       console.error(e);
       Alert.alert('Error', 'No se pudo guardar el gasto');
@@ -222,20 +363,33 @@ export default function ExpensesScreen() {
 
   const handleDeleteExpense = () => {
     if (!selectedExpense) return;
-    Alert.alert('Eliminar Gasto', '¿Estás seguro de eliminar este gasto?', [
+    const isCardPurchase = selectedExpense.paymentMethod === 'Crédito' && !!selectedExpense.cardName;
+    const message = isCardPurchase
+      ? '¿Estás seguro de eliminar este gasto? Lo que siga pendiente de la compra se quitará de la tarjeta y se eliminarán su préstamo y su cargo de impuestos, si los tiene.'
+      : '¿Estás seguro de eliminar este gasto?';
+    Alert.alert('Eliminar Gasto', message, [
       { text: 'Cancelar', style: 'cancel' },
       { 
         text: 'Eliminar', style: 'destructive', 
         onPress: async () => {
-          await ExpenseRepo.delete(selectedExpense.id);
+          await deleteExpenseWithCardSync(selectedExpense.id);
           setDetailOpen(false);
           loadData();
+          syncAfterDataChange();
         }
       }
     ]);
   };
 
   const totalSpent = useMemo(() => expenses.reduce((s, e) => s + e.amount, 0), [expenses]);
+
+  // Categorías configuradas + las que sólo aparecen en los gastos (sin color propio).
+  const filterCategoryOptions = useMemo(() => [
+    ...categories.map(c => ({ name: c.name, color: c.color as string | undefined })),
+    ...expenseCategoryNames
+      .filter(name => !categories.some(c => c.name === name))
+      .map(name => ({ name, color: undefined as string | undefined })),
+  ], [categories, expenseCategoryNames]);
   let lastDateRendered = '';
 
   return (
@@ -246,7 +400,7 @@ export default function ExpensesScreen() {
         <Text style={[styles.title, { color: colors.onSurface }]}>Gastos</Text>
         <TouchableOpacity 
           style={[styles.iconBtn, { backgroundColor: activeFilters ? colors.primaryContainer : 'transparent' }]}
-          onPress={() => setFilterOpen(true)}
+          onPress={openFilters}
         >
           <Ionicons name="filter" size={24} color={activeFilters ? colors.primary : colors.onSurface} />
         </TouchableOpacity>
@@ -398,10 +552,10 @@ export default function ExpensesScreen() {
         <View style={{ gap: 16 }}>
           <View style={{ flexDirection: 'row', gap: 16 }}>
             <View style={{ flex: 1 }}>
-              <TextField label="Desde (YYYY-MM-DD)" placeholder="Ej. 2024-01-01" value={filterFrom} onChangeText={setFilterFrom} />
+              <TextField label="Desde (opcional)" placeholder="YYYY-MM-DD" value={filterFrom} onChangeText={setFilterFrom} isDate />
             </View>
             <View style={{ flex: 1 }}>
-              <TextField label="Hasta (YYYY-MM-DD)" placeholder="Ej. 2024-12-31" value={filterTo} onChangeText={setFilterTo} />
+              <TextField label="Hasta (opcional)" placeholder="YYYY-MM-DD" value={filterTo} onChangeText={setFilterTo} isDate />
             </View>
           </View>
 
@@ -415,11 +569,11 @@ export default function ExpensesScreen() {
           </View>
 
           <View>
-            <Text style={{ fontSize: 12, color: colors.onSurfaceVariant, marginBottom: 8, fontFamily: 'sans-serif-medium' }}>Categoría</Text>
+            <Text style={{ fontSize: 12, color: colors.onSurfaceVariant, marginBottom: 8, fontFamily: 'sans-serif-medium' }}>Categorías (puedes elegir varias)</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-              <Chip label="Todas" active={filterCat === ''} onPress={() => setFilterCat('')} />
-              {categories.map((c) => (
-                <Chip key={c.name} label={c.name} active={filterCat === c.name} onPress={() => setFilterCat(c.name)} color={c.color} />
+              <Chip label="Todas" active={filterCats.length === 0} onPress={() => setFilterCats([])} />
+              {filterCategoryOptions.map((c) => (
+                <Chip key={c.name} label={c.name} active={filterCats.includes(c.name)} onPress={() => toggleFilterCat(c.name)} color={c.color} />
               ))}
             </View>
           </View>
@@ -442,6 +596,48 @@ export default function ExpensesScreen() {
             value={amountStr} 
             onChangeText={setAmountStr} 
           />
+
+          {(() => {
+            const amountParsed = parseFloat(amountStr.replace(',', '.')) || 0;
+            let taxComision = 0;
+            let taxIva = 0;
+            let taxIsd = 0;
+            let appliesTaxes = false;
+
+            if (taxesConfig?.enabled && taxesConfig.applyTo.includes(`Gastos:${categoryType}`)) {
+              appliesTaxes = true;
+              taxComision = (amountParsed * taxesConfig.comisionRate) / 100;
+              taxIva = (taxComision * taxesConfig.ivaRate) / 100;
+              taxIsd = (amountParsed * taxesConfig.isdRate) / 100;
+            }
+            const totalTax = taxComision + taxIva + taxIsd;
+            const totalCharge = amountParsed + totalTax;
+
+            if (appliesTaxes && totalTax > 0) {
+              return (
+                <View style={{ backgroundColor: colors.surfaceContainerHighest, padding: 12, borderRadius: 12 }}>
+                  <Text style={{ fontSize: 12, color: colors.onSurfaceVariant, marginBottom: 4 }}>Desglose de Impuestos/Comisión</Text>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text style={{ fontSize: 13, color: colors.onSurface }}>Comisión ({taxesConfig?.comisionRate}%)</Text>
+                    <Text style={{ fontSize: 13, color: colors.onSurface }}>+{formatCurrency(taxComision)}</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text style={{ fontSize: 13, color: colors.onSurface }}>IVA sobre Comisión ({taxesConfig?.ivaRate}%)</Text>
+                    <Text style={{ fontSize: 13, color: colors.onSurface }}>+{formatCurrency(taxIva)}</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text style={{ fontSize: 13, color: colors.onSurface }}>ISD sobre Principal ({taxesConfig?.isdRate}%)</Text>
+                    <Text style={{ fontSize: 13, color: colors.onSurface }}>+{formatCurrency(taxIsd)}</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: colors.outlineVariant }}>
+                    <Text style={{ fontSize: 14, fontWeight: 'bold', color: colors.onSurface }}>Total retenido y monto debitado</Text>
+                    <Text style={{ fontSize: 14, fontWeight: 'bold', color: colors.primary }}>{formatCurrency(totalCharge)}</Text>
+                  </View>
+                </View>
+              );
+            }
+            return null;
+          })()}
 
           <View>
             <Text style={{ fontSize: 12, color: colors.onSurfaceVariant, marginBottom: 8, fontFamily: 'sans-serif-medium' }}>Categoría *</Text>
@@ -468,10 +664,15 @@ export default function ExpensesScreen() {
             </View>
           </View>
 
-          {paymentMethod === 'Débito' && accounts.length > 0 && (
+          {(paymentMethod === 'Débito' || paymentMethod === 'Efectivo') && accounts.length > 0 && (
             <View>
-               <Text style={{ fontSize: 12, color: colors.onSurfaceVariant, marginBottom: 8, fontFamily: 'sans-serif-medium' }}>Cuenta de débito</Text>
+               <Text style={{ fontSize: 12, color: colors.onSurfaceVariant, marginBottom: 8, fontFamily: 'sans-serif-medium' }}>
+                 {paymentMethod === 'Efectivo' ? 'Extraído de cuenta (Opcional)' : 'Cuenta de débito'}
+               </Text>
                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+                 {paymentMethod === 'Efectivo' && (
+                   <Chip label="Efectivo físico (Bolsillo)" active={!selectedDebit} onPress={() => setSelectedDebit('')} />
+                 )}
                  {accounts.map(a => (
                    <Chip key={a.name} label={`${a.name} · ${a.bankName}`} active={selectedDebit === a.name} onPress={() => setSelectedDebit(a.name)} />
                  ))}
@@ -506,7 +707,11 @@ export default function ExpensesScreen() {
 
           <View style={{ flexDirection: 'row', gap: 16 }}>
             <View style={{ flex: 1 }}>
-              <TextField label="Fecha" placeholder="Ej. 2024-03-12" value={dateStr} onChangeText={setDateStr} />
+              <TouchableOpacity onPress={() => setDatePickerOpen(true)}>
+                <View pointerEvents="none">
+                  <TextField label="Fecha *" placeholder="YYYY-MM-DD" value={dateStr} onChangeText={() => {}} />
+                </View>
+              </TouchableOpacity>
             </View>
             <View style={{ flex: 1 }}>
               <TextField label="Hora (Opcional)" placeholder="Ej. 14:30" value={timeStr} onChangeText={setTimeStr} />
@@ -536,9 +741,19 @@ export default function ExpensesScreen() {
             </View>
           )}
 
-          <Button title={editingId ? 'Actualizar gasto' : 'Guardar gasto'} onPress={handleSaveExpense} />
+          <View style={{ flexDirection: 'row', gap: 12, marginTop: 16 }}>
+             <Button style={{ flex: 1 }} variant="outlined" title="Cancelar" onPress={() => setFormOpen(false)} />
+             <Button style={{ flex: 1 }} title={editingId ? 'Actualizar gasto' : 'Guardar gasto'} onPress={handleSaveExpense} />
+          </View>
         </View>
       </BottomSheet>
+
+      <DatePickerModal 
+        visible={isDatePickerOpen} 
+        onClose={() => setDatePickerOpen(false)} 
+        value={dateStr} 
+        onSelect={setDateStr} 
+      />
 
     </View>
   );
