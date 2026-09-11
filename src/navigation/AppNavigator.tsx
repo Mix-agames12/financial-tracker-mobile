@@ -14,6 +14,7 @@ import IncomeScreen from '../screens/IncomeScreen';
 import LoansScreen from '../screens/LoansScreen';
 import AnalyticsScreen from '../screens/AnalyticsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import { ActionFeedback } from '../components/ActionFeedback';
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -101,23 +102,26 @@ export default function AppNavigator() {
       };
 
   return (
-    <NavigationContainer theme={CustomNavTheme}>
-      <Stack.Navigator>
-        <Stack.Screen 
-          name="MainTabs" 
-          component={MainTabs} 
-          options={{ headerShown: false }} 
-        />
-        <Stack.Screen 
-          name="Settings" 
-          component={SettingsScreen} 
-          options={{ 
-            title: 'Configuración',
-            headerStyle: { backgroundColor: colors.surfaceContainerLowest },
-            headerTintColor: colors.onSurface,
-          }} 
-        />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <>
+      <NavigationContainer theme={CustomNavTheme}>
+        <Stack.Navigator>
+          <Stack.Screen 
+            name="MainTabs" 
+            component={MainTabs} 
+            options={{ headerShown: false }} 
+          />
+          <Stack.Screen 
+            name="Settings" 
+            component={SettingsScreen} 
+            options={{ 
+              title: 'Configuración',
+              headerStyle: { backgroundColor: colors.surfaceContainerLowest },
+              headerTintColor: colors.onSurface,
+            }} 
+          />
+        </Stack.Navigator>
+      </NavigationContainer>
+      <ActionFeedback />
+    </>
   );
 }
