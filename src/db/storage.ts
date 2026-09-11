@@ -149,28 +149,48 @@ export const AccountRepo = {
   delete: (id: string) => remove('accounts', id),
 };
 
+export const DEFAULT_EXPENSE_CATEGORIES: Omit<Category, 'id'>[] = [
+  { name: 'Alimentación', icon: 'restaurant', color: '#f59e0b', type: 'expense' },
+  { name: 'Transporte', icon: 'car', color: '#3b82f6', type: 'expense' },
+  { name: 'Vivienda', icon: 'home', color: '#8b5cf6', type: 'expense' },
+  { name: 'Salud', icon: 'heart', color: '#ef4444', type: 'expense' },
+  { name: 'Entretenimiento', icon: 'film', color: '#ec4899', type: 'expense' },
+  { name: 'Educación', icon: 'school', color: '#06b6d4', type: 'expense' },
+  { name: 'Ropa', icon: 'shirt', color: '#f97316', type: 'expense' },
+  { name: 'Tecnología', icon: 'desktop', color: '#6366f1', type: 'expense' },
+  { name: 'Servicios', icon: 'receipt', color: '#14b8a6', type: 'expense' },
+  { name: 'Suscripción', icon: 'card', color: '#a855f7', type: 'expense' },
+  { name: 'Otros', icon: 'ellipsis-horizontal', color: '#64748b', type: 'expense' },
+];
+
 export const CategoryRepo = {
   getAll: () => getAll<Category>('categories'),
   add: (data: any) => add<Category>('categories', data),
+  update: (data: Category) => update<Category>('categories', data),
   delete: (id: string) => remove('categories', id),
   seedDefaults: async () => {
     const existing = await getAll<Category>('categories');
-    if (existing.length > 0) return;
-    const defaults = [
-      { name: 'Alimentación', icon: 'restaurant', color: '#f59e0b', type: 'expense' },
-      { name: 'Transporte', icon: 'directions_car', color: '#3b82f6', type: 'expense' },
-      { name: 'Vivienda', icon: 'home', color: '#8b5cf6', type: 'expense' },
-      { name: 'Salud', icon: 'favorite', color: '#ef4444', type: 'expense' },
-      { name: 'Entretenimiento', icon: 'movie', color: '#ec4899', type: 'expense' },
-      { name: 'Educación', icon: 'school', color: '#06b6d4', type: 'expense' },
-      { name: 'Ropa', icon: 'checkroom', color: '#f97316', type: 'expense' },
-      { name: 'Tecnología', icon: 'devices', color: '#6366f1', type: 'expense' },
-      { name: 'Servicios', icon: 'receipt_long', color: '#14b8a6', type: 'expense' },
-      { name: 'Suscripción', icon: 'subscriptions', color: '#a855f7', type: 'expense' },
-      { name: 'Otros', icon: 'more_horiz', color: '#64748b', type: 'expense' },
-    ];
-    for (const cat of defaults) {
-      await add('categories', cat as any);
+    const defaults = DEFAULT_EXPENSE_CATEGORIES;
+    
+    // Sincroniza icono/color de las categorías por defecto sin pisar los colores
+    // que el usuario personalizó, y agrega las que falten.
+    let modified = false;
+    const updated = existing.map(cat => {
+      const def = defaults.find(d => d.name === cat.name);
+      if (!def) return cat;
+      const color = cat.isCustomColor ? cat.color : def.color;
+      if (cat.color !== color || cat.icon !== def.icon) {
+        modified = true;
+        return { ...cat, color, icon: def.icon };
+      }
+      return cat;
+    });
+    if (modified) {
+      await saveAll('categories', updated);
+    }
+    const missing = defaults.filter(d => !existing.some(c => c.name === d.name));
+    for (const cat of missing) {
+      await add<Category>('categories', cat);
     }
   },
 };
@@ -214,21 +234,40 @@ export async function hasAnyData() {
 }
 
 export async function getTotalBalance() {
-  const salaries = await SalaryRepo.getAll();
   const incomes = await IncomeRepo.getAll();
   const expenses = await ExpenseRepo.getAll();
+  const accounts = await AccountRepo.getAll();
+  const salaries = await SalaryRepo.getAll(); 
 
-  const totalSalary = salaries.reduce((sum, s) => sum + (Number(s.amount) || 0), 0);
   const totalIncome = incomes.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
   const totalExpenses = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+  const totalInitial = accounts.reduce((sum, a) => sum + (Number(a.initialBalance) || 0), 0);
+  
+  const configuredSalary = salaries[0]?.amount || 0;
 
   return {
-    totalIncome: totalSalary + totalIncome,
+    totalIncome: totalIncome,
     totalExpenses,
-    balance: totalSalary + totalIncome - totalExpenses,
-    salaryAmount: totalSalary,
-    extraIncome: totalIncome,
+    balance: totalIncome + totalInitial - totalExpenses,
+    salaryAmount: configuredSalary,
+    extraIncome: totalIncome, // Now identical to totalIncome unless we separate it visually
   };
+}
+
+export async function getAccountBalances(): Promise<Record<string, number>> {
+  const accounts = await AccountRepo.getAll();
+  const incomes = await IncomeRepo.getAll();
+  const expenses = await ExpenseRepo.getAll();
+  
+  const accBals: Record<string, number> = {};
+  accounts.forEach(a => {
+    let bal = Number(a.initialBalance) || 0;
+    incomes.filter(i => i.bankAccount && i.bankAccount.startsWith(a.name)).forEach(i => bal += (Number(i.amount) || 0));
+    // All expenses made with Debit pointing to this account deduct from this account
+    expenses.filter(e => e.accountName === a.name).forEach(e => bal -= (Number(e.amount) || 0));
+    accBals[a.id] = bal;
+  });
+  return accBals;
 }
 
 export async function exportAllData() {
@@ -255,13 +294,11 @@ export async function getMonthlySummary(year: number, month: number) {
 
   const expenses = await ExpenseRepo.getByDateRange(start, end);
   const incomes = await IncomeRepo.getByDateRange(start, end);
-
-  // Include salary in monthly income
-  const salaries = await SalaryRepo.getAll();
-  const salaryAmount = salaries.reduce((s, sal) => s + (Number(sal.amount) || 0), 0);
+  const salaries = await SalaryRepo.getAll(); 
 
   const totalExp = expenses.reduce((s, e) => s + Number(e.amount), 0);
-  const totalInc = incomes.reduce((s, i) => s + Number(i.amount), 0) + salaryAmount;
+  const totalInc = incomes.reduce((s, i) => s + Number(i.amount), 0);
+  const configuredSalary = salaries[0]?.amount || 0;
 
   const byCategory: Record<string, number> = {};
   expenses.forEach(e => {
@@ -290,7 +327,7 @@ export async function getMonthlySummary(year: number, month: number) {
   return {
     totalExpenses: totalExp,
     totalIncome: totalInc,
-    salaryAmount,
+    salaryAmount: configuredSalary,
     byCategory,
     byPaymentMethod,
     byAccount,

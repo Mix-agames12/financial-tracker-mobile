@@ -130,6 +130,8 @@ y debes seleccionar la opcion de android, ahora los servidores de Expo construir
 eas build -p android --profile preview
 ```
 
+> El widget de Android ("Resumen financiero") usa código nativo, por lo que no está disponible en Expo Go: pruébalo instalando el APK generado con este comando y añadiéndolo desde el selector de widgets del teléfono.
+
 La terminal te pedirá generar un Keystore (las credenciales de firma de tu app), si es tu primera vez, presiona "Y" (Yes) para que Expo lo genere y lo guarde automáticamente por ti (es la opción más cómoda)
 
 Ahora tu código se subirá a los servidores de Expo, te aparecerá un enlace en la terminal en el que puedes darle clic para ver el progreso en la web
@@ -168,12 +170,15 @@ financial-tracker-mobile/
 
 ## Proximos pasos (Features)
 
-- [ ] Desarrollar un módulo de exportación y serialización de datos para la generación de reportes financieros locales en formatos estandarizados (PDF y CSV).
-- [ ] Integrar un servicio de notificaciones Push (ej. Expo Notifications o FCM) para la calendarización y emisión de alertas sobre pagos próximos.
-- [ ] Implementar detección del Locale o geolocalización del dispositivo durante el flujo de Onboarding (primer inicio) para configurar automáticamente el tipo de moneda por defecto.
-- [ ] Ampliar la lógica del motor de búsqueda en el listado de gastos para soportar el filtrado condicional por parámetros de categoría.
-- [ ] Implementar tematización dinámica en la UI para asignar y renderizar colores personalizables según la categoría del gasto.
-- [ ] Implementar gestos de arrastre (PanResponder o componente Swipeable Bottom Sheet) en la tarjeta de ingreso de gastos para mejorar la ergonomía de la interfaz.
-- [ ] Aplicar renderizado condicional en los estilos (Conditional Styling) del balance de ahorros para aplicar feedback visual (cambio de color) cuando el valor sea negativo.
+- [x] Desarrollar un módulo de exportación y serialización de datos para la generación de reportes financieros locales en formatos estandarizados (PDF y CSV).
+- [x] Integrar un servicio de notificaciones Push (ej. Expo Notifications) para la calendarización y emisión de alertas sobre pagos próximos.
+- [x] Implementar detección del Locale o geolocalización del dispositivo durante el flujo de Onboarding (primer inicio) para configurar automáticamente el tipo de moneda por defecto.
+- [x] Ampliar la lógica del motor de búsqueda en el listado de gastos para soportar el filtrado condicional por parámetros de categoría.
+- [x] Implementar tematización dinámica en la UI para asignar y renderizar colores personalizables según la categoría del gasto.
+- [x] Implementar gestos de arrastre (PanResponder o componente Swipeable Bottom Sheet) en la tarjeta de ingreso de gastos para mejorar la ergonomía de la interfaz.
+- [x] Aplicar renderizado condicional en los estilos (Conditional Styling) del balance de ahorros para aplicar feedback visual (cambio de color) cuando el valor sea negativo.
+- [x] Integrar un widget de Android con el resumen financiero (balance, ingresos y gastos del mes).
+
 ---
+
 <p align="center">Construido con ❤️ para tu tranquilidad financiera</p>

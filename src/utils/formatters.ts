@@ -1,10 +1,101 @@
+// ===== Moneda =====
+
+export interface CurrencyConfig {
+  currency: string; // ISO 4217, p. ej. 'USD'
+  locale: string; // p. ej. 'es-EC'
+}
+
+const DEFAULT_CURRENCY_CONFIG: CurrencyConfig = { currency: 'USD', locale: 'es-EC' };
+
+let currencyConfig: CurrencyConfig = DEFAULT_CURRENCY_CONFIG;
+let currencyFormatter: Intl.NumberFormat | null = null;
+
+function buildFormatter(config: CurrencyConfig): Intl.NumberFormat {
+  return new Intl.NumberFormat(config.locale, {
+    style: 'currency',
+    currency: config.currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+export function isValidCurrencyConfig(config: CurrencyConfig): boolean {
+  try {
+    buildFormatter(config).format(1);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Define la moneda usada por formatCurrency en toda la app (se carga desde Settings al iniciar). */
+export function setCurrencyConfig(config: Partial<CurrencyConfig>) {
+  const next: CurrencyConfig = {
+    currency: config.currency || DEFAULT_CURRENCY_CONFIG.currency,
+    locale: config.locale || DEFAULT_CURRENCY_CONFIG.locale,
+  };
+  currencyConfig = isValidCurrencyConfig(next) ? next : DEFAULT_CURRENCY_CONFIG;
+  currencyFormatter = null;
+}
+
+export function getCurrencyConfig(): CurrencyConfig {
+  return currencyConfig;
+}
+
+function getFormatter(): Intl.NumberFormat {
+  if (!currencyFormatter) currencyFormatter = buildFormatter(currencyConfig);
+  return currencyFormatter;
+}
+
 export function formatCurrency(amount: number | string | undefined): string {
   const num = typeof amount === 'string' ? parseFloat(amount) : Number(amount) || 0;
-  return new Intl.NumberFormat('es-EC', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-  }).format(num);
+  return getFormatter().format(Number.isFinite(num) ? num : 0);
+}
+
+/** Símbolo de la moneda activa (p. ej. "$", "€", "S/"). */
+export function getCurrencySymbol(): string {
+  const symbol = getFormatter().format(0).replace(/[\d\s.,-]/g, '');
+  return symbol || currencyConfig.currency;
+}
+
+// ===== Montos =====
+
+/** Deja un único separador decimal ('.') y como máximo `maxDecimals` decimales. */
+export function sanitizeDecimalInput(text: string, maxDecimals = 2): string {
+  const cleaned = text.replace(/,/g, '.').replace(/[^0-9.]/g, '');
+  const dotIndex = cleaned.indexOf('.');
+  if (dotIndex === -1) return cleaned;
+  const intPart = cleaned.slice(0, dotIndex) || '0';
+  const decimals = cleaned.slice(dotIndex + 1).replace(/\./g, '').slice(0, maxDecimals);
+  return `${intPart}.${decimals}`;
+}
+
+export function sanitizeIntegerInput(text: string): string {
+  return text.replace(/[^0-9]/g, '');
+}
+
+/** Redondea a 2 decimales evitando errores de coma flotante (0.1 + 0.2). */
+export function roundMoney(value: number): number {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return 0;
+  return Math.round((num + Number.EPSILON) * 100) / 100;
+}
+
+/** Valor para precargar un campo de monto al editar: máximo 2 decimales, vacío si no hay valor. */
+export function toAmountInput(value: number | string | undefined | null): string {
+  if (value === undefined || value === null || value === '') return '';
+  const num = Number(value);
+  return Number.isFinite(num) ? String(roundMoney(num)) : '';
+}
+
+// ===== Fechas =====
+
+/** 'YYYY-MM-DD' en hora local. toISOString() usa UTC y adelanta el día por la noche en UTC-5. */
+export function toLocalDateStr(d: Date): string {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 export function formatDate(dateStr: string | undefined): string {
@@ -32,12 +123,20 @@ export function formatPercent(value: number): string {
   return `${(value * 100).toFixed(1)}%`;
 }
 
+/** "1 mes" / "3 meses". */
+export function formatMonths(n: number): string {
+  return `${n} ${n === 1 ? 'mes' : 'meses'}`;
+}
+
 export function getToday(): string {
-  return new Date().toISOString().split('T')[0];
+  return toLocalDateStr(new Date());
 }
 
 export function getNow(): string {
-  return new Date().toTimeString().slice(0, 5);
+  const d = new Date();
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
 }
 
 export function getMonthName(month: number): string {
@@ -63,4 +162,42 @@ export function daysUntil(dateStr: string): number {
   now.setHours(0, 0, 0, 0);
   const target = new Date(dateStr + 'T00:00:00');
   return Math.ceil((target.getTime() - now.getTime()) / 86400000);
+}
+
+function clampDay(day: number): number {
+  return Math.min(Math.max(Math.trunc(day) || 1, 1), 31);
+}
+
+/** Ese día del mes (base 0); si el mes es más corto, su último día. */
+function dayInMonth(year: number, month: number, day: number): Date {
+  return new Date(year, month, Math.min(day, new Date(year, month + 1, 0).getDate()));
+}
+
+function startOfDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+/** Próxima fecha (hoy o posterior) con ese día del mes; en meses cortos usa el último día. */
+export function nextDateForDay(day: number, from: Date = new Date()): string {
+  const today = startOfDay(from);
+  const thisMonth = dayInMonth(today.getFullYear(), today.getMonth(), clampDay(day));
+  if (thisMonth >= today) return toLocalDateStr(thisMonth);
+  return toLocalDateStr(dayInMonth(today.getFullYear(), today.getMonth() + 1, clampDay(day)));
+}
+
+/** Última fecha (hoy o anterior) con ese día del mes, p. ej. el último corte de una tarjeta. */
+export function lastDateForDay(day: number, from: Date = new Date()): string {
+  const today = startOfDay(from);
+  const thisMonth = dayInMonth(today.getFullYear(), today.getMonth(), clampDay(day));
+  if (thisMonth <= today) return toLocalDateStr(thisMonth);
+  return toLocalDateStr(dayInMonth(today.getFullYear(), today.getMonth() - 1, clampDay(day)));
+}
+
+/** Próxima fecha (hoy o posterior) con ese día y mes (1-12); el 29/02 cae el 28/02 en años no bisiestos. */
+export function nextDateForMonthDay(month: number, day: number, from: Date = new Date()): string {
+  const today = startOfDay(from);
+  const monthIndex = Math.min(Math.max(Math.trunc(month) || 1, 1), 12) - 1;
+  const thisYear = dayInMonth(today.getFullYear(), monthIndex, clampDay(day));
+  if (thisYear >= today) return toLocalDateStr(thisYear);
+  return toLocalDateStr(dayInMonth(today.getFullYear() + 1, monthIndex, clampDay(day)));
 }

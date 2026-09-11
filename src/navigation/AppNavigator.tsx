@@ -2,6 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer, DefaultTheme, DarkTheme as NavDarkTheme } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '../theme/ThemeContext';
@@ -13,12 +14,14 @@ import IncomeScreen from '../screens/IncomeScreen';
 import LoansScreen from '../screens/LoansScreen';
 import AnalyticsScreen from '../screens/AnalyticsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import { ActionFeedback } from '../components/ActionFeedback';
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function MainTabs() {
   const { colors, isDark } = useTheme();
+  const insets = useSafeAreaInsets();
 
   return (
     <Tab.Navigator
@@ -27,8 +30,8 @@ function MainTabs() {
         tabBarStyle: {
           backgroundColor: colors.surfaceContainerLowest,
           borderTopColor: colors.outlineVariant,
-          height: 64,
-          paddingBottom: 8,
+          height: 64 + insets.bottom,
+          paddingBottom: Math.max(8, insets.bottom),
           paddingTop: 8,
         },
         tabBarActiveTintColor: colors.primary,
@@ -99,23 +102,26 @@ export default function AppNavigator() {
       };
 
   return (
-    <NavigationContainer theme={CustomNavTheme}>
-      <Stack.Navigator>
-        <Stack.Screen 
-          name="MainTabs" 
-          component={MainTabs} 
-          options={{ headerShown: false }} 
-        />
-        <Stack.Screen 
-          name="Settings" 
-          component={SettingsScreen} 
-          options={{ 
-            title: 'Configuración',
-            headerStyle: { backgroundColor: colors.surfaceContainerLowest },
-            headerTintColor: colors.onSurface,
-          }} 
-        />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <>
+      <NavigationContainer theme={CustomNavTheme}>
+        <Stack.Navigator>
+          <Stack.Screen 
+            name="MainTabs" 
+            component={MainTabs} 
+            options={{ headerShown: false }} 
+          />
+          <Stack.Screen 
+            name="Settings" 
+            component={SettingsScreen} 
+            options={{ 
+              title: 'Configuración',
+              headerStyle: { backgroundColor: colors.surfaceContainerLowest },
+              headerTintColor: colors.onSurface,
+            }} 
+          />
+        </Stack.Navigator>
+      </NavigationContainer>
+      <ActionFeedback />
+    </>
   );
 }

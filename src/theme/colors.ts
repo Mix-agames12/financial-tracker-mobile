@@ -51,7 +51,7 @@ export const darkColors: ThemeColors = {
   primaryDark: '#4f46e5',
   primaryContainer: '#e0e7ff',
   onPrimary: '#ffffff',
-  onPrimaryContainer: '#312e81',
+  onPrimaryContainer: '#312e81ff',
 
   secondary: '#10b981',
   secondaryLight: '#34d399',
