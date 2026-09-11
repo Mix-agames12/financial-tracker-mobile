@@ -10,10 +10,15 @@ import { Button } from '../components/Button';
 import { TextField } from '../components/TextField';
 import { BottomSheet } from '../components/BottomSheet';
 import { ProgressBar } from '../components/ProgressBar';
+import { ToastManager } from '../components/ActionFeedback';
+import { Chip } from '../components/Chip';
+import { DatePickerModal } from '../components/DatePickerModal';
 
-import { formatCurrency, formatDate, daysUntil, getToday } from '../utils/formatters';
-import { LoanRepo, ExpenseRepo } from '../db/storage';
-import { Loan } from '../types';
+import { formatCurrency, formatDate, daysUntil, getToday, roundMoney, toAmountInput } from '../utils/formatters';
+import { syncAfterDataChange } from '../utils/dataSync';
+import { applyLoanPaymentToCard, releaseLoanFromCard, syncLoanEditWithCard } from '../utils/cardPurchases';
+import { LoanRepo, ExpenseRepo, AccountRepo, getAccountBalances, getTotalBalance, SettingsRepo } from '../db/storage';
+import { Loan, Account, TaxesConfig } from '../types';
 
 export default function LoansScreen() {
   const { colors } = useTheme();
@@ -21,6 +26,10 @@ export default function LoansScreen() {
 
   const [refreshing, setRefreshing] = useState(false);
   const [loans, setLoans] = useState<Loan[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [accountBalances, setAccountBalances] = useState<Record<string, number>>({});
+  const [paymentAccount, setPaymentAccount] = useState('');
+  const [taxesConfig, setTaxesConfig] = useState<TaxesConfig | null>(null);
 
   // Modals
   const [isFormOpen, setFormOpen] = useState(false);
@@ -34,6 +43,7 @@ export default function LoansScreen() {
   const [installments, setInstallments] = useState('');
   const [paidInstallments, setPaidInstallments] = useState('');
   const [nextPaymentDate, setNextPaymentDate] = useState('');
+  const [isDatePickerOpen, setDatePickerOpen] = useState(false);
 
   // Selected for Details
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
@@ -47,6 +57,10 @@ export default function LoansScreen() {
         return ((a as any).nextPaymentDate || '').localeCompare((b as any).nextPaymentDate || '');
       });
       setLoans(data);
+      setAccounts(await AccountRepo.getAll());
+      setAccountBalances(await getAccountBalances());
+      const s = await SettingsRepo.get();
+      setTaxesConfig(s.taxes || null);
     } catch (e) {
       console.error(e);
     }
@@ -67,7 +81,7 @@ export default function LoansScreen() {
   const openForm = (loan: Loan | null = null) => {
     setEditingData(loan);
     setName(loan?.name || '');
-    setTotalAmount(loan?.totalAmount?.toString() || '');
+    setTotalAmount(toAmountInput(loan?.totalAmount));
     setInterestRate(loan?.interestRate?.toString() || '');
     setInstallments(loan?.installments?.toString() || '');
     setPaidInstallments(loan?.paidInstallments?.toString() || '0');
@@ -91,6 +105,11 @@ export default function LoansScreen() {
     const installmentAmount = totalWithInterest / inst;
     const paidInst = parseInt(paidInstallments) || 0;
 
+    if (paidInst < 0 || paidInst > inst) {
+      Alert.alert('Error', 'Las cuotas pagadas no pueden ser negativas ni superan el total de cuotas');
+      return;
+    }
+
     const payload = {
       name: name.trim(),
       totalAmount: tAmount,
@@ -100,19 +119,24 @@ export default function LoansScreen() {
       monthlyQuota: Math.round(installmentAmount * 100) / 100,
       
       // Dynamic fields preserved explicitly to match legacy logic 
-      totalWithInterest,
+      totalWithInterest: roundMoney(totalWithInterest),
       nextPaymentDate,
       status: paidInst >= inst ? 'paid' : 'active',
     };
 
     try {
       if (editingData) {
-        await LoanRepo.update({ ...editingData, ...payload } as any);
+        const edited = { ...editingData, ...payload } as Loan;
+        // Préstamo de una compra con tarjeta: la tarjeta pasa a reflejar lo que queda por pagar.
+        const cardOutstanding = await syncLoanEditWithCard(editingData, edited);
+        await LoanRepo.update(cardOutstanding === undefined ? edited : { ...edited, cardOutstanding });
       } else {
         await LoanRepo.add(payload as any);
       }
       setFormOpen(false);
+      ToastManager.show('Préstamo guardado con éxito');
       loadData();
+      syncAfterDataChange();
     } catch (e) {
       console.error(e);
       Alert.alert('Error', 'No se pudo guardar el préstamo');
@@ -121,14 +145,19 @@ export default function LoansScreen() {
 
   const handleDelete = () => {
     if (!selectedLoan) return;
-    Alert.alert('Eliminar', '¿Estás seguro de eliminar este préstamo?', [
+    const message = selectedLoan.cardId
+      ? '¿Estás seguro de eliminar este préstamo? Lo que siga pendiente de la compra se quitará del saldo de la tarjeta.'
+      : '¿Estás seguro de eliminar este préstamo?';
+    Alert.alert('Eliminar', message, [
       { text: 'Cancelar', style: 'cancel' },
       { 
         text: 'Eliminar', style: 'destructive', 
         onPress: async () => {
+          await releaseLoanFromCard(selectedLoan);
           await LoanRepo.delete(selectedLoan.id);
           setDetailOpen(false);
           loadData();
+          syncAfterDataChange();
         } 
       }
     ]);
@@ -137,30 +166,93 @@ export default function LoansScreen() {
   const handlePayInstallment = async () => {
     if (!selectedLoan) return;
     
+    if (!paymentAccount) return Alert.alert('Error', 'Debes seleccionar una cuenta origen para pagar la cuota');
+    const acc = accounts.find(a => a.name === paymentAccount);
+    if (!acc) return Alert.alert('Error', 'Cuenta inválida');
+
+    const amount = Math.round(selectedLoan.monthlyQuota * 100) / 100;
+
+    let taxComision = 0;
+    let taxIva = 0;
+    let taxIsd = 0;
+    let appliesTaxes = false;
+
+    if (taxesConfig?.enabled && taxesConfig.applyTo.includes('Préstamos')) {
+      appliesTaxes = true;
+      taxComision = (amount * taxesConfig.comisionRate) / 100;
+      taxIva = (taxComision * taxesConfig.ivaRate) / 100;
+      taxIsd = (amount * taxesConfig.isdRate) / 100;
+    }
+    const totalTax = taxComision + taxIva + taxIsd;
+    const totalCharge = amount + totalTax;
+
+    const tb = await getTotalBalance();
+    if (tb.balance < totalCharge) {
+      return Alert.alert('Balance Negativo', `No se permite un balance total negativo. Disponible global: ${formatCurrency(tb.balance)}`);
+    }
+
+    if ((accountBalances[acc.id] || 0) < totalCharge) {
+      return Alert.alert('Saldo Insuficiente', `La cuenta ${paymentAccount} no tiene fondos suficientes para cubrir la cuota de ${formatCurrency(totalCharge)}. Disponible: ${formatCurrency(accountBalances[acc.id] || 0)}`);
+    }
+    
     const newPaidCount = selectedLoan.paidInstallments + 1;
     const isNowPaid = newPaidCount >= selectedLoan.installments;
 
+    const advancePaymentDate = (dateStr: string): string => {
+      if (!dateStr) return '';
+      const [y, m, d] = dateStr.split('-').map(Number);
+      if (!y || !m || !d) return '';
+      let newM = m + 1;
+      let newY = y;
+      if (newM > 12) { newM = 1; newY++; }
+      const maxDays = new Date(newY, newM, 0).getDate();
+      const newD = Math.min(d, maxDays);
+      return `${newY}-${String(newM).padStart(2, '0')}-${String(newD).padStart(2, '0')}`;
+    };
+
+    const newNextDate = advancePaymentDate((selectedLoan as any).nextPaymentDate || '');
+
     try {
+      // Compra con tarjeta: la cuota pagada deja de estar pendiente en la tarjeta.
+      const cardOutstanding = await applyLoanPaymentToCard(selectedLoan, amount, isNowPaid);
       const updatedLoan = {
         ...selectedLoan,
         paidInstallments: newPaidCount,
-        status: isNowPaid ? 'paid' : 'active'
+        status: isNowPaid ? 'paid' : 'active',
+        nextPaymentDate: isNowPaid ? '' : ((selectedLoan as any).nextPaymentDate ? newNextDate : ''),
+        ...(cardOutstanding === undefined ? {} : { cardOutstanding }),
       } as any;
 
       await LoanRepo.update(updatedLoan);
 
       await ExpenseRepo.add({
-        amount: Math.round(selectedLoan.monthlyQuota * 100) / 100,
+        amount,
         category: 'Préstamo',
         detail: `Cuota ${newPaidCount}/${selectedLoan.installments} — ${selectedLoan.name}`,
-        paymentMethod: 'Débito', // Fallback, could prompt for an account if desired
+        accountName: paymentAccount,
+        paymentMethod: 'Débito',
         date: getToday(),
         ...( { isLoanPayment: true, loanId: selectedLoan.id, time: new Date().toTimeString().slice(0, 5), tags: ['préstamo', 'cuota'] } as any )
       });
 
+      if (appliesTaxes && totalTax > 0) {
+        await ExpenseRepo.add({
+          amount: Math.round(totalTax * 100) / 100,
+          category: 'Otros',
+          detail: `Cuota ${newPaidCount}/${selectedLoan.installments} (Retenciones) — ${selectedLoan.name}`,
+          accountName: paymentAccount,
+          paymentMethod: 'Débito',
+          date: getToday(),
+          ...( { time: new Date().toTimeString().slice(0, 5), tags: ['impuestos', 'préstamo'] } as any )
+        });
+      }
+
       setDetailOpen(false);
-      Alert.alert('Éxito', `Cuota de ${formatCurrency(selectedLoan.monthlyQuota)} descontada del balance general`);
+      Alert.alert('Éxito', selectedLoan.cardId
+        ? `Cuota de ${formatCurrency(selectedLoan.monthlyQuota)} descontada del balance general y del saldo de la tarjeta`
+        : `Cuota de ${formatCurrency(selectedLoan.monthlyQuota)} descontada del balance general`);
       loadData();
+      syncAfterDataChange();
 
     } catch (e) {
       console.error(e);
@@ -329,6 +421,61 @@ export default function LoansScreen() {
                </Text>
             </View>
 
+            {(selectedLoan as any).status !== 'paid' && accounts.length > 0 && (
+              <View style={{ marginBottom: 16 }}>
+                <Text style={{ fontSize: 12, color: colors.onSurfaceVariant, marginBottom: 8, fontFamily: 'sans-serif-medium' }}>Cuenta origen para el pago *</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+                  {accounts.map(a => (
+                    <Chip key={a.name} label={`${a.name} (${formatCurrency(accountBalances[a.id] || 0)})`} active={paymentAccount === a.name} onPress={() => setPaymentAccount(a.name)} />
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
+            {(() => {
+              if (!selectedLoan || (selectedLoan as any).status === 'paid') return null;
+              
+              const amountParsed = Math.round(selectedLoan.monthlyQuota * 100) / 100;
+              let taxComision = 0;
+              let taxIva = 0;
+              let taxIsd = 0;
+              let appliesTaxes = false;
+
+              if (taxesConfig?.enabled && taxesConfig.applyTo.includes('Préstamos')) {
+                appliesTaxes = true;
+                taxComision = (amountParsed * taxesConfig.comisionRate) / 100;
+                taxIva = (taxComision * taxesConfig.ivaRate) / 100;
+                taxIsd = (amountParsed * taxesConfig.isdRate) / 100;
+              }
+              const totalTax = taxComision + taxIva + taxIsd;
+              const totalCharge = amountParsed + totalTax;
+
+              if (appliesTaxes && totalTax > 0) {
+                return (
+                  <View style={{ backgroundColor: colors.surfaceContainerHighest, padding: 12, borderRadius: 12, marginBottom: 16 }}>
+                    <Text style={{ fontSize: 12, color: colors.onSurfaceVariant, marginBottom: 4 }}>Desglose de Impuestos/Comisión</Text>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                      <Text style={{ fontSize: 13, color: colors.onSurface }}>Comisión ({taxesConfig?.comisionRate}%)</Text>
+                      <Text style={{ fontSize: 13, color: colors.onSurface }}>+{formatCurrency(taxComision)}</Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                      <Text style={{ fontSize: 13, color: colors.onSurface }}>IVA sobre Comisión ({taxesConfig?.ivaRate}%)</Text>
+                      <Text style={{ fontSize: 13, color: colors.onSurface }}>+{formatCurrency(taxIva)}</Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                      <Text style={{ fontSize: 13, color: colors.onSurface }}>ISD sobre Principal ({taxesConfig?.isdRate}%)</Text>
+                      <Text style={{ fontSize: 13, color: colors.onSurface }}>+{formatCurrency(taxIsd)}</Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: colors.outlineVariant }}>
+                      <Text style={{ fontSize: 14, fontWeight: 'bold', color: colors.onSurface }}>Total retenido y debitado</Text>
+                      <Text style={{ fontSize: 14, fontWeight: 'bold', color: colors.primary }}>{formatCurrency(totalCharge)}</Text>
+                    </View>
+                  </View>
+                );
+              }
+              return null;
+            })()}
+
             {(selectedLoan as any).status !== 'paid' && (
               <Button 
                 title="Registrar pago de cuota" 
@@ -387,16 +534,30 @@ export default function LoansScreen() {
             onChangeText={setPaidInstallments} 
           />
 
-          <TextField 
-            label="Fecha máximo de próximo pago" 
-            placeholder="YYYY-MM-DD" 
-            value={nextPaymentDate} 
-            onChangeText={setNextPaymentDate} 
-          />
+          <TouchableOpacity onPress={() => setDatePickerOpen(true)}>
+            <View pointerEvents="none">
+              <TextField 
+                label="Fecha máxima de próximo pago (Opcional)" 
+                placeholder="YYYY-MM-DD" 
+                value={nextPaymentDate} 
+                onChangeText={() => {}} 
+              />
+            </View>
+          </TouchableOpacity>
 
-          <Button title={editingData ? 'Actualizar' : 'Guardar préstamo'} onPress={handleSaveLoan} />
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+             <Button style={{ flex: 1 }} variant="outlined" title="Cancelar" onPress={() => setFormOpen(false)} />
+             <Button style={{ flex: 1 }} title={editingData ? 'Actualizar' : 'Guardar préstamo'} onPress={handleSaveLoan} />
+          </View>
         </View>
       </BottomSheet>
+
+      <DatePickerModal 
+        visible={isDatePickerOpen} 
+        onClose={() => setDatePickerOpen(false)} 
+        value={nextPaymentDate} 
+        onSelect={setNextPaymentDate} 
+      />
 
     </View>
   );
