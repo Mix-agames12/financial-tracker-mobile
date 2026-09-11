@@ -11,7 +11,7 @@ import { Chip } from '../components/Chip';
 import { BottomSheet } from '../components/BottomSheet';
 import { ToastManager } from '../components/ActionFeedback';
 import { DatePickerModal } from '../components/DatePickerModal';
-import { formatCurrency, formatDate, getToday, getNow, roundMoney, toAmountInput } from '../utils/formatters';
+import { formatCurrency, formatDate, getToday, getNow, nextDateForMonthDay, roundMoney, toAmountInput } from '../utils/formatters';
 import { syncAfterDataChange } from '../utils/dataSync';
 
 // Heuristic H7: State Memory
@@ -43,6 +43,18 @@ function applyExpenseFilters(expenses: Expense[], f: ExpenseFilters): Expense[] 
     (f.categories.length === 0 || f.categories.includes(e.category)) &&
     (!f.method || e.paymentMethod === f.method)
   );
+}
+
+type RecurringFrequency = 'monthly' | 'specific' | 'yearly';
+
+const MONTHS_SHORT = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+function describeRecurrence(exp: Expense): string {
+  if (exp.recurringFrequency === 'yearly' && exp.recurringMonth && exp.recurringDay) {
+    return `Anual · ${exp.recurringDay} ${MONTHS_SHORT[exp.recurringMonth - 1]}`;
+  }
+  if (exp.recurringFrequency === 'specific' && exp.recurringDay) return `Día ${exp.recurringDay}`;
+  return 'Mensual';
 }
 
 export default function ExpensesScreen() {
@@ -88,8 +100,9 @@ export default function ExpensesScreen() {
   const [tags, setTags] = useState('');
   
   const [isRecurring, setIsRecurring] = useState(false);
-  const [recurringFrequency, setRecurringFrequency] = useState<'monthly' | 'specific'>('monthly');
+  const [recurringFrequency, setRecurringFrequency] = useState<RecurringFrequency>('monthly');
   const [recurringDay, setRecurringDay] = useState('');
+  const [recurringDate, setRecurringDate] = useState(''); // cobro anual (YYYY-MM-DD)
   const [subscriptionType, setSubscriptionType] = useState('');
 
   const loadData = async (filters: ExpenseFilters = appliedFilters) => {
@@ -179,6 +192,7 @@ export default function ExpensesScreen() {
     setIsRecurring(false);
     setRecurringFrequency('monthly');
     setRecurringDay('');
+    setRecurringDate('');
     setSubscriptionType('');
     setDetailOpen(false);
     setFormOpen(true);
@@ -198,8 +212,11 @@ export default function ExpensesScreen() {
     setTimeStr((exp as any).time || getNow());
     setTags((exp as any).tags?.join(', ') || '');
     setIsRecurring(exp.isRecurring || false);
-    setRecurringFrequency((exp.recurringFrequency as 'monthly' | 'specific') || 'monthly');
+    setRecurringFrequency((exp.recurringFrequency as RecurringFrequency) || 'monthly');
     setRecurringDay(exp.recurringDay?.toString() || '');
+    setRecurringDate(exp.recurringFrequency === 'yearly' && exp.recurringMonth && exp.recurringDay
+      ? nextDateForMonthDay(exp.recurringMonth, exp.recurringDay)
+      : '');
     setSubscriptionType((exp as any).subscriptionType || '');
     setDetailOpen(false);
     setFormOpen(true);
@@ -225,7 +242,9 @@ export default function ExpensesScreen() {
     }
 
     const mStr = String(dueMonth + 1).padStart(2, '0');
-    const dStr = String(paymentDueDay).padStart(2, '0');
+    // El día de pago no puede pasar del último día del mes (p. ej. 31 en noviembre).
+    const lastDayOfDueMonth = new Date(dueYear, dueMonth + 1, 0).getDate();
+    const dStr = String(Math.min(paymentDueDay, lastDayOfDueMonth)).padStart(2, '0');
     return `${dueYear}-${mStr}-${dStr}`;
   };
 
@@ -258,6 +277,9 @@ export default function ExpensesScreen() {
     const totalTax = taxComision + taxIva + taxIsd;
     const totalCharge = amount + totalTax;
 
+    // Recurrente anual: día y mes de la fecha de cobro elegida (por defecto, la del gasto).
+    const [, annualMonth, annualDay] = (recurringDate || dateStr || getToday()).split('-').map(Number);
+
     const payload: Omit<Expense, 'id'> = {
       amount: Math.round(amount * 100) / 100,
       category: categoryType,
@@ -273,7 +295,12 @@ export default function ExpensesScreen() {
         tags: tags.split(',').map(t => t.trim()).filter(Boolean),
         isRecurring,
         recurringFrequency: isRecurring ? recurringFrequency : undefined,
-        recurringDay: isRecurring && recurringFrequency === 'specific' ? parseInt(recurringDay) || 1 : undefined,
+        recurringDay: !isRecurring
+          ? undefined
+          : recurringFrequency === 'specific'
+            ? Math.min(31, Math.max(1, parseInt(recurringDay) || 1))
+            : recurringFrequency === 'yearly' ? annualDay : undefined,
+        recurringMonth: isRecurring && recurringFrequency === 'yearly' ? annualMonth : undefined,
         subscriptionType: categoryType === 'Suscripción' ? subscriptionType : '',
       } as any )
     };
@@ -465,7 +492,7 @@ export default function ExpensesScreen() {
                       {exp.paymentMethod === 'Débito' && exp.accountName ? ` · ${exp.accountName}` : ''}
                       {exp.paymentMethod === 'Crédito' && exp.cardName ? ` · ${exp.cardName}` : ''}
                       {exp.isDeferred ? ` · Diferido ${exp.deferredMonths}m` : ''}
-                      {(exp as any).isRecurring ? ' · Recurrente' : ''}
+                      {exp.isRecurring ? (exp.recurringFrequency === 'yearly' ? ' · Anual' : ' · Recurrente') : ''}
                     </Text>
                   </View>
                   <View style={styles.listTrailing}>
@@ -527,7 +554,7 @@ export default function ExpensesScreen() {
                 <View style={styles.detailItem}>
                   <Text style={{ fontSize: 12, color: colors.onSurfaceVariant }}>Recurrente</Text>
                   <Text style={{ fontSize: 16, color: colors.onSurface }}>
-                    {selectedExpense.recurringFrequency === 'specific' ? `Día ${selectedExpense.recurringDay}` : 'Mensual'}
+                    {describeRecurrence(selectedExpense)}
                   </Text>
                 </View>
               )}
@@ -730,13 +757,31 @@ export default function ExpensesScreen() {
             <View style={{ gap: 16 }}>
               <View>
                 <Text style={{ fontSize: 12, color: colors.onSurfaceVariant, marginBottom: 8, fontFamily: 'sans-serif-medium' }}>Frecuencia</Text>
-                <View style={{ flexDirection: 'row', gap: 8 }}>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                   <Chip label="Mensual" active={recurringFrequency === 'monthly'} onPress={() => setRecurringFrequency('monthly')} />
                   <Chip label="Día específico" active={recurringFrequency === 'specific'} onPress={() => setRecurringFrequency('specific')} />
+                  <Chip
+                    label="Anual"
+                    active={recurringFrequency === 'yearly'}
+                    onPress={() => {
+                      setRecurringFrequency('yearly');
+                      if (!recurringDate) setRecurringDate(dateStr);
+                    }}
+                  />
                 </View>
               </View>
               {recurringFrequency === 'specific' && (
                 <TextField label="Día de cobro (1-31)" placeholder="Ej. 15" keyboardType="number-pad" value={recurringDay} onChangeText={setRecurringDay} />
+              )}
+              {recurringFrequency === 'yearly' && (
+                <TextField
+                  label="Fecha de cobro anual"
+                  placeholder="YYYY-MM-DD"
+                  value={recurringDate || dateStr}
+                  onChangeText={setRecurringDate}
+                  isDate
+                  help="Se repite cada año en este día y mes; te avisaremos antes de cada cobro."
+                />
               )}
             </View>
           )}

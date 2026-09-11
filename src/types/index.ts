@@ -11,8 +11,9 @@ export interface Expense {
   deferredMonths?: number;
   monthlyQuota?: number;
   isRecurring?: boolean;
-  recurringFrequency?: 'monthly' | 'specific' | string;
+  recurringFrequency?: 'monthly' | 'specific' | 'yearly' | string;
   recurringDay?: number;
+  recurringMonth?: number; // 1-12, sólo en recurrentes anuales
   parentExpenseId?: string; // cargo de impuestos/comisiones → id de la compra que lo originó
 }
 

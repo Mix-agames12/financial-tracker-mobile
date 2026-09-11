@@ -163,3 +163,41 @@ export function daysUntil(dateStr: string): number {
   const target = new Date(dateStr + 'T00:00:00');
   return Math.ceil((target.getTime() - now.getTime()) / 86400000);
 }
+
+function clampDay(day: number): number {
+  return Math.min(Math.max(Math.trunc(day) || 1, 1), 31);
+}
+
+/** Ese día del mes (base 0); si el mes es más corto, su último día. */
+function dayInMonth(year: number, month: number, day: number): Date {
+  return new Date(year, month, Math.min(day, new Date(year, month + 1, 0).getDate()));
+}
+
+function startOfDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+/** Próxima fecha (hoy o posterior) con ese día del mes; en meses cortos usa el último día. */
+export function nextDateForDay(day: number, from: Date = new Date()): string {
+  const today = startOfDay(from);
+  const thisMonth = dayInMonth(today.getFullYear(), today.getMonth(), clampDay(day));
+  if (thisMonth >= today) return toLocalDateStr(thisMonth);
+  return toLocalDateStr(dayInMonth(today.getFullYear(), today.getMonth() + 1, clampDay(day)));
+}
+
+/** Última fecha (hoy o anterior) con ese día del mes, p. ej. el último corte de una tarjeta. */
+export function lastDateForDay(day: number, from: Date = new Date()): string {
+  const today = startOfDay(from);
+  const thisMonth = dayInMonth(today.getFullYear(), today.getMonth(), clampDay(day));
+  if (thisMonth <= today) return toLocalDateStr(thisMonth);
+  return toLocalDateStr(dayInMonth(today.getFullYear(), today.getMonth() - 1, clampDay(day)));
+}
+
+/** Próxima fecha (hoy o posterior) con ese día y mes (1-12); el 29/02 cae el 28/02 en años no bisiestos. */
+export function nextDateForMonthDay(month: number, day: number, from: Date = new Date()): string {
+  const today = startOfDay(from);
+  const monthIndex = Math.min(Math.max(Math.trunc(month) || 1, 1), 12) - 1;
+  const thisYear = dayInMonth(today.getFullYear(), monthIndex, clampDay(day));
+  if (thisYear >= today) return toLocalDateStr(thisYear);
+  return toLocalDateStr(dayInMonth(today.getFullYear() + 1, monthIndex, clampDay(day)));
+}

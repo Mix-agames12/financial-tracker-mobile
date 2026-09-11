@@ -1,6 +1,6 @@
 import { CreditCardRepo, ExpenseRepo, LoanRepo } from '../db/storage';
 import { loanCardOutstanding, TAX_DETAIL_SUFFIX } from './cardPurchases';
-import { daysUntil, roundMoney, toLocalDateStr } from './formatters';
+import { daysUntil, nextDateForDay, nextDateForMonthDay, roundMoney } from './formatters';
 
 export type UpcomingPaymentKind = 'loan' | 'card' | 'recurring';
 
@@ -11,17 +11,6 @@ export interface UpcomingPayment {
   amount: number;
   dueDate: string; // 'YYYY-MM-DD'
   daysLeft: number; // negativo = vencido
-}
-
-/** Próxima fecha (hoy o posterior) con ese día del mes; en meses cortos usa el último día. */
-export function nextDateForDay(day: number, from: Date = new Date()): string {
-  const safeDay = Math.min(Math.max(Math.trunc(day) || 1, 1), 31);
-  const today = new Date(from.getFullYear(), from.getMonth(), from.getDate());
-  const year = today.getFullYear();
-  const month = today.getMonth();
-  const thisMonth = new Date(year, month, Math.min(safeDay, new Date(year, month + 1, 0).getDate()));
-  if (thisMonth >= today) return toLocalDateStr(thisMonth);
-  return toLocalDateStr(new Date(year, month + 1, Math.min(safeDay, new Date(year, month + 2, 0).getDate())));
 }
 
 /**
@@ -74,14 +63,17 @@ export async function getUpcomingPayments(horizonDays = 30): Promise<UpcomingPay
     .filter((e) => e.isRecurring && !e.parentExpenseId && !(e.detail || '').endsWith(TAX_DETAIL_SUFFIX))
     .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
     .forEach((exp) => {
-      const day = exp.recurringFrequency === 'specific' && exp.recurringDay
+      const [, purchaseMonth, purchaseDay] = (exp.date || '').split('-').map(Number);
+      const yearly = exp.recurringFrequency === 'yearly';
+      const day = (exp.recurringFrequency === 'specific' || yearly) && exp.recurringDay
         ? exp.recurringDay
-        : Number((exp.date || '').split('-')[2]);
-      if (!day) return;
-      const key = `${exp.detail}|${exp.category}|${day}`.toLowerCase();
+        : purchaseDay;
+      const month = yearly ? exp.recurringMonth || purchaseMonth : 0;
+      if (!day || (yearly && !month)) return;
+      const key = `${exp.detail}|${exp.category}|${month}|${day}`.toLowerCase();
       if (seen.has(key)) return;
       seen.add(key);
-      const dueDate = nextDateForDay(day);
+      const dueDate = yearly ? nextDateForMonthDay(month, day) : nextDateForDay(day);
       payments.push({
         id: `recurring-${exp.id}`,
         kind: 'recurring',
