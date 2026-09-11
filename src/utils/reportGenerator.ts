@@ -63,6 +63,12 @@ function expenseAmount(exp: Expense): number {
   return Number((exp as any).totalCharge ?? exp.amount) || 0;
 }
 
+/** "Crédito · Visa", "Débito · Ahorros" o sólo el método si no hay cuenta ni tarjeta. */
+function paymentMethodLabel(exp: Expense): string {
+  const source = exp.paymentMethod === 'Crédito' ? exp.cardName : exp.accountName;
+  return source ? `${exp.paymentMethod} · ${source}` : exp.paymentMethod || 'Otro';
+}
+
 /** Aplica el período y el tipo elegidos; CSV y PDF usan exactamente los mismos registros. */
 function selectRecords(data: ReportData) {
   const range = getReportPeriod(data.filters.period);
@@ -171,8 +177,33 @@ export async function generatePDFReport(data: ReportData): Promise<boolean> {
             </div>`;
         }).join('');
 
-  const topCategories = topEntries(expenses, (e) => e.category || 'Sin categoría', expenseAmount);
-  const topSources = topEntries(incomes, (i) => i.source || 'Otros', (i) => Number(i.amount) || 0);
+  // Todas las categorías y fuentes con movimientos en el período, de mayor a menor.
+  const topCategories = topEntries(expenses, (e) => e.category || 'Sin categoría', expenseAmount, Infinity)
+    .filter(([, amount]) => amount > 0);
+  const topSources = topEntries(incomes, (i) => i.source || 'Otros', (i) => Number(i.amount) || 0, Infinity)
+    .filter(([, amount]) => amount > 0);
+
+  // Detalle de movimientos: del más reciente al más antiguo (la hora sólo desempata).
+  const movements = [
+    ...incomes.map((inc) => ({
+      date: inc.date,
+      time: '',
+      detail: inc.detail || inc.source || 'Ingreso',
+      category: inc.source || 'Ingreso',
+      method: inc.bankAccount ? `Depósito · ${inc.bankAccount}` : 'Depósito',
+      amount: Number(inc.amount) || 0,
+      isIncome: true,
+    })),
+    ...expenses.map((exp) => ({
+      date: exp.date,
+      time: String((exp as any).time || ''),
+      detail: exp.detail || exp.category || 'Gasto',
+      category: exp.category || 'Sin categoría',
+      method: paymentMethodLabel(exp),
+      amount: expenseAmount(exp),
+      isIncome: false,
+    })),
+  ].sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.time.localeCompare(a.time));
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -208,6 +239,13 @@ export async function generatePDFReport(data: ReportData): Promise<boolean> {
         .bar-fill { height: 100%; border-radius: 7px; }
         .bar-val { font-size: 11px; margin-left: 8px; color: #333; min-width: 80px; }
         .empty { text-align: center; color: #999; }
+        .movements { width: 100%; border-collapse: collapse; font-size: 11px; }
+        .movements th { background: #1C3E49; color: #fff; text-align: left; padding: 6px 8px; }
+        .movements td { padding: 6px 8px; border-bottom: 1px solid #e5e5e5; vertical-align: top; }
+        .movements thead { display: table-header-group; }
+        .movements tr { page-break-inside: avoid; }
+        .movements .amount { text-align: right; white-space: nowrap; }
+        .movements .nowrap { white-space: nowrap; }
       </style>
     </head>
     <body>
@@ -238,11 +276,11 @@ export async function generatePDFReport(data: ReportData): Promise<boolean> {
       </div>` : ''}
 
       ${includeExpenses ? `
-      <div class="section-title">Gastos por categoría (top 5)</div>
+      <div class="section-title">Gastos por categoría</div>
       <div class="card">${barRows(topCategories, totalExpense, '#E74C3C')}</div>` : ''}
 
       ${includeIncomes ? `
-      <div class="section-title">Ingresos por fuente (top 5)</div>
+      <div class="section-title">Ingresos por fuente</div>
       <div class="card">${barRows(topSources, totalIncome, '#2E7D32')}</div>` : ''}
 
       <div class="section-title">Saldos actuales en cuentas</div>
@@ -256,6 +294,24 @@ export async function generatePDFReport(data: ReportData): Promise<boolean> {
             </div>`;
         }).join('')}
       </div>
+
+      <div class="section-title">Detalle de movimientos</div>
+      ${movements.length === 0 ? '<p class="empty">Sin movimientos en el período</p>' : `
+      <table class="movements">
+        <thead>
+          <tr><th>Fecha</th><th>Detalle</th><th>Categoría</th><th>Medio de pago</th><th class="amount">Monto</th></tr>
+        </thead>
+        <tbody>
+          ${movements.map((m) => `
+            <tr>
+              <td class="nowrap">${formatDate(m.date)}</td>
+              <td>${escapeHtml(m.detail)}</td>
+              <td>${escapeHtml(m.category)}</td>
+              <td>${escapeHtml(m.method)}</td>
+              <td class="amount" style="color: ${m.isIncome ? '#2E7D32' : '#E74C3C'};">${m.isIncome ? '+' : '-'}${formatCurrency(m.amount)}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`}
     </body>
     </html>
   `;
