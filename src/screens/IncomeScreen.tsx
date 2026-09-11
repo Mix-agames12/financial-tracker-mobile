@@ -10,13 +10,16 @@ import { Button } from '../components/Button';
 import { TextField } from '../components/TextField';
 import { Chip } from '../components/Chip';
 import { BottomSheet } from '../components/BottomSheet';
+import { ToastManager } from '../components/ActionFeedback';
 import { ProgressBar } from '../components/ProgressBar';
+import { DatePickerModal } from '../components/DatePickerModal';
 
-import { formatCurrency, formatDate, getToday } from '../utils/formatters';
+import { formatCurrency, formatDate, formatMonths, getToday, roundMoney, toAmountInput } from '../utils/formatters';
+import { syncAfterDataChange } from '../utils/dataSync';
 import { 
-  SalaryRepo, IncomeRepo, AccountRepo, CreditCardRepo, InvestmentRepo, ExpenseRepo 
+  SalaryRepo, IncomeRepo, AccountRepo, CreditCardRepo, InvestmentRepo, ExpenseRepo, getAccountBalances, SettingsRepo 
 } from '../db/storage';
-import { Salary, Income, Account, CreditCard, Investment } from '../types';
+import { Salary, Income, Account, CreditCard, Investment, TaxesConfig } from '../types';
 
 export default function IncomeScreen() {
   const { colors } = useTheme();
@@ -28,6 +31,7 @@ export default function IncomeScreen() {
   const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
   const [investments, setInvestments] = useState<Investment[]>([]);
   const [incomes, setIncomes] = useState<Income[]>([]);
+  const [taxesConfig, setTaxesConfig] = useState<TaxesConfig | null>(null);
 
   // Modals visibility
   const [sheetCurrent, setSheetCurrent] = useState<'salary' | 'account' | 'creditCard' | 'investment' | 'income' | null>(null);
@@ -44,8 +48,11 @@ export default function IncomeScreen() {
   const [payDateType, setPayDateType] = useState('specific');
   const [payDate, setPayDate] = useState('');
   const [recurrence, setRecurrence] = useState('Mensual');
+  const [salaryAccount, setSalaryAccount] = useState('');
 
   // Account Form States
+  const [accountBalances, setAccountBalances] = useState<Record<string, number>>({});
+  const [initialBalanceForm, setInitialBalanceForm] = useState('');
   const [accountType, setAccountType] = useState('Ahorro');
   const [bankName, setBankName] = useState('');
   const [refNumber, setRefNumber] = useState('');
@@ -64,6 +71,7 @@ export default function IncomeScreen() {
   // Income Forms
   const [incomeSource, setIncomeSource] = useState('');
   const [incomeDate, setIncomeDate] = useState(getToday());
+  const [isDatePickerOpen, setDatePickerOpen] = useState(false);
   const [incomeAccount, setIncomeAccount] = useState('');
 
   // Detailed Modals
@@ -76,13 +84,18 @@ export default function IncomeScreen() {
       const sals = await SalaryRepo.getAll();
       setSalary((sals[0] as any) || null);
 
-      setAccounts(await AccountRepo.getAll());
+      const accList = await AccountRepo.getAll();
+      setAccounts(accList);
       setCreditCards(await CreditCardRepo.getAll());
       setInvestments(await InvestmentRepo.getAll());
 
       const incs = await IncomeRepo.getAll();
       incs.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
       setIncomes(incs);
+
+      setAccountBalances(await getAccountBalances());
+      const s = await SettingsRepo.get();
+      setTaxesConfig(s.taxes || null);
     } catch (e) {
       console.error(e);
     }
@@ -111,31 +124,33 @@ export default function IncomeScreen() {
     setSheetCurrent(type);
 
     if (type === 'salary') {
-      setFormAmount(data?.amount?.toString() || '');
+      setFormAmount(toAmountInput(data?.amount));
       setPayDateType(data?.payDateType || 'specific');
       setPayDate(data?.payDate || '');
       setRecurrence(data?.recurrence || 'Mensual');
+      setSalaryAccount(data?.bankAccount || '');
     } else if (type === 'account') {
       setFormName(data?.name || '');
       setBankName(data?.bankName || '');
       setAccountType(data?.accountType || 'Ahorro');
       setRefNumber(data?.referenceNumber || '');
+      setInitialBalanceForm(toAmountInput(data?.initialBalance));
     } else if (type === 'creditCard') {
       setFormName(data?.name || '');
       setBankName(data?.bankName || '');
       setCutOffDay(data?.cutOffDay?.toString() || '');
       setPaymentDay(data?.paymentDueDay?.toString() || '');
-      setCreditLimit(data?.creditLimit?.toString() || '');
-      setFormAmount(data?.currentBalance?.toString() || '');
+      setCreditLimit(toAmountInput(data?.creditLimit));
+      setFormAmount(toAmountInput(data?.currentBalance));
     } else if (type === 'investment') {
       setFormName(data?.entity || '');
-      setFormAmount(data?.monthlyDeposit?.toString() || '');
+      setFormAmount(toAmountInput(data?.monthlyDeposit));
       setRemainingMonths(data?.remainingMonths?.toString() || '');
       setTotalMonths(data?.totalMonths?.toString() || '');
       setFormDetail(data?.detail || '');
-      setTotalDeposited(data?.totalDeposited?.toString() || '');
+      setTotalDeposited(toAmountInput(data?.totalDeposited));
     } else if (type === 'income') {
-      setFormAmount(data?.amount?.toString() || '');
+      setFormAmount(toAmountInput(data?.amount));
       setIncomeSource(data?.source || '');
       setFormDetail(data?.detail || '');
       setIncomeAccount(data?.bankAccount || '');
@@ -161,22 +176,28 @@ export default function IncomeScreen() {
       amount: amt,
       payDateType,
       payDate: payDateType === 'specific' ? payDate || '1' : '',
-      recurrence
+      recurrence,
+      bankAccount: salaryAccount
     });
     closeCurrentSheet();
+    ToastManager.show('Sueldo configurado con éxito');
     loadData();
+    syncAfterDataChange();
   };
 
   const handleSaveAccount = async () => {
     if (!formName.trim() || !bankName.trim()) return Alert.alert('Error', 'Nombre y banco son obligatorios');
     const payload = {
       name: formName.trim(), bankName: bankName.trim(),
-      referenceNumber: refNumber.trim(), accountType
+      referenceNumber: refNumber.trim(), accountType,
+      initialBalance: parseFloat(initialBalanceForm.replace(',', '.')) || 0
     };
     if (editingData) await AccountRepo.update({ ...editingData, ...payload });
     else await AccountRepo.add(payload);
     closeCurrentSheet();
+    ToastManager.show('Cuenta guardada con éxito');
     loadData();
+    syncAfterDataChange();
   };
 
   const handleSaveCreditCard = async () => {
@@ -191,25 +212,34 @@ export default function IncomeScreen() {
     if (editingData) await CreditCardRepo.update({ ...editingData, ...payload });
     else await CreditCardRepo.add(payload);
     closeCurrentSheet();
+    ToastManager.show('Tarjeta guardada con éxito');
     loadData();
+    syncAfterDataChange();
   };
 
   const handleSaveInvestment = async () => {
     const amt = parseFloat(formAmount.replace(',', '.'));
     if (!formName.trim() || isNaN(amt) || amt <= 0) return Alert.alert('Error', 'Entidad y depósito válido son obligatorios');
+    const termMonths = parseInt(totalMonths) || 0;
+    const monthsLeft = parseInt(remainingMonths) || 0;
+    if (termMonths > 0 && monthsLeft > termMonths) {
+      return Alert.alert('Error', 'Los meses restantes no pueden superar el plazo total');
+    }
     
     const payload = {
       entity: formName.trim(),
       monthlyDeposit: amt,
-      remainingMonths: parseInt(remainingMonths) || 0,
-      totalMonths: parseInt(totalMonths) || 0,
+      remainingMonths: monthsLeft,
+      totalMonths: termMonths,
       detail: formDetail.trim(),
-      totalDeposited: parseFloat(totalDeposited.replace(',', '.')) || 0,
+      totalDeposited: roundMoney(parseFloat(totalDeposited) || 0),
     };
     if (editingData) await InvestmentRepo.update({ ...editingData, ...payload });
     else await InvestmentRepo.add(payload);
     closeCurrentSheet();
+    ToastManager.show('Inversión guardada con éxito');
     loadData();
+    syncAfterDataChange();
   };
 
   const handleSaveIncome = async () => {
@@ -229,7 +259,9 @@ export default function IncomeScreen() {
     if (editingData) await IncomeRepo.update({ ...editingData, ...payload });
     else await IncomeRepo.add(payload);
     closeCurrentSheet();
+    ToastManager.show('Ingreso guardado con éxito');
     loadData();
+    syncAfterDataChange();
   };
 
   // ----- DELETE HANDLERS -----
@@ -241,6 +273,7 @@ export default function IncomeScreen() {
           await repo.delete(id);
           closeCurrentSheet();
           loadData();
+          syncAfterDataChange();
         } 
       }
     ]);
@@ -248,6 +281,29 @@ export default function IncomeScreen() {
 
   const handleInvestmentDeposit = async () => {
     const inv = detailData as Investment;
+
+    const acc = accounts.find(a => a.name === depositSourceAccount);
+    if (!acc) return Alert.alert('Error', 'Cuenta origen inválida');
+
+    const amount = inv.monthlyDeposit;
+    let taxComision = 0;
+    let taxIva = 0;
+    let taxIsd = 0;
+    let appliesTaxes = false;
+
+    if (taxesConfig?.enabled && taxesConfig.applyTo.includes('Inversiones')) {
+      appliesTaxes = true;
+      taxComision = (amount * taxesConfig.comisionRate) / 100;
+      taxIva = (taxComision * taxesConfig.ivaRate) / 100;
+      taxIsd = (amount * taxesConfig.isdRate) / 100;
+    }
+    const totalTax = taxComision + taxIva + taxIsd;
+    const totalCharge = amount + totalTax;
+
+    if ((accountBalances[acc.id] || 0) < totalCharge) {
+      return Alert.alert('Saldo Insuficiente', `La cuenta ${depositSourceAccount} no tiene fondos suficientes para descontar ${formatCurrency(totalCharge)}. Disponible: ${formatCurrency(accountBalances[acc.id] || 0)}`);
+    }
+
     await ExpenseRepo.add({
       amount: inv.monthlyDeposit,
       category: 'Inversión',
@@ -263,15 +319,28 @@ export default function IncomeScreen() {
       } as any )
     });
 
+    if (appliesTaxes && totalTax > 0) {
+      await ExpenseRepo.add({
+        amount: Math.round(totalTax * 100) / 100,
+        category: 'Otros',
+        detail: `Depósito mensual (Retenciones) — ${inv.entity}`,
+        accountName: depositSourceAccount,
+        paymentMethod: 'Débito',
+        date: getToday(),
+        ...( { time: new Date().toTimeString().slice(0, 5), tags: ['impuestos', 'inversión'] } as any )
+      });
+    }
+
     await InvestmentRepo.update({
       ...inv,
-      totalDeposited: (inv.totalDeposited || 0) + inv.monthlyDeposit,
+      totalDeposited: roundMoney((inv.totalDeposited || 0) + inv.monthlyDeposit),
       remainingMonths: Math.max(0, (inv.remainingMonths || 0) - 1)
     });
 
     closeCurrentSheet();
     Alert.alert('Éxito', `Depósito de ${formatCurrency(inv.monthlyDeposit)} registrado como gasto`);
     loadData();
+    syncAfterDataChange();
   };
 
 
@@ -295,9 +364,10 @@ export default function IncomeScreen() {
             {salary ? (
               <View>
                 <Text style={styles.cardLabel}>Sueldo configurado</Text>
-                <Text style={styles.cardValue}>{formatCurrency(salary.amount)}</Text>
+                <Text style={styles.cardValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{formatCurrency(salary.amount)}</Text>
                 <Text style={styles.cardSubtext}>
                   Día de pago: {salary.payDateType === 'last' ? 'Último día del mes' : salary.payDateType === 'lastBusiness' ? 'Último hábil' : 'Día ' + salary.payDate} · {salary.recurrence || 'Mensual'}
+                  {salary.bankAccount ? `\nDepositado en: ${salary.bankAccount}` : ''}
                 </Text>
               </View>
             ) : (
@@ -330,7 +400,7 @@ export default function IncomeScreen() {
                     <Text style={[styles.cardTitle, { color: colors.onSurface }]}>{acc.name}</Text>
                     <Text style={[styles.cardSubtitle, { color: colors.onSurfaceVariant }]}>{acc.bankName} · {acc.accountType}</Text>
                   </View>
-                  <Text style={[styles.cardSubtitle, { color: colors.onSurfaceVariant }]}>{acc.referenceNumber}</Text>
+                  <Text style={[styles.cardTitle, { color: colors.secondary }]}>{formatCurrency(accountBalances[acc.id] || 0)}</Text>
                 </View>
               </Card>
             </TouchableOpacity>
@@ -350,19 +420,32 @@ export default function IncomeScreen() {
         {creditCards.length === 0 ? (
           <Text style={[styles.emptyText, { color: colors.onSurfaceVariant }]}>Sin tarjetas registradas</Text>
         ) : (
-          creditCards.map(cc => (
-            <TouchableOpacity key={cc.id} onPress={() => openDetail('creditCard', cc)}>
-              <Card style={styles.smallCard}>
-                <View style={styles.rowBetween}>
-                  <View>
-                    <Text style={[styles.cardTitle, { color: colors.onSurface }]}>{cc.name}</Text>
-                    <Text style={[styles.cardSubtitle, { color: colors.onSurfaceVariant }]}>{cc.bankName}</Text>
+          creditCards.map(cc => {
+            const ratio = cc.creditLimit > 0 ? (cc.currentBalance / cc.creditLimit) : 0;
+            const isDanger = ratio >= 0.9;
+            return (
+              <TouchableOpacity key={cc.id} onPress={() => openDetail('creditCard', cc)}>
+                <Card style={[styles.smallCard, isDanger && { backgroundColor: `${colors.error}15`, borderColor: colors.error, borderWidth: 1 }]}>
+                  <View style={[styles.rowBetween, { marginBottom: cc.creditLimit > 0 ? 8 : 0 }]}>
+                    <View>
+                      <Text style={[styles.cardTitle, { color: colors.onSurface }]}>{cc.name}</Text>
+                      <Text style={[styles.cardSubtitle, { color: colors.onSurfaceVariant }]}>{cc.bankName}</Text>
+                    </View>
+                    <Text style={[styles.cardTitle, { color: isDanger ? colors.error : colors.onSurface }]}>{formatCurrency(cc.currentBalance)}</Text>
                   </View>
-                  {cc.currentBalance > 0 && <Text style={[styles.cardTitle, { color: colors.error }]}>{formatCurrency(cc.currentBalance)}</Text>}
-                </View>
-              </Card>
-            </TouchableOpacity>
-          ))
+                  {cc.creditLimit > 0 && (
+                    <View style={{ gap: 4 }}>
+                       <View style={styles.rowBetween}>
+                         <Text style={{ fontSize: 10, color: colors.onSurfaceVariant }}>Disp: {formatCurrency(Math.max(0, cc.creditLimit - cc.currentBalance))}</Text>
+                         <Text style={{ fontSize: 10, color: colors.onSurfaceVariant }}>Límite: {formatCurrency(cc.creditLimit)}</Text>
+                       </View>
+                       <ProgressBar progress={Math.min(1, ratio)} colorVariant={isDanger ? 'danger' : 'primary'} />
+                    </View>
+                  )}
+                </Card>
+              </TouchableOpacity>
+            );
+          })
         )}
 
         {/* Investments */}
@@ -388,8 +471,22 @@ export default function IncomeScreen() {
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
                     <Text style={[styles.cardTitle, { color: colors.primary }]}>{formatCurrency(inv.monthlyDeposit)}/mes</Text>
-                    <Text style={[styles.cardSubtitle, { color: colors.onSurfaceVariant }]}>{inv.remainingMonths} Meses restantes.</Text>
+                    <Text style={[styles.cardSubtitle, { color: colors.onSurfaceVariant }]}>
+                      {inv.remainingMonths > 0
+                        ? `${formatMonths(inv.remainingMonths)} ${inv.remainingMonths === 1 ? 'restante' : 'restantes'}`
+                        : 'Completado'}
+                    </Text>
                   </View>
+                </View>
+                <View style={[styles.rowBetween, { marginTop: 8, flexWrap: 'wrap', gap: 4 }]}>
+                  <Text style={[styles.cardSubtitle, { color: colors.onSurfaceVariant }]}>
+                    Total depositado actualmente: <Text style={{ color: colors.secondary, fontWeight: '600' }}>{formatCurrency(inv.totalDeposited)}</Text>
+                  </Text>
+                  {inv.totalMonths > 0 && (
+                    <Text style={[styles.cardSubtitle, { color: colors.onSurfaceVariant }]}>
+                      {Math.max(0, inv.totalMonths - inv.remainingMonths)} de {formatMonths(inv.totalMonths)}
+                    </Text>
+                  )}
                 </View>
                 {inv.remainingMonths > 0 && (
                   <View style={{ marginTop: 12 }}>
@@ -483,7 +580,21 @@ export default function IncomeScreen() {
           </View>
 
           {payDateType === 'specific' && (
-            <TextField label="Día de pago (1-28)" placeholder="Ej. 15" keyboardType="number-pad" value={payDate} onChangeText={setPayDate} />
+            <TextField 
+              label="Día de pago (1-31)" 
+              placeholder="Ej. 15" 
+              keyboardType="number-pad" 
+              value={payDate} 
+              onChangeText={(text) => {
+                let val = text.replace(/[^0-9]/g, '');
+                if (val !== '') {
+                  let num = parseInt(val, 10);
+                  if (num > 31) val = '31';
+                  if (num === 0) val = '';
+                }
+                setPayDate(val);
+              }} 
+            />
           )}
 
           <View>
@@ -493,6 +604,15 @@ export default function IncomeScreen() {
                 <Chip key={r} label={r} active={recurrence === r} onPress={() => setRecurrence(r)} />
               ))}
             </View>
+          </View>
+
+          <View>
+            <Text style={{ fontSize: 12, color: colors.onSurfaceVariant, marginBottom: 8, fontFamily: 'sans-serif-medium' }}>Depositar sueldo en cuenta (Opcional)</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+              {accounts.map(a => (
+                <Chip key={a.name} label={a.name} active={salaryAccount === a.name} onPress={() => setSalaryAccount(salaryAccount === a.name ? '' : a.name)} />
+              ))}
+            </ScrollView>
           </View>
 
           <Button title="Guardar sueldo" onPress={handleSaveSalary} icon="save" />
@@ -515,7 +635,11 @@ export default function IncomeScreen() {
           </View>
 
           <TextField label="Banco *" value={bankName} onChangeText={setBankName} />
-          <Button title="Guardar cuenta" onPress={handleSaveAccount} icon="save" />
+          <TextField label="Monto inicial actual (Opcional)" placeholder="Ej. 1500.00" keyboardType="decimal-pad" value={initialBalanceForm} onChangeText={setInitialBalanceForm} />
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+             <Button style={{ flex: 1 }} variant="outlined" title="Cancelar" onPress={closeCurrentSheet} />
+             <Button style={{ flex: 1 }} title="Guardar cuenta" onPress={handleSaveAccount} icon="save" />
+          </View>
         </View>
       </BottomSheet>
 
@@ -524,12 +648,15 @@ export default function IncomeScreen() {
           <TextField label="Nombre o Alias *" placeholder="Ej. Visa Oro" value={formName} onChangeText={setFormName} />
           <TextField label="Banco *" placeholder="Ej. Santander" value={bankName} onChangeText={setBankName} />
           <View style={{ flexDirection: 'row', gap: 16 }}>
-            <View style={{ flex: 1 }}><TextField label="Día corte" placeholder="Ej. 15" keyboardType="numeric" value={cutOffDay} onChangeText={setCutOffDay} /></View>
-            <View style={{ flex: 1 }}><TextField label="Día pago" placeholder="Ej. 5" keyboardType="numeric" value={paymentDay} onChangeText={setPaymentDay} /></View>
+            <View style={{ flex: 1 }}><TextField label="Día corte" placeholder="Ej. 15" keyboardType="number-pad" value={cutOffDay} onChangeText={setCutOffDay} /></View>
+            <View style={{ flex: 1 }}><TextField label="Día pago" placeholder="Ej. 5" keyboardType="number-pad" value={paymentDay} onChangeText={setPaymentDay} /></View>
           </View>
           <TextField label="Límite crédito" placeholder="Ej. 5000" keyboardType="decimal-pad" value={creditLimit} onChangeText={setCreditLimit} />
           <TextField label="Saldo actual" placeholder="Ej. 1250.50" keyboardType="decimal-pad" value={formAmount} onChangeText={setFormAmount} />
-          <Button title="Guardar tarjeta" onPress={handleSaveCreditCard} icon="save" />
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+             <Button style={{ flex: 1 }} variant="outlined" title="Cancelar" onPress={closeCurrentSheet} />
+             <Button style={{ flex: 1 }} title="Guardar tarjeta" onPress={handleSaveCreditCard} icon="save" />
+          </View>
         </View>
       </BottomSheet>
 
@@ -538,12 +665,15 @@ export default function IncomeScreen() {
           <TextField label="Entidad *" placeholder="Ej. GBM+" value={formName} onChangeText={setFormName} />
           <TextField label="Depósito mensual *" placeholder="Ej. 200.00" keyboardType="decimal-pad" value={formAmount} onChangeText={setFormAmount} />
           <View style={{ flexDirection: 'row', gap: 16 }}>
-            <View style={{ flex: 1 }}><TextField label="Meses restantes" placeholder="Ej. 12" keyboardType="numeric" value={remainingMonths} onChangeText={setRemainingMonths} /></View>
-            <View style={{ flex: 1 }}><TextField label="Meses totales" placeholder="Ej. 24" keyboardType="numeric" value={totalMonths} onChangeText={setTotalMonths} /></View>
+            <View style={{ flex: 1 }}><TextField label="Plazo total (meses)" placeholder="Ej. 24" keyboardType="number-pad" value={totalMonths} onChangeText={setTotalMonths} /></View>
+            <View style={{ flex: 1 }}><TextField label="Meses restantes" placeholder="Ej. 12" keyboardType="number-pad" value={remainingMonths} onChangeText={setRemainingMonths} /></View>
           </View>
           <TextField label="Detalle" placeholder="Ej. Fondo para retiro" value={formDetail} onChangeText={setFormDetail} />
-          <TextField label="Depositado hasta ahora" placeholder="Ej. 2400.00" keyboardType="decimal-pad" value={totalDeposited} onChangeText={setTotalDeposited} />
-          <Button title="Guardar fondo" onPress={handleSaveInvestment} icon="save" />
+          <TextField label="Total depositado actualmente" placeholder="Ej. 2400.00" keyboardType="decimal-pad" value={totalDeposited} onChangeText={setTotalDeposited} />
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+             <Button style={{ flex: 1 }} variant="outlined" title="Cancelar" onPress={closeCurrentSheet} />
+             <Button style={{ flex: 1 }} title="Guardar fondo" onPress={handleSaveInvestment} icon="save" />
+          </View>
         </View>
       </BottomSheet>
 
@@ -562,10 +692,25 @@ export default function IncomeScreen() {
             </ScrollView>
           </View>
 
-          <TextField label="Fecha" placeholder="YYYY-MM-DD" value={incomeDate} onChangeText={setIncomeDate} />
-          <Button title="Guardar ingreso" onPress={handleSaveIncome} icon="save" />
+          <TouchableOpacity onPress={() => setDatePickerOpen(true)}>
+            <View pointerEvents="none">
+              <TextField label="Fecha *" placeholder="YYYY-MM-DD" value={incomeDate} onChangeText={() => {}} />
+            </View>
+          </TouchableOpacity>
+
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+             <Button style={{ flex: 1 }} variant="outlined" title="Cancelar" onPress={closeCurrentSheet} />
+             <Button style={{ flex: 1 }} title="Guardar ingreso" onPress={handleSaveIncome} icon="save" />
+          </View>
         </View>
       </BottomSheet>
+
+      <DatePickerModal 
+        visible={isDatePickerOpen} 
+        onClose={() => setDatePickerOpen(false)} 
+        value={incomeDate} 
+        onSelect={setIncomeDate} 
+      />
 
       {/* ================= MODALS: DETAILS ================= */}
 
@@ -578,6 +723,7 @@ export default function IncomeScreen() {
                   <View style={styles.detailItem}><Text style={{ fontSize: 12, color: colors.onSurfaceVariant }}>Banco</Text><Text style={{ fontSize: 16, color: colors.onSurface }}>{detailData.bankName}</Text></View>
                   <View style={styles.detailItem}><Text style={{ fontSize: 12, color: colors.onSurfaceVariant }}>Tipo</Text><Text style={{ fontSize: 16, color: colors.onSurface }}>{detailData.accountType}</Text></View>
                   <View style={styles.detailItem}><Text style={{ fontSize: 12, color: colors.onSurfaceVariant }}>Referencia</Text><Text style={{ fontSize: 16, color: colors.onSurface }}>{detailData.referenceNumber || '-'}</Text></View>
+                  <View style={styles.detailItem}><Text style={{ fontSize: 12, color: colors.onSurfaceVariant }}>Balance Calculado</Text><Text style={{ fontSize: 16, color: colors.secondary, fontWeight: 'bold' }}>{formatCurrency(accountBalances[detailData.id] || 0)}</Text></View>
                 </>
               )}
               {detailType === 'creditCard' && (
@@ -590,9 +736,13 @@ export default function IncomeScreen() {
               )}
               {detailType === 'investment' && (
                 <>
-                  <View style={styles.detailItem}><Text style={{ fontSize: 12, color: colors.onSurfaceVariant }}>Meses restantes</Text><Text style={{ fontSize: 16, color: colors.onSurface }}>{detailData.remainingMonths || 0}</Text></View>
-                  <View style={styles.detailItem}><Text style={{ fontSize: 12, color: colors.onSurfaceVariant }}>Meses totales</Text><Text style={{ fontSize: 16, color: colors.onSurface }}>{detailData.totalMonths || '-'}</Text></View>
-                  <View style={styles.detailItem}><Text style={{ fontSize: 12, color: colors.onSurfaceVariant }}>Total depositado</Text><Text style={{ fontSize: 16, color: colors.secondary }}>{formatCurrency(detailData.totalDeposited)}</Text></View>
+                  <View style={styles.detailItem}><Text style={{ fontSize: 12, color: colors.onSurfaceVariant }}>Plazo total</Text><Text style={{ fontSize: 16, color: colors.onSurface }}>{detailData.totalMonths ? formatMonths(detailData.totalMonths) : '-'}</Text></View>
+                  <View style={styles.detailItem}><Text style={{ fontSize: 12, color: colors.onSurfaceVariant }}>Meses restantes</Text><Text style={{ fontSize: 16, color: colors.onSurface }}>{formatMonths(detailData.remainingMonths || 0)}</Text></View>
+                  {detailData.totalMonths > 0 && (
+                    <View style={styles.detailItem}><Text style={{ fontSize: 12, color: colors.onSurfaceVariant }}>Meses depositados</Text><Text style={{ fontSize: 16, color: colors.onSurface }}>{formatMonths(Math.max(0, detailData.totalMonths - (detailData.remainingMonths || 0)))}</Text></View>
+                  )}
+                  <View style={styles.detailItem}><Text style={{ fontSize: 12, color: colors.onSurfaceVariant }}>Depósito mensual</Text><Text style={{ fontSize: 16, color: colors.onSurface }}>{formatCurrency(detailData.monthlyDeposit)}</Text></View>
+                  <View style={styles.detailItem}><Text style={{ fontSize: 12, color: colors.onSurfaceVariant }}>Total depositado actualmente</Text><Text style={{ fontSize: 16, color: colors.secondary }}>{formatCurrency(detailData.totalDeposited)}</Text></View>
                   <View style={styles.detailItem}><Text style={{ fontSize: 12, color: colors.onSurfaceVariant }}>Detalle</Text><Text style={{ fontSize: 16, color: colors.onSurface }}>{detailData.detail || '-'}</Text></View>
                 </>
               )}
@@ -617,6 +767,49 @@ export default function IncomeScreen() {
                     <Chip key={a.name} label={`${a.name} · ${a.bankName}`} active={depositSourceAccount === a.name} onPress={() => setDepositSourceAccount(a.name)} />
                   ))}
                 </ScrollView>
+
+                {(() => {
+                  const amountParsed = (detailData as Investment).monthlyDeposit;
+                  let taxComision = 0;
+                  let taxIva = 0;
+                  let taxIsd = 0;
+                  let appliesTaxes = false;
+
+                  if (taxesConfig?.enabled && taxesConfig.applyTo.includes('Inversiones')) {
+                    appliesTaxes = true;
+                    taxComision = (amountParsed * taxesConfig.comisionRate) / 100;
+                    taxIva = (taxComision * taxesConfig.ivaRate) / 100;
+                    taxIsd = (amountParsed * taxesConfig.isdRate) / 100;
+                  }
+                  const totalTax = taxComision + taxIva + taxIsd;
+                  const totalCharge = amountParsed + totalTax;
+
+                  if (appliesTaxes && totalTax > 0) {
+                    return (
+                      <View style={{ backgroundColor: colors.surfaceContainerHighest, padding: 12, borderRadius: 12, marginBottom: 16 }}>
+                        <Text style={{ fontSize: 12, color: colors.onSurfaceVariant, marginBottom: 4 }}>Desglose de Impuestos/Comisión</Text>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                          <Text style={{ fontSize: 13, color: colors.onSurface }}>Comisión ({taxesConfig?.comisionRate}%)</Text>
+                          <Text style={{ fontSize: 13, color: colors.onSurface }}>+{formatCurrency(taxComision)}</Text>
+                        </View>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                          <Text style={{ fontSize: 13, color: colors.onSurface }}>IVA sobre Comisión ({taxesConfig?.ivaRate}%)</Text>
+                          <Text style={{ fontSize: 13, color: colors.onSurface }}>+{formatCurrency(taxIva)}</Text>
+                        </View>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                          <Text style={{ fontSize: 13, color: colors.onSurface }}>ISD sobre Principal ({taxesConfig?.isdRate}%)</Text>
+                          <Text style={{ fontSize: 13, color: colors.onSurface }}>+{formatCurrency(taxIsd)}</Text>
+                        </View>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: colors.outlineVariant }}>
+                          <Text style={{ fontSize: 14, fontWeight: 'bold', color: colors.onSurface }}>Total retenido y debitado</Text>
+                          <Text style={{ fontSize: 14, fontWeight: 'bold', color: colors.primary }}>{formatCurrency(totalCharge)}</Text>
+                        </View>
+                      </View>
+                    );
+                  }
+                  return null;
+                })()}
+
                 <Button 
                   title={`Depositar ${formatCurrency(detailData.monthlyDeposit)}`} 
                   disabled={!depositSourceAccount} 
