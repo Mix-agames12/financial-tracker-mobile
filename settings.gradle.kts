@@ -20,5 +20,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "android-kotlin"
+rootProject.name = "tracker-de-gastos"
 include(":app")

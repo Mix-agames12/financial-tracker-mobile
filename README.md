@@ -1,8 +1,8 @@
 # Mi Dinero — versión nativa Android (Kotlin + Jetpack Compose)
 
-Traslado 1:1 de la app Expo / React Native de este repositorio (`App.tsx` y `src/`) a un proyecto Android
-nativo que se abre y compila con Android Studio. El código React Native **no se toca**: sigue en su sitio como
-referencia para comparar lado a lado.
+Proyecto Android nativo que se abre y compila con Android Studio. Es el traslado 1:1 de la antigua app
+Expo / React Native, que ya se eliminó del repositorio (sigue disponible en el historial de git, p. ej. en el
+commit `2fb0d12` o en la rama `main`).
 
 - Paquete: `com.mixagames666.trackerrntemp` (el mismo que la app React Native).
 - `minSdk` 24 · `compileSdk`/`targetSdk` 35 · Kotlin 2.0.21 · AGP 8.6.1 · Gradle 8.8 · Compose BOM 2024.12.01.
@@ -27,11 +27,11 @@ Todo lo que hace la app React Native, con los mismos textos en español, validac
 Requisitos: **Android Studio Koala (2024.1.2) o posterior**, JDK 17+ (el JBR que trae el IDE sirve) y el SDK de
 Android 35 (platform + build-tools).
 
-1. *File → Open* y elegir la carpeta **`android-kotlin`** (no la raíz del repositorio).
+1. *File → Open* y elegir la raíz del repositorio.
 2. Dejar que Gradle sincronice (Android Studio crea `local.properties` con `sdk.dir`; no se versiona).
 3. *Run ▶* sobre un emulador o dispositivo (API 24 o superior).
 
-Desde la terminal, dentro de `android-kotlin/`:
+Desde la terminal, en la raíz del repositorio:
 
 ```bash
 ./gradlew assembleDebug        # app/build/outputs/apk/debug/app-debug.apk
@@ -87,21 +87,21 @@ Raíz del código: `app/src/main/java/com/mixagames666/trackerrntemp/`.
 
 ## Cómo se comprobó la paridad
 
-`tools/golden/` compila con `tsc` la lógica **original** en TypeScript (`formatters`, `cardPurchases`,
-`paymentReminders`, `storage`, `reportGenerator`, `currency`) con *stubs* de AsyncStorage y de los módulos
-`expo-*`, reloj congelado (2026-11-17 12:00, `America/Guayaquil`) e ids normalizados. Ejecuta 18 escenarios
-(compras a crédito diferidas, cambio de monto/tarjeta/método, impuestos, pago de todas las cuotas, vinculación
-legacy, próximos pagos, agregados, dashboard y aviso de sueldo, análisis en martes/domingo/enero, CSV y modelo
-del PDF, categorías y ajustes, round-trip del backup…) y guarda el resultado en
-`app/src/test/resources/golden/*.json`. Los tests de Kotlin (`golden/GoldenTest`) repiten cada escenario con el
-código portado y exigen el mismo resultado en cada paso y el mismo estado final de las colecciones.
+Los vectores dorados de `app/src/test/resources/golden/*.json` se generaron ejecutando la lógica **original**
+en TypeScript (`formatters`, `cardPurchases`, `paymentReminders`, `storage`, `reportGenerator`, `currency`) con
+*stubs* de AsyncStorage y de los módulos `expo-*`, reloj congelado (2026-11-17 12:00, `America/Guayaquil`) e ids
+normalizados. Son 18 escenarios (compras a crédito diferidas, cambio de monto/tarjeta/método, impuestos, pago de
+todas las cuotas, vinculación legacy, próximos pagos, agregados, dashboard y aviso de sueldo, análisis en
+martes/domingo/enero, CSV y modelo del PDF, categorías y ajustes, round-trip del backup…). Los tests de Kotlin
+(`golden/GoldenTest`) repiten cada escenario con el código portado y exigen el mismo resultado en cada paso y el
+mismo estado final de las colecciones.
 
 ```bash
-# Regenerar los vectores desde el código TypeScript (requiere `npm install` en la raíz o RN_NODE_MODULES)
-node android-kotlin/tools/golden/run.js
-# Compararlos con Kotlin
 ./gradlew testDebugUnitTest
 ```
+
+> La herramienta que generaba los vectores (`tools/golden/`) dependía del código TypeScript y se eliminó junto con
+> él; los `.json` ya generados se conservan y siguen siendo la referencia de las pruebas.
 
 La semántica de JavaScript que el resto del código necesita (`toFixed`, `parseFloat`, `Math.round`, número→texto,
 desborde de fechas) también se compara contra Node en el escenario `js-and-formatters`. Aparte hay pruebas del

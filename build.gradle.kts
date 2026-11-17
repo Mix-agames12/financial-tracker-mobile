@@ -1,4 +1,4 @@
-// Proyecto Android nativo (Kotlin + Jetpack Compose): port 1:1 de la app React Native/Expo.
+// Proyecto Android nativo (Kotlin + Jetpack Compose) de Mi Dinero / Tracker de gastos.
 plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.kotlin.android) apply false
