@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Archivos que la app comparte con otras apps (reportes CSV/PDF y backup JSON). -->
+<paths>
+    <files-path name="documents" path="documents/" />
+    <cache-path name="reports" path="reports/" />
+</paths>

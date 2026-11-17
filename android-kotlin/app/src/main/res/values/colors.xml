@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- app.json -> splash.backgroundColor: el splash nativo es blanco; el overlay animado (#312e81) va en Compose. -->
+    <color name="splash_background">#FFFFFF</color>
+    <!-- Tema oscuro por defecto de la app (colors.ts -> darkColors.background). -->
+    <color name="app_window_background">#0F172A</color>
+    <!-- SummaryWidget.tsx -> PALETTE.light.bg (en modo noche: values-night/colors.xml) -->
+    <color name="widget_background">#FFFFFF</color>
+</resources>

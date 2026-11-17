@@ -1,0 +1,1546 @@
+{
+  "name": "pdf-report-model",
+  "description": "Datos del PDF (resumen, donas, barras, saldos y detalle) extraídos del HTML original",
+  "clock": "2026-11-17T12:00:00",
+  "seed": {
+    "accounts": [
+      {
+        "id": "acc-1",
+        "name": "Ahorros",
+        "bankName": "Banco X",
+        "accountType": "Ahorro",
+        "initialBalance": 1000,
+        "referenceNumber": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "acc-2",
+        "name": "Corriente \"Plus\"",
+        "bankName": "Banco, Y",
+        "accountType": "Ahorro",
+        "initialBalance": -50.5,
+        "referenceNumber": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "income": [
+      {
+        "id": "i-1",
+        "amount": 1500,
+        "source": "Sueldo",
+        "detail": "Sueldo",
+        "bankAccount": "Ahorros - Banco X",
+        "bankName": "Banco X",
+        "date": "2026-11-05",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "i-2",
+        "amount": 300.456,
+        "source": "Venta, \"garaje\"",
+        "detail": "Bicicleta\nusada",
+        "bankAccount": "Corriente \"Plus\" - Banco, Y",
+        "bankName": "Banco, Y",
+        "date": "2026-10-16",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "i-3",
+        "amount": 1500,
+        "source": "Sueldo",
+        "detail": "Sueldo",
+        "bankAccount": "Ahorros - Banco X",
+        "bankName": "Banco X",
+        "date": "2026-03-05",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "i-4",
+        "amount": 40,
+        "source": "",
+        "detail": "",
+        "bankAccount": "",
+        "bankName": "",
+        "date": "2025-12-31",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "expenses": [
+      {
+        "id": "e-1",
+        "amount": 25.5,
+        "date": "2026-11-17",
+        "category": "Alimentación",
+        "detail": "Almuerzo <b>",
+        "paymentMethod": "Efectivo",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "time": "13:05"
+      },
+      {
+        "id": "e-2",
+        "amount": 60,
+        "date": "2026-11-17",
+        "category": "Transporte",
+        "detail": "Gasolina & más",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "accountName": "Ahorros",
+        "time": "08:00"
+      },
+      {
+        "id": "e-3",
+        "amount": 15.999,
+        "date": "2026-11-15",
+        "category": "Alimentación",
+        "detail": "Cena \"especial\"",
+        "paymentMethod": "Crédito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "cardName": "Visa Oro"
+      },
+      {
+        "id": "e-4",
+        "amount": 200,
+        "date": "2026-10-02",
+        "category": "Tecnología",
+        "detail": "Teclado",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "accountName": "Corriente \"Plus\""
+      },
+      {
+        "id": "e-5",
+        "amount": 12.25,
+        "date": "2026-10-28",
+        "category": "Alimentación",
+        "detail": "Snack d'or",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "e-6",
+        "amount": 44,
+        "date": "2026-03-01",
+        "category": "",
+        "detail": "",
+        "paymentMethod": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "e-7",
+        "amount": 3,
+        "date": "2026-11-17",
+        "category": "Otros",
+        "detail": "Dentro del día",
+        "paymentMethod": "Efectivo",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "totalCharge": 3.5,
+        "time": "13:05"
+      },
+      {
+        "id": "e-8",
+        "amount": 7,
+        "date": "2025-06-30",
+        "category": "Salud",
+        "detail": "Antiguo",
+        "paymentMethod": "Efectivo",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "loans": [],
+    "settings": [
+      {
+        "id": "default",
+        "appName": "Mi Dinero",
+        "monthlyGoal": 0,
+        "theme": "dark",
+        "currency": "USD",
+        "currencyLocale": "es-EC",
+        "onboardingCompleted": true
+      }
+    ]
+  },
+  "steps": [
+    {
+      "op": "pdfModel",
+      "args": {
+        "type": "all",
+        "period": "thisMonth"
+      },
+      "result": {
+        "shared": true,
+        "header": [
+          "01 nov 2026 – 30 nov 2026",
+          "Ingresos y gastos"
+        ],
+        "stats": [
+          [
+            "Ingresos",
+            "$1.500,00"
+          ],
+          [
+            "Gastos",
+            "$105,00"
+          ],
+          [
+            "Balance del período",
+            "$1.395,00"
+          ],
+          [
+            "Transacciones",
+            "5"
+          ]
+        ],
+        "donuts": [
+          "7%",
+          "93%"
+        ],
+        "bars": [
+          {
+            "label": "Transporte",
+            "width": "57.1",
+            "color": "#E74C3C",
+            "value": "$60,00"
+          },
+          {
+            "label": "Alimentación",
+            "width": "39.5",
+            "color": "#E74C3C",
+            "value": "$41,50"
+          },
+          {
+            "label": "Otros",
+            "width": "3.3",
+            "color": "#E74C3C",
+            "value": "$3,50"
+          },
+          {
+            "label": "Sueldo",
+            "width": "100.0",
+            "color": "#2E7D32",
+            "value": "$1.500,00"
+          }
+        ],
+        "balances": [
+          [
+            "Ahorros · Banco X",
+            "$3.940,00"
+          ],
+          [
+            "Corriente \"Plus\" · Banco, Y",
+            "$49,96"
+          ]
+        ],
+        "movements": [
+          [
+            "17 nov 2026",
+            "Almuerzo <b>",
+            "Alimentación",
+            "Efectivo",
+            "-$25,50"
+          ],
+          [
+            "17 nov 2026",
+            "Dentro del día",
+            "Otros",
+            "Efectivo",
+            "-$3,50"
+          ],
+          [
+            "17 nov 2026",
+            "Gasolina & más",
+            "Transporte",
+            "Débito · Ahorros",
+            "-$60,00"
+          ],
+          [
+            "15 nov 2026",
+            "Cena \"especial\"",
+            "Alimentación",
+            "Crédito · Visa Oro",
+            "-$16,00"
+          ],
+          [
+            "05 nov 2026",
+            "Sueldo",
+            "Sueldo",
+            "Depósito · Ahorros - Banco X",
+            "+$1.500,00"
+          ]
+        ],
+        "emptyMarkers": 0
+      }
+    },
+    {
+      "op": "pdfModel",
+      "args": {
+        "type": "all",
+        "period": "lastMonth"
+      },
+      "result": {
+        "shared": true,
+        "header": [
+          "01 oct 2026 – 31 oct 2026",
+          "Ingresos y gastos"
+        ],
+        "stats": [
+          [
+            "Ingresos",
+            "$300,46"
+          ],
+          [
+            "Gastos",
+            "$212,25"
+          ],
+          [
+            "Balance del período",
+            "$88,21"
+          ],
+          [
+            "Transacciones",
+            "3"
+          ]
+        ],
+        "donuts": [
+          "71%",
+          "29%"
+        ],
+        "bars": [
+          {
+            "label": "Tecnología",
+            "width": "94.2",
+            "color": "#E74C3C",
+            "value": "$200,00"
+          },
+          {
+            "label": "Alimentación",
+            "width": "5.8",
+            "color": "#E74C3C",
+            "value": "$12,25"
+          },
+          {
+            "label": "Venta, \"garaje\"",
+            "width": "100.0",
+            "color": "#2E7D32",
+            "value": "$300,46"
+          }
+        ],
+        "balances": [
+          [
+            "Ahorros · Banco X",
+            "$3.940,00"
+          ],
+          [
+            "Corriente \"Plus\" · Banco, Y",
+            "$49,96"
+          ]
+        ],
+        "movements": [
+          [
+            "28 oct 2026",
+            "Snack d'or",
+            "Alimentación",
+            "Débito",
+            "-$12,25"
+          ],
+          [
+            "16 oct 2026",
+            "Bicicleta\nusada",
+            "Venta, \"garaje\"",
+            "Depósito · Corriente \"Plus\" - Banco, Y",
+            "+$300,46"
+          ],
+          [
+            "02 oct 2026",
+            "Teclado",
+            "Tecnología",
+            "Débito · Corriente \"Plus\"",
+            "-$200,00"
+          ]
+        ],
+        "emptyMarkers": 0
+      }
+    },
+    {
+      "op": "pdfModel",
+      "args": {
+        "type": "all",
+        "period": "thisYear"
+      },
+      "result": {
+        "shared": true,
+        "header": [
+          "Año 2026",
+          "Ingresos y gastos"
+        ],
+        "stats": [
+          [
+            "Ingresos",
+            "$3.300,46"
+          ],
+          [
+            "Gastos",
+            "$361,25"
+          ],
+          [
+            "Balance del período",
+            "$2.939,21"
+          ],
+          [
+            "Transacciones",
+            "10"
+          ]
+        ],
+        "donuts": [
+          "11%",
+          "89%"
+        ],
+        "bars": [
+          {
+            "label": "Tecnología",
+            "width": "55.4",
+            "color": "#E74C3C",
+            "value": "$200,00"
+          },
+          {
+            "label": "Transporte",
+            "width": "16.6",
+            "color": "#E74C3C",
+            "value": "$60,00"
+          },
+          {
+            "label": "Alimentación",
+            "width": "14.9",
+            "color": "#E74C3C",
+            "value": "$53,75"
+          },
+          {
+            "label": "Sin categoría",
+            "width": "12.2",
+            "color": "#E74C3C",
+            "value": "$44,00"
+          },
+          {
+            "label": "Otros",
+            "width": "1.0",
+            "color": "#E74C3C",
+            "value": "$3,50"
+          },
+          {
+            "label": "Sueldo",
+            "width": "90.9",
+            "color": "#2E7D32",
+            "value": "$3.000,00"
+          },
+          {
+            "label": "Venta, \"garaje\"",
+            "width": "9.1",
+            "color": "#2E7D32",
+            "value": "$300,46"
+          }
+        ],
+        "balances": [
+          [
+            "Ahorros · Banco X",
+            "$3.940,00"
+          ],
+          [
+            "Corriente \"Plus\" · Banco, Y",
+            "$49,96"
+          ]
+        ],
+        "movements": [
+          [
+            "17 nov 2026",
+            "Almuerzo <b>",
+            "Alimentación",
+            "Efectivo",
+            "-$25,50"
+          ],
+          [
+            "17 nov 2026",
+            "Dentro del día",
+            "Otros",
+            "Efectivo",
+            "-$3,50"
+          ],
+          [
+            "17 nov 2026",
+            "Gasolina & más",
+            "Transporte",
+            "Débito · Ahorros",
+            "-$60,00"
+          ],
+          [
+            "15 nov 2026",
+            "Cena \"especial\"",
+            "Alimentación",
+            "Crédito · Visa Oro",
+            "-$16,00"
+          ],
+          [
+            "05 nov 2026",
+            "Sueldo",
+            "Sueldo",
+            "Depósito · Ahorros - Banco X",
+            "+$1.500,00"
+          ],
+          [
+            "28 oct 2026",
+            "Snack d'or",
+            "Alimentación",
+            "Débito",
+            "-$12,25"
+          ],
+          [
+            "16 oct 2026",
+            "Bicicleta\nusada",
+            "Venta, \"garaje\"",
+            "Depósito · Corriente \"Plus\" - Banco, Y",
+            "+$300,46"
+          ],
+          [
+            "02 oct 2026",
+            "Teclado",
+            "Tecnología",
+            "Débito · Corriente \"Plus\"",
+            "-$200,00"
+          ],
+          [
+            "05 mar 2026",
+            "Sueldo",
+            "Sueldo",
+            "Depósito · Ahorros - Banco X",
+            "+$1.500,00"
+          ],
+          [
+            "01 mar 2026",
+            "Gasto",
+            "Sin categoría",
+            "Otro",
+            "-$44,00"
+          ]
+        ],
+        "emptyMarkers": 0
+      }
+    },
+    {
+      "op": "pdfModel",
+      "args": {
+        "type": "all",
+        "period": "all"
+      },
+      "result": {
+        "shared": true,
+        "header": [
+          "Todo el historial",
+          "Ingresos y gastos"
+        ],
+        "stats": [
+          [
+            "Ingresos",
+            "$3.340,46"
+          ],
+          [
+            "Gastos",
+            "$368,25"
+          ],
+          [
+            "Balance del período",
+            "$2.972,21"
+          ],
+          [
+            "Transacciones",
+            "12"
+          ]
+        ],
+        "donuts": [
+          "11%",
+          "89%"
+        ],
+        "bars": [
+          {
+            "label": "Tecnología",
+            "width": "54.3",
+            "color": "#E74C3C",
+            "value": "$200,00"
+          },
+          {
+            "label": "Transporte",
+            "width": "16.3",
+            "color": "#E74C3C",
+            "value": "$60,00"
+          },
+          {
+            "label": "Alimentación",
+            "width": "14.6",
+            "color": "#E74C3C",
+            "value": "$53,75"
+          },
+          {
+            "label": "Sin categoría",
+            "width": "11.9",
+            "color": "#E74C3C",
+            "value": "$44,00"
+          },
+          {
+            "label": "Salud",
+            "width": "1.9",
+            "color": "#E74C3C",
+            "value": "$7,00"
+          },
+          {
+            "label": "Otros",
+            "width": "1.0",
+            "color": "#E74C3C",
+            "value": "$3,50"
+          },
+          {
+            "label": "Sueldo",
+            "width": "89.8",
+            "color": "#2E7D32",
+            "value": "$3.000,00"
+          },
+          {
+            "label": "Venta, \"garaje\"",
+            "width": "9.0",
+            "color": "#2E7D32",
+            "value": "$300,46"
+          },
+          {
+            "label": "Otros",
+            "width": "1.2",
+            "color": "#2E7D32",
+            "value": "$40,00"
+          }
+        ],
+        "balances": [
+          [
+            "Ahorros · Banco X",
+            "$3.940,00"
+          ],
+          [
+            "Corriente \"Plus\" · Banco, Y",
+            "$49,96"
+          ]
+        ],
+        "movements": [
+          [
+            "17 nov 2026",
+            "Almuerzo <b>",
+            "Alimentación",
+            "Efectivo",
+            "-$25,50"
+          ],
+          [
+            "17 nov 2026",
+            "Dentro del día",
+            "Otros",
+            "Efectivo",
+            "-$3,50"
+          ],
+          [
+            "17 nov 2026",
+            "Gasolina & más",
+            "Transporte",
+            "Débito · Ahorros",
+            "-$60,00"
+          ],
+          [
+            "15 nov 2026",
+            "Cena \"especial\"",
+            "Alimentación",
+            "Crédito · Visa Oro",
+            "-$16,00"
+          ],
+          [
+            "05 nov 2026",
+            "Sueldo",
+            "Sueldo",
+            "Depósito · Ahorros - Banco X",
+            "+$1.500,00"
+          ],
+          [
+            "28 oct 2026",
+            "Snack d'or",
+            "Alimentación",
+            "Débito",
+            "-$12,25"
+          ],
+          [
+            "16 oct 2026",
+            "Bicicleta\nusada",
+            "Venta, \"garaje\"",
+            "Depósito · Corriente \"Plus\" - Banco, Y",
+            "+$300,46"
+          ],
+          [
+            "02 oct 2026",
+            "Teclado",
+            "Tecnología",
+            "Débito · Corriente \"Plus\"",
+            "-$200,00"
+          ],
+          [
+            "05 mar 2026",
+            "Sueldo",
+            "Sueldo",
+            "Depósito · Ahorros - Banco X",
+            "+$1.500,00"
+          ],
+          [
+            "01 mar 2026",
+            "Gasto",
+            "Sin categoría",
+            "Otro",
+            "-$44,00"
+          ],
+          [
+            "31 dic 2025",
+            "Ingreso",
+            "Ingreso",
+            "Depósito",
+            "+$40,00"
+          ],
+          [
+            "30 jun 2025",
+            "Antiguo",
+            "Salud",
+            "Efectivo",
+            "-$7,00"
+          ]
+        ],
+        "emptyMarkers": 0
+      }
+    },
+    {
+      "op": "pdfModel",
+      "args": {
+        "type": "ingresos",
+        "period": "thisMonth"
+      },
+      "result": {
+        "shared": true,
+        "header": [
+          "01 nov 2026 – 30 nov 2026",
+          "Sólo ingresos"
+        ],
+        "stats": [
+          [
+            "Ingresos",
+            "$1.500,00"
+          ],
+          [
+            "Transacciones",
+            "1"
+          ]
+        ],
+        "donuts": [],
+        "bars": [
+          {
+            "label": "Sueldo",
+            "width": "100.0",
+            "color": "#2E7D32",
+            "value": "$1.500,00"
+          }
+        ],
+        "balances": [
+          [
+            "Ahorros · Banco X",
+            "$3.940,00"
+          ],
+          [
+            "Corriente \"Plus\" · Banco, Y",
+            "$49,96"
+          ]
+        ],
+        "movements": [
+          [
+            "05 nov 2026",
+            "Sueldo",
+            "Sueldo",
+            "Depósito · Ahorros - Banco X",
+            "+$1.500,00"
+          ]
+        ],
+        "emptyMarkers": 0
+      }
+    },
+    {
+      "op": "pdfModel",
+      "args": {
+        "type": "ingresos",
+        "period": "lastMonth"
+      },
+      "result": {
+        "shared": true,
+        "header": [
+          "01 oct 2026 – 31 oct 2026",
+          "Sólo ingresos"
+        ],
+        "stats": [
+          [
+            "Ingresos",
+            "$300,46"
+          ],
+          [
+            "Transacciones",
+            "1"
+          ]
+        ],
+        "donuts": [],
+        "bars": [
+          {
+            "label": "Venta, \"garaje\"",
+            "width": "100.0",
+            "color": "#2E7D32",
+            "value": "$300,46"
+          }
+        ],
+        "balances": [
+          [
+            "Ahorros · Banco X",
+            "$3.940,00"
+          ],
+          [
+            "Corriente \"Plus\" · Banco, Y",
+            "$49,96"
+          ]
+        ],
+        "movements": [
+          [
+            "16 oct 2026",
+            "Bicicleta\nusada",
+            "Venta, \"garaje\"",
+            "Depósito · Corriente \"Plus\" - Banco, Y",
+            "+$300,46"
+          ]
+        ],
+        "emptyMarkers": 0
+      }
+    },
+    {
+      "op": "pdfModel",
+      "args": {
+        "type": "ingresos",
+        "period": "thisYear"
+      },
+      "result": {
+        "shared": true,
+        "header": [
+          "Año 2026",
+          "Sólo ingresos"
+        ],
+        "stats": [
+          [
+            "Ingresos",
+            "$3.300,46"
+          ],
+          [
+            "Transacciones",
+            "3"
+          ]
+        ],
+        "donuts": [],
+        "bars": [
+          {
+            "label": "Sueldo",
+            "width": "90.9",
+            "color": "#2E7D32",
+            "value": "$3.000,00"
+          },
+          {
+            "label": "Venta, \"garaje\"",
+            "width": "9.1",
+            "color": "#2E7D32",
+            "value": "$300,46"
+          }
+        ],
+        "balances": [
+          [
+            "Ahorros · Banco X",
+            "$3.940,00"
+          ],
+          [
+            "Corriente \"Plus\" · Banco, Y",
+            "$49,96"
+          ]
+        ],
+        "movements": [
+          [
+            "05 nov 2026",
+            "Sueldo",
+            "Sueldo",
+            "Depósito · Ahorros - Banco X",
+            "+$1.500,00"
+          ],
+          [
+            "16 oct 2026",
+            "Bicicleta\nusada",
+            "Venta, \"garaje\"",
+            "Depósito · Corriente \"Plus\" - Banco, Y",
+            "+$300,46"
+          ],
+          [
+            "05 mar 2026",
+            "Sueldo",
+            "Sueldo",
+            "Depósito · Ahorros - Banco X",
+            "+$1.500,00"
+          ]
+        ],
+        "emptyMarkers": 0
+      }
+    },
+    {
+      "op": "pdfModel",
+      "args": {
+        "type": "ingresos",
+        "period": "all"
+      },
+      "result": {
+        "shared": true,
+        "header": [
+          "Todo el historial",
+          "Sólo ingresos"
+        ],
+        "stats": [
+          [
+            "Ingresos",
+            "$3.340,46"
+          ],
+          [
+            "Transacciones",
+            "4"
+          ]
+        ],
+        "donuts": [],
+        "bars": [
+          {
+            "label": "Sueldo",
+            "width": "89.8",
+            "color": "#2E7D32",
+            "value": "$3.000,00"
+          },
+          {
+            "label": "Venta, \"garaje\"",
+            "width": "9.0",
+            "color": "#2E7D32",
+            "value": "$300,46"
+          },
+          {
+            "label": "Otros",
+            "width": "1.2",
+            "color": "#2E7D32",
+            "value": "$40,00"
+          }
+        ],
+        "balances": [
+          [
+            "Ahorros · Banco X",
+            "$3.940,00"
+          ],
+          [
+            "Corriente \"Plus\" · Banco, Y",
+            "$49,96"
+          ]
+        ],
+        "movements": [
+          [
+            "05 nov 2026",
+            "Sueldo",
+            "Sueldo",
+            "Depósito · Ahorros - Banco X",
+            "+$1.500,00"
+          ],
+          [
+            "16 oct 2026",
+            "Bicicleta\nusada",
+            "Venta, \"garaje\"",
+            "Depósito · Corriente \"Plus\" - Banco, Y",
+            "+$300,46"
+          ],
+          [
+            "05 mar 2026",
+            "Sueldo",
+            "Sueldo",
+            "Depósito · Ahorros - Banco X",
+            "+$1.500,00"
+          ],
+          [
+            "31 dic 2025",
+            "Ingreso",
+            "Ingreso",
+            "Depósito",
+            "+$40,00"
+          ]
+        ],
+        "emptyMarkers": 0
+      }
+    },
+    {
+      "op": "pdfModel",
+      "args": {
+        "type": "gastos",
+        "period": "thisMonth"
+      },
+      "result": {
+        "shared": true,
+        "header": [
+          "01 nov 2026 – 30 nov 2026",
+          "Sólo gastos"
+        ],
+        "stats": [
+          [
+            "Gastos",
+            "$105,00"
+          ],
+          [
+            "Transacciones",
+            "4"
+          ]
+        ],
+        "donuts": [],
+        "bars": [
+          {
+            "label": "Transporte",
+            "width": "57.1",
+            "color": "#E74C3C",
+            "value": "$60,00"
+          },
+          {
+            "label": "Alimentación",
+            "width": "39.5",
+            "color": "#E74C3C",
+            "value": "$41,50"
+          },
+          {
+            "label": "Otros",
+            "width": "3.3",
+            "color": "#E74C3C",
+            "value": "$3,50"
+          }
+        ],
+        "balances": [
+          [
+            "Ahorros · Banco X",
+            "$3.940,00"
+          ],
+          [
+            "Corriente \"Plus\" · Banco, Y",
+            "$49,96"
+          ]
+        ],
+        "movements": [
+          [
+            "17 nov 2026",
+            "Almuerzo <b>",
+            "Alimentación",
+            "Efectivo",
+            "-$25,50"
+          ],
+          [
+            "17 nov 2026",
+            "Dentro del día",
+            "Otros",
+            "Efectivo",
+            "-$3,50"
+          ],
+          [
+            "17 nov 2026",
+            "Gasolina & más",
+            "Transporte",
+            "Débito · Ahorros",
+            "-$60,00"
+          ],
+          [
+            "15 nov 2026",
+            "Cena \"especial\"",
+            "Alimentación",
+            "Crédito · Visa Oro",
+            "-$16,00"
+          ]
+        ],
+        "emptyMarkers": 0
+      }
+    },
+    {
+      "op": "pdfModel",
+      "args": {
+        "type": "gastos",
+        "period": "lastMonth"
+      },
+      "result": {
+        "shared": true,
+        "header": [
+          "01 oct 2026 – 31 oct 2026",
+          "Sólo gastos"
+        ],
+        "stats": [
+          [
+            "Gastos",
+            "$212,25"
+          ],
+          [
+            "Transacciones",
+            "2"
+          ]
+        ],
+        "donuts": [],
+        "bars": [
+          {
+            "label": "Tecnología",
+            "width": "94.2",
+            "color": "#E74C3C",
+            "value": "$200,00"
+          },
+          {
+            "label": "Alimentación",
+            "width": "5.8",
+            "color": "#E74C3C",
+            "value": "$12,25"
+          }
+        ],
+        "balances": [
+          [
+            "Ahorros · Banco X",
+            "$3.940,00"
+          ],
+          [
+            "Corriente \"Plus\" · Banco, Y",
+            "$49,96"
+          ]
+        ],
+        "movements": [
+          [
+            "28 oct 2026",
+            "Snack d'or",
+            "Alimentación",
+            "Débito",
+            "-$12,25"
+          ],
+          [
+            "02 oct 2026",
+            "Teclado",
+            "Tecnología",
+            "Débito · Corriente \"Plus\"",
+            "-$200,00"
+          ]
+        ],
+        "emptyMarkers": 0
+      }
+    },
+    {
+      "op": "pdfModel",
+      "args": {
+        "type": "gastos",
+        "period": "thisYear"
+      },
+      "result": {
+        "shared": true,
+        "header": [
+          "Año 2026",
+          "Sólo gastos"
+        ],
+        "stats": [
+          [
+            "Gastos",
+            "$361,25"
+          ],
+          [
+            "Transacciones",
+            "7"
+          ]
+        ],
+        "donuts": [],
+        "bars": [
+          {
+            "label": "Tecnología",
+            "width": "55.4",
+            "color": "#E74C3C",
+            "value": "$200,00"
+          },
+          {
+            "label": "Transporte",
+            "width": "16.6",
+            "color": "#E74C3C",
+            "value": "$60,00"
+          },
+          {
+            "label": "Alimentación",
+            "width": "14.9",
+            "color": "#E74C3C",
+            "value": "$53,75"
+          },
+          {
+            "label": "Sin categoría",
+            "width": "12.2",
+            "color": "#E74C3C",
+            "value": "$44,00"
+          },
+          {
+            "label": "Otros",
+            "width": "1.0",
+            "color": "#E74C3C",
+            "value": "$3,50"
+          }
+        ],
+        "balances": [
+          [
+            "Ahorros · Banco X",
+            "$3.940,00"
+          ],
+          [
+            "Corriente \"Plus\" · Banco, Y",
+            "$49,96"
+          ]
+        ],
+        "movements": [
+          [
+            "17 nov 2026",
+            "Almuerzo <b>",
+            "Alimentación",
+            "Efectivo",
+            "-$25,50"
+          ],
+          [
+            "17 nov 2026",
+            "Dentro del día",
+            "Otros",
+            "Efectivo",
+            "-$3,50"
+          ],
+          [
+            "17 nov 2026",
+            "Gasolina & más",
+            "Transporte",
+            "Débito · Ahorros",
+            "-$60,00"
+          ],
+          [
+            "15 nov 2026",
+            "Cena \"especial\"",
+            "Alimentación",
+            "Crédito · Visa Oro",
+            "-$16,00"
+          ],
+          [
+            "28 oct 2026",
+            "Snack d'or",
+            "Alimentación",
+            "Débito",
+            "-$12,25"
+          ],
+          [
+            "02 oct 2026",
+            "Teclado",
+            "Tecnología",
+            "Débito · Corriente \"Plus\"",
+            "-$200,00"
+          ],
+          [
+            "01 mar 2026",
+            "Gasto",
+            "Sin categoría",
+            "Otro",
+            "-$44,00"
+          ]
+        ],
+        "emptyMarkers": 0
+      }
+    },
+    {
+      "op": "pdfModel",
+      "args": {
+        "type": "gastos",
+        "period": "all"
+      },
+      "result": {
+        "shared": true,
+        "header": [
+          "Todo el historial",
+          "Sólo gastos"
+        ],
+        "stats": [
+          [
+            "Gastos",
+            "$368,25"
+          ],
+          [
+            "Transacciones",
+            "8"
+          ]
+        ],
+        "donuts": [],
+        "bars": [
+          {
+            "label": "Tecnología",
+            "width": "54.3",
+            "color": "#E74C3C",
+            "value": "$200,00"
+          },
+          {
+            "label": "Transporte",
+            "width": "16.3",
+            "color": "#E74C3C",
+            "value": "$60,00"
+          },
+          {
+            "label": "Alimentación",
+            "width": "14.6",
+            "color": "#E74C3C",
+            "value": "$53,75"
+          },
+          {
+            "label": "Sin categoría",
+            "width": "11.9",
+            "color": "#E74C3C",
+            "value": "$44,00"
+          },
+          {
+            "label": "Salud",
+            "width": "1.9",
+            "color": "#E74C3C",
+            "value": "$7,00"
+          },
+          {
+            "label": "Otros",
+            "width": "1.0",
+            "color": "#E74C3C",
+            "value": "$3,50"
+          }
+        ],
+        "balances": [
+          [
+            "Ahorros · Banco X",
+            "$3.940,00"
+          ],
+          [
+            "Corriente \"Plus\" · Banco, Y",
+            "$49,96"
+          ]
+        ],
+        "movements": [
+          [
+            "17 nov 2026",
+            "Almuerzo <b>",
+            "Alimentación",
+            "Efectivo",
+            "-$25,50"
+          ],
+          [
+            "17 nov 2026",
+            "Dentro del día",
+            "Otros",
+            "Efectivo",
+            "-$3,50"
+          ],
+          [
+            "17 nov 2026",
+            "Gasolina & más",
+            "Transporte",
+            "Débito · Ahorros",
+            "-$60,00"
+          ],
+          [
+            "15 nov 2026",
+            "Cena \"especial\"",
+            "Alimentación",
+            "Crédito · Visa Oro",
+            "-$16,00"
+          ],
+          [
+            "28 oct 2026",
+            "Snack d'or",
+            "Alimentación",
+            "Débito",
+            "-$12,25"
+          ],
+          [
+            "02 oct 2026",
+            "Teclado",
+            "Tecnología",
+            "Débito · Corriente \"Plus\"",
+            "-$200,00"
+          ],
+          [
+            "01 mar 2026",
+            "Gasto",
+            "Sin categoría",
+            "Otro",
+            "-$44,00"
+          ],
+          [
+            "30 jun 2025",
+            "Antiguo",
+            "Salud",
+            "Efectivo",
+            "-$7,00"
+          ]
+        ],
+        "emptyMarkers": 0
+      }
+    }
+  ],
+  "final": {
+    "salary": [],
+    "expenses": [
+      {
+        "id": "e-1",
+        "amount": 25.5,
+        "date": "2026-11-17",
+        "category": "Alimentación",
+        "detail": "Almuerzo <b>",
+        "paymentMethod": "Efectivo",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "time": "13:05"
+      },
+      {
+        "id": "e-2",
+        "amount": 60,
+        "date": "2026-11-17",
+        "category": "Transporte",
+        "detail": "Gasolina & más",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "accountName": "Ahorros",
+        "time": "08:00"
+      },
+      {
+        "id": "e-3",
+        "amount": 15.999,
+        "date": "2026-11-15",
+        "category": "Alimentación",
+        "detail": "Cena \"especial\"",
+        "paymentMethod": "Crédito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "cardName": "Visa Oro"
+      },
+      {
+        "id": "e-4",
+        "amount": 200,
+        "date": "2026-10-02",
+        "category": "Tecnología",
+        "detail": "Teclado",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "accountName": "Corriente \"Plus\""
+      },
+      {
+        "id": "e-5",
+        "amount": 12.25,
+        "date": "2026-10-28",
+        "category": "Alimentación",
+        "detail": "Snack d'or",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "e-6",
+        "amount": 44,
+        "date": "2026-03-01",
+        "category": "",
+        "detail": "",
+        "paymentMethod": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "e-7",
+        "amount": 3,
+        "date": "2026-11-17",
+        "category": "Otros",
+        "detail": "Dentro del día",
+        "paymentMethod": "Efectivo",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "totalCharge": 3.5,
+        "time": "13:05"
+      },
+      {
+        "id": "e-8",
+        "amount": 7,
+        "date": "2025-06-30",
+        "category": "Salud",
+        "detail": "Antiguo",
+        "paymentMethod": "Efectivo",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "income": [
+      {
+        "id": "i-1",
+        "amount": 1500,
+        "source": "Sueldo",
+        "detail": "Sueldo",
+        "bankAccount": "Ahorros - Banco X",
+        "bankName": "Banco X",
+        "date": "2026-11-05",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "i-2",
+        "amount": 300.456,
+        "source": "Venta, \"garaje\"",
+        "detail": "Bicicleta\nusada",
+        "bankAccount": "Corriente \"Plus\" - Banco, Y",
+        "bankName": "Banco, Y",
+        "date": "2026-10-16",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "i-3",
+        "amount": 1500,
+        "source": "Sueldo",
+        "detail": "Sueldo",
+        "bankAccount": "Ahorros - Banco X",
+        "bankName": "Banco X",
+        "date": "2026-03-05",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "i-4",
+        "amount": 40,
+        "source": "",
+        "detail": "",
+        "bankAccount": "",
+        "bankName": "",
+        "date": "2025-12-31",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "loans": [],
+    "creditCards": [],
+    "reminders": [],
+    "accounts": [
+      {
+        "id": "acc-1",
+        "name": "Ahorros",
+        "bankName": "Banco X",
+        "accountType": "Ahorro",
+        "initialBalance": 1000,
+        "referenceNumber": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "acc-2",
+        "name": "Corriente \"Plus\"",
+        "bankName": "Banco, Y",
+        "accountType": "Ahorro",
+        "initialBalance": -50.5,
+        "referenceNumber": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "categories": [],
+    "investments": [],
+    "settings": [
+      {
+        "id": "default",
+        "appName": "Mi Dinero",
+        "monthlyGoal": 0,
+        "theme": "dark",
+        "currency": "USD",
+        "currencyLocale": "es-EC",
+        "onboardingCompleted": true
+      }
+    ]
+  }
+}

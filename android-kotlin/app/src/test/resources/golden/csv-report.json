@@ -1,0 +1,559 @@
+{
+  "name": "csv-report",
+  "description": "CSV de reportes: todos los tipos × períodos (escapado de comillas, BOM, orden descendente)",
+  "clock": "2026-11-17T12:00:00",
+  "seed": {
+    "accounts": [
+      {
+        "id": "acc-1",
+        "name": "Ahorros",
+        "bankName": "Banco X",
+        "accountType": "Ahorro",
+        "initialBalance": 1000,
+        "referenceNumber": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "acc-2",
+        "name": "Corriente \"Plus\"",
+        "bankName": "Banco, Y",
+        "accountType": "Ahorro",
+        "initialBalance": -50.5,
+        "referenceNumber": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "income": [
+      {
+        "id": "i-1",
+        "amount": 1500,
+        "source": "Sueldo",
+        "detail": "Sueldo",
+        "bankAccount": "Ahorros - Banco X",
+        "bankName": "Banco X",
+        "date": "2026-11-05",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "i-2",
+        "amount": 300.456,
+        "source": "Venta, \"garaje\"",
+        "detail": "Bicicleta\nusada",
+        "bankAccount": "Corriente \"Plus\" - Banco, Y",
+        "bankName": "Banco, Y",
+        "date": "2026-10-16",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "i-3",
+        "amount": 1500,
+        "source": "Sueldo",
+        "detail": "Sueldo",
+        "bankAccount": "Ahorros - Banco X",
+        "bankName": "Banco X",
+        "date": "2026-03-05",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "i-4",
+        "amount": 40,
+        "source": "",
+        "detail": "",
+        "bankAccount": "",
+        "bankName": "",
+        "date": "2025-12-31",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "expenses": [
+      {
+        "id": "e-1",
+        "amount": 25.5,
+        "date": "2026-11-17",
+        "category": "Alimentación",
+        "detail": "Almuerzo <b>",
+        "paymentMethod": "Efectivo",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "time": "13:05"
+      },
+      {
+        "id": "e-2",
+        "amount": 60,
+        "date": "2026-11-17",
+        "category": "Transporte",
+        "detail": "Gasolina & más",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "accountName": "Ahorros",
+        "time": "08:00"
+      },
+      {
+        "id": "e-3",
+        "amount": 15.999,
+        "date": "2026-11-15",
+        "category": "Alimentación",
+        "detail": "Cena \"especial\"",
+        "paymentMethod": "Crédito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "cardName": "Visa Oro"
+      },
+      {
+        "id": "e-4",
+        "amount": 200,
+        "date": "2026-10-02",
+        "category": "Tecnología",
+        "detail": "Teclado",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "accountName": "Corriente \"Plus\""
+      },
+      {
+        "id": "e-5",
+        "amount": 12.25,
+        "date": "2026-10-28",
+        "category": "Alimentación",
+        "detail": "Snack d'or",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "e-6",
+        "amount": 44,
+        "date": "2026-03-01",
+        "category": "",
+        "detail": "",
+        "paymentMethod": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "e-7",
+        "amount": 3,
+        "date": "2026-11-17",
+        "category": "Otros",
+        "detail": "Dentro del día",
+        "paymentMethod": "Efectivo",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "totalCharge": 3.5,
+        "time": "13:05"
+      },
+      {
+        "id": "e-8",
+        "amount": 7,
+        "date": "2025-06-30",
+        "category": "Salud",
+        "detail": "Antiguo",
+        "paymentMethod": "Efectivo",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "loans": [],
+    "settings": [
+      {
+        "id": "default",
+        "appName": "Mi Dinero",
+        "monthlyGoal": 0,
+        "theme": "dark",
+        "currency": "USD",
+        "currencyLocale": "es-EC",
+        "onboardingCompleted": true
+      }
+    ]
+  },
+  "steps": [
+    {
+      "op": "reportPeriod",
+      "args": {
+        "period": "thisMonth"
+      },
+      "result": {
+        "startDate": "2026-11-01",
+        "endDate": "2026-11-30",
+        "label": "01 nov 2026 – 30 nov 2026",
+        "fileTag": "2026-11"
+      }
+    },
+    {
+      "op": "reportPeriod",
+      "args": {
+        "period": "lastMonth"
+      },
+      "result": {
+        "startDate": "2026-10-01",
+        "endDate": "2026-10-31",
+        "label": "01 oct 2026 – 31 oct 2026",
+        "fileTag": "2026-10"
+      }
+    },
+    {
+      "op": "reportPeriod",
+      "args": {
+        "period": "thisYear"
+      },
+      "result": {
+        "startDate": "2026-01-01",
+        "endDate": "2026-12-31",
+        "label": "Año 2026",
+        "fileTag": "2026"
+      }
+    },
+    {
+      "op": "reportPeriod",
+      "args": {
+        "period": "all"
+      },
+      "result": {
+        "label": "Todo el historial",
+        "fileTag": "historial"
+      }
+    },
+    {
+      "op": "generateCsv",
+      "args": {
+        "type": "all",
+        "period": "thisMonth"
+      },
+      "result": {
+        "shared": true,
+        "fileName": "reporte_2026-11_2026-11-17.csv",
+        "content": "﻿Fecha,Tipo,Categoría/Fuente,Cuenta,Monto,Detalle\n2026-11-17,Gasto,\"Alimentación\",,25.50,\"Almuerzo <b>\"\n2026-11-17,Gasto,\"Transporte\",\"Ahorros\",60.00,\"Gasolina & más\"\n2026-11-17,Gasto,\"Otros\",,3.50,\"Dentro del día\"\n2026-11-15,Gasto,\"Alimentación\",\"Visa Oro\",16.00,\"Cena \"\"especial\"\"\"\n2026-11-05,Ingreso,\"Sueldo\",\"Ahorros - Banco X\",1500.00,\"Sueldo\"\n"
+      }
+    },
+    {
+      "op": "generateCsv",
+      "args": {
+        "type": "all",
+        "period": "lastMonth"
+      },
+      "result": {
+        "shared": true,
+        "fileName": "reporte_2026-10_2026-11-17.csv",
+        "content": "﻿Fecha,Tipo,Categoría/Fuente,Cuenta,Monto,Detalle\n2026-10-28,Gasto,\"Alimentación\",,12.25,\"Snack d'or\"\n2026-10-16,Ingreso,\"Venta, \"\"garaje\"\"\",\"Corriente \"\"Plus\"\" - Banco, Y\",300.46,\"Bicicleta\nusada\"\n2026-10-02,Gasto,\"Tecnología\",\"Corriente \"\"Plus\"\"\",200.00,\"Teclado\"\n"
+      }
+    },
+    {
+      "op": "generateCsv",
+      "args": {
+        "type": "all",
+        "period": "thisYear"
+      },
+      "result": {
+        "shared": true,
+        "fileName": "reporte_2026_2026-11-17.csv",
+        "content": "﻿Fecha,Tipo,Categoría/Fuente,Cuenta,Monto,Detalle\n2026-11-17,Gasto,\"Alimentación\",,25.50,\"Almuerzo <b>\"\n2026-11-17,Gasto,\"Transporte\",\"Ahorros\",60.00,\"Gasolina & más\"\n2026-11-17,Gasto,\"Otros\",,3.50,\"Dentro del día\"\n2026-11-15,Gasto,\"Alimentación\",\"Visa Oro\",16.00,\"Cena \"\"especial\"\"\"\n2026-11-05,Ingreso,\"Sueldo\",\"Ahorros - Banco X\",1500.00,\"Sueldo\"\n2026-10-28,Gasto,\"Alimentación\",,12.25,\"Snack d'or\"\n2026-10-16,Ingreso,\"Venta, \"\"garaje\"\"\",\"Corriente \"\"Plus\"\" - Banco, Y\",300.46,\"Bicicleta\nusada\"\n2026-10-02,Gasto,\"Tecnología\",\"Corriente \"\"Plus\"\"\",200.00,\"Teclado\"\n2026-03-05,Ingreso,\"Sueldo\",\"Ahorros - Banco X\",1500.00,\"Sueldo\"\n2026-03-01,Gasto,,,44.00,\n"
+      }
+    },
+    {
+      "op": "generateCsv",
+      "args": {
+        "type": "all",
+        "period": "all"
+      },
+      "result": {
+        "shared": true,
+        "fileName": "reporte_historial_2026-11-17.csv",
+        "content": "﻿Fecha,Tipo,Categoría/Fuente,Cuenta,Monto,Detalle\n2026-11-17,Gasto,\"Alimentación\",,25.50,\"Almuerzo <b>\"\n2026-11-17,Gasto,\"Transporte\",\"Ahorros\",60.00,\"Gasolina & más\"\n2026-11-17,Gasto,\"Otros\",,3.50,\"Dentro del día\"\n2026-11-15,Gasto,\"Alimentación\",\"Visa Oro\",16.00,\"Cena \"\"especial\"\"\"\n2026-11-05,Ingreso,\"Sueldo\",\"Ahorros - Banco X\",1500.00,\"Sueldo\"\n2026-10-28,Gasto,\"Alimentación\",,12.25,\"Snack d'or\"\n2026-10-16,Ingreso,\"Venta, \"\"garaje\"\"\",\"Corriente \"\"Plus\"\" - Banco, Y\",300.46,\"Bicicleta\nusada\"\n2026-10-02,Gasto,\"Tecnología\",\"Corriente \"\"Plus\"\"\",200.00,\"Teclado\"\n2026-03-05,Ingreso,\"Sueldo\",\"Ahorros - Banco X\",1500.00,\"Sueldo\"\n2026-03-01,Gasto,,,44.00,\n2025-12-31,Ingreso,,,40.00,\n2025-06-30,Gasto,\"Salud\",,7.00,\"Antiguo\"\n"
+      }
+    },
+    {
+      "op": "generateCsv",
+      "args": {
+        "type": "ingresos",
+        "period": "thisMonth"
+      },
+      "result": {
+        "shared": true,
+        "fileName": "reporte_2026-11_2026-11-17.csv",
+        "content": "﻿Fecha,Tipo,Categoría/Fuente,Cuenta,Monto,Detalle\n2026-11-05,Ingreso,\"Sueldo\",\"Ahorros - Banco X\",1500.00,\"Sueldo\"\n"
+      }
+    },
+    {
+      "op": "generateCsv",
+      "args": {
+        "type": "ingresos",
+        "period": "lastMonth"
+      },
+      "result": {
+        "shared": true,
+        "fileName": "reporte_2026-10_2026-11-17.csv",
+        "content": "﻿Fecha,Tipo,Categoría/Fuente,Cuenta,Monto,Detalle\n2026-10-16,Ingreso,\"Venta, \"\"garaje\"\"\",\"Corriente \"\"Plus\"\" - Banco, Y\",300.46,\"Bicicleta\nusada\"\n"
+      }
+    },
+    {
+      "op": "generateCsv",
+      "args": {
+        "type": "ingresos",
+        "period": "thisYear"
+      },
+      "result": {
+        "shared": true,
+        "fileName": "reporte_2026_2026-11-17.csv",
+        "content": "﻿Fecha,Tipo,Categoría/Fuente,Cuenta,Monto,Detalle\n2026-11-05,Ingreso,\"Sueldo\",\"Ahorros - Banco X\",1500.00,\"Sueldo\"\n2026-10-16,Ingreso,\"Venta, \"\"garaje\"\"\",\"Corriente \"\"Plus\"\" - Banco, Y\",300.46,\"Bicicleta\nusada\"\n2026-03-05,Ingreso,\"Sueldo\",\"Ahorros - Banco X\",1500.00,\"Sueldo\"\n"
+      }
+    },
+    {
+      "op": "generateCsv",
+      "args": {
+        "type": "ingresos",
+        "period": "all"
+      },
+      "result": {
+        "shared": true,
+        "fileName": "reporte_historial_2026-11-17.csv",
+        "content": "﻿Fecha,Tipo,Categoría/Fuente,Cuenta,Monto,Detalle\n2026-11-05,Ingreso,\"Sueldo\",\"Ahorros - Banco X\",1500.00,\"Sueldo\"\n2026-10-16,Ingreso,\"Venta, \"\"garaje\"\"\",\"Corriente \"\"Plus\"\" - Banco, Y\",300.46,\"Bicicleta\nusada\"\n2026-03-05,Ingreso,\"Sueldo\",\"Ahorros - Banco X\",1500.00,\"Sueldo\"\n2025-12-31,Ingreso,,,40.00,\n"
+      }
+    },
+    {
+      "op": "generateCsv",
+      "args": {
+        "type": "gastos",
+        "period": "thisMonth"
+      },
+      "result": {
+        "shared": true,
+        "fileName": "reporte_2026-11_2026-11-17.csv",
+        "content": "﻿Fecha,Tipo,Categoría/Fuente,Cuenta,Monto,Detalle\n2026-11-17,Gasto,\"Alimentación\",,25.50,\"Almuerzo <b>\"\n2026-11-17,Gasto,\"Transporte\",\"Ahorros\",60.00,\"Gasolina & más\"\n2026-11-17,Gasto,\"Otros\",,3.50,\"Dentro del día\"\n2026-11-15,Gasto,\"Alimentación\",\"Visa Oro\",16.00,\"Cena \"\"especial\"\"\"\n"
+      }
+    },
+    {
+      "op": "generateCsv",
+      "args": {
+        "type": "gastos",
+        "period": "lastMonth"
+      },
+      "result": {
+        "shared": true,
+        "fileName": "reporte_2026-10_2026-11-17.csv",
+        "content": "﻿Fecha,Tipo,Categoría/Fuente,Cuenta,Monto,Detalle\n2026-10-28,Gasto,\"Alimentación\",,12.25,\"Snack d'or\"\n2026-10-02,Gasto,\"Tecnología\",\"Corriente \"\"Plus\"\"\",200.00,\"Teclado\"\n"
+      }
+    },
+    {
+      "op": "generateCsv",
+      "args": {
+        "type": "gastos",
+        "period": "thisYear"
+      },
+      "result": {
+        "shared": true,
+        "fileName": "reporte_2026_2026-11-17.csv",
+        "content": "﻿Fecha,Tipo,Categoría/Fuente,Cuenta,Monto,Detalle\n2026-11-17,Gasto,\"Alimentación\",,25.50,\"Almuerzo <b>\"\n2026-11-17,Gasto,\"Transporte\",\"Ahorros\",60.00,\"Gasolina & más\"\n2026-11-17,Gasto,\"Otros\",,3.50,\"Dentro del día\"\n2026-11-15,Gasto,\"Alimentación\",\"Visa Oro\",16.00,\"Cena \"\"especial\"\"\"\n2026-10-28,Gasto,\"Alimentación\",,12.25,\"Snack d'or\"\n2026-10-02,Gasto,\"Tecnología\",\"Corriente \"\"Plus\"\"\",200.00,\"Teclado\"\n2026-03-01,Gasto,,,44.00,\n"
+      }
+    },
+    {
+      "op": "generateCsv",
+      "args": {
+        "type": "gastos",
+        "period": "all"
+      },
+      "result": {
+        "shared": true,
+        "fileName": "reporte_historial_2026-11-17.csv",
+        "content": "﻿Fecha,Tipo,Categoría/Fuente,Cuenta,Monto,Detalle\n2026-11-17,Gasto,\"Alimentación\",,25.50,\"Almuerzo <b>\"\n2026-11-17,Gasto,\"Transporte\",\"Ahorros\",60.00,\"Gasolina & más\"\n2026-11-17,Gasto,\"Otros\",,3.50,\"Dentro del día\"\n2026-11-15,Gasto,\"Alimentación\",\"Visa Oro\",16.00,\"Cena \"\"especial\"\"\"\n2026-10-28,Gasto,\"Alimentación\",,12.25,\"Snack d'or\"\n2026-10-02,Gasto,\"Tecnología\",\"Corriente \"\"Plus\"\"\",200.00,\"Teclado\"\n2026-03-01,Gasto,,,44.00,\n2025-06-30,Gasto,\"Salud\",,7.00,\"Antiguo\"\n"
+      }
+    },
+    {
+      "op": "setClock",
+      "args": {
+        "at": "2027-01-15T09:00:00"
+      },
+      "result": null
+    },
+    {
+      "op": "reportPeriod",
+      "args": {
+        "period": "lastMonth"
+      },
+      "result": {
+        "startDate": "2026-12-01",
+        "endDate": "2026-12-31",
+        "label": "01 dic 2026 – 31 dic 2026",
+        "fileTag": "2026-12"
+      }
+    },
+    {
+      "op": "generateCsv",
+      "args": {
+        "type": "all",
+        "period": "lastMonth"
+      },
+      "result": {
+        "shared": true,
+        "fileName": "reporte_2026-12_2027-01-15.csv",
+        "content": "﻿Fecha,Tipo,Categoría/Fuente,Cuenta,Monto,Detalle\n"
+      }
+    },
+    {
+      "op": "generateCsv",
+      "args": {
+        "type": "all",
+        "period": "thisYear"
+      },
+      "result": {
+        "shared": true,
+        "fileName": "reporte_2027_2027-01-15.csv",
+        "content": "﻿Fecha,Tipo,Categoría/Fuente,Cuenta,Monto,Detalle\n"
+      }
+    }
+  ],
+  "final": {
+    "salary": [],
+    "expenses": [
+      {
+        "id": "e-1",
+        "amount": 25.5,
+        "date": "2026-11-17",
+        "category": "Alimentación",
+        "detail": "Almuerzo <b>",
+        "paymentMethod": "Efectivo",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "time": "13:05"
+      },
+      {
+        "id": "e-2",
+        "amount": 60,
+        "date": "2026-11-17",
+        "category": "Transporte",
+        "detail": "Gasolina & más",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "accountName": "Ahorros",
+        "time": "08:00"
+      },
+      {
+        "id": "e-3",
+        "amount": 15.999,
+        "date": "2026-11-15",
+        "category": "Alimentación",
+        "detail": "Cena \"especial\"",
+        "paymentMethod": "Crédito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "cardName": "Visa Oro"
+      },
+      {
+        "id": "e-4",
+        "amount": 200,
+        "date": "2026-10-02",
+        "category": "Tecnología",
+        "detail": "Teclado",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "accountName": "Corriente \"Plus\""
+      },
+      {
+        "id": "e-5",
+        "amount": 12.25,
+        "date": "2026-10-28",
+        "category": "Alimentación",
+        "detail": "Snack d'or",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "e-6",
+        "amount": 44,
+        "date": "2026-03-01",
+        "category": "",
+        "detail": "",
+        "paymentMethod": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "e-7",
+        "amount": 3,
+        "date": "2026-11-17",
+        "category": "Otros",
+        "detail": "Dentro del día",
+        "paymentMethod": "Efectivo",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "totalCharge": 3.5,
+        "time": "13:05"
+      },
+      {
+        "id": "e-8",
+        "amount": 7,
+        "date": "2025-06-30",
+        "category": "Salud",
+        "detail": "Antiguo",
+        "paymentMethod": "Efectivo",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "income": [
+      {
+        "id": "i-1",
+        "amount": 1500,
+        "source": "Sueldo",
+        "detail": "Sueldo",
+        "bankAccount": "Ahorros - Banco X",
+        "bankName": "Banco X",
+        "date": "2026-11-05",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "i-2",
+        "amount": 300.456,
+        "source": "Venta, \"garaje\"",
+        "detail": "Bicicleta\nusada",
+        "bankAccount": "Corriente \"Plus\" - Banco, Y",
+        "bankName": "Banco, Y",
+        "date": "2026-10-16",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "i-3",
+        "amount": 1500,
+        "source": "Sueldo",
+        "detail": "Sueldo",
+        "bankAccount": "Ahorros - Banco X",
+        "bankName": "Banco X",
+        "date": "2026-03-05",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "i-4",
+        "amount": 40,
+        "source": "",
+        "detail": "",
+        "bankAccount": "",
+        "bankName": "",
+        "date": "2025-12-31",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "loans": [],
+    "creditCards": [],
+    "reminders": [],
+    "accounts": [
+      {
+        "id": "acc-1",
+        "name": "Ahorros",
+        "bankName": "Banco X",
+        "accountType": "Ahorro",
+        "initialBalance": 1000,
+        "referenceNumber": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "acc-2",
+        "name": "Corriente \"Plus\"",
+        "bankName": "Banco, Y",
+        "accountType": "Ahorro",
+        "initialBalance": -50.5,
+        "referenceNumber": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "categories": [],
+    "investments": [],
+    "settings": [
+      {
+        "id": "default",
+        "appName": "Mi Dinero",
+        "monthlyGoal": 0,
+        "theme": "dark",
+        "currency": "USD",
+        "currencyLocale": "es-EC",
+        "onboardingCompleted": true
+      }
+    ]
+  }
+}

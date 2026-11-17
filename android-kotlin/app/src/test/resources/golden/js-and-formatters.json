@@ -1,0 +1,1123 @@
+{
+  "name": "js-and-formatters",
+  "description": "Semántica JS (toFixed, String(number), parseFloat/parseInt, Math.round) y helpers puros de formatters.ts",
+  "clock": "2026-11-17T12:00:00",
+  "seed": {},
+  "steps": [
+    {
+      "op": "js",
+      "args": {
+        "kind": "toFixed",
+        "values": [
+          1.005,
+          2.675,
+          0.125,
+          0.25,
+          1.45,
+          8.345,
+          10.075,
+          0,
+          123456.789,
+          0.30000000000000004,
+          1e-7,
+          -1.005,
+          -0.5,
+          99.995
+        ],
+        "digits": 2
+      },
+      "result": [
+        "1.00",
+        "2.67",
+        "0.13",
+        "0.25",
+        "1.45",
+        "8.35",
+        "10.07",
+        "0.00",
+        "123456.79",
+        "0.30",
+        "0.00",
+        "-1.00",
+        "-0.50",
+        "100.00"
+      ]
+    },
+    {
+      "op": "js",
+      "args": {
+        "kind": "toFixed",
+        "values": [
+          12.345,
+          0.05,
+          0.25,
+          0.125,
+          33.35,
+          99.95,
+          100,
+          0.0005
+        ],
+        "digits": 1
+      },
+      "result": [
+        "12.3",
+        "0.1",
+        "0.3",
+        "0.1",
+        "33.4",
+        "100.0",
+        "100.0",
+        "0.0"
+      ]
+    },
+    {
+      "op": "js",
+      "args": {
+        "kind": "toString",
+        "values": [
+          1500,
+          12.5,
+          0.1,
+          15000000,
+          123456789.123,
+          0.000001,
+          1e-7,
+          1e+21,
+          1.5e+300,
+          0,
+          100,
+          3.14159,
+          0.000025,
+          123456789012345680000
+        ]
+      },
+      "result": [
+        "1500",
+        "12.5",
+        "0.1",
+        "15000000",
+        "123456789.123",
+        "0.000001",
+        "1e-7",
+        "1e+21",
+        "1.5e+300",
+        "0",
+        "100",
+        "3.14159",
+        "0.000025",
+        "123456789012345680000"
+      ]
+    },
+    {
+      "op": "js",
+      "args": {
+        "kind": "parseFloat",
+        "values": [
+          "12abc",
+          "",
+          ".5",
+          "5.",
+          "1e3",
+          "  7.5",
+          "abc",
+          "-3.2x",
+          "0x10",
+          "1.2.3",
+          "-",
+          "+4"
+        ]
+      },
+      "result": [
+        12,
+        "NaN",
+        0.5,
+        5,
+        1000,
+        7.5,
+        "NaN",
+        -3.2,
+        0,
+        1.2,
+        "NaN",
+        4
+      ]
+    },
+    {
+      "op": "js",
+      "args": {
+        "kind": "parseInt",
+        "values": [
+          "12.7",
+          "",
+          "abc",
+          "007",
+          "1e3",
+          " 42",
+          "-5",
+          "3,5",
+          "99999999999"
+        ]
+      },
+      "result": [
+        12,
+        "NaN",
+        "NaN",
+        7,
+        1,
+        42,
+        -5,
+        3,
+        99999999999
+      ]
+    },
+    {
+      "op": "js",
+      "args": {
+        "kind": "round",
+        "values": [
+          0.5,
+          1.5,
+          2.5,
+          -0.5,
+          -1.5,
+          -2.5,
+          2.4999999,
+          1000000000000000.5
+        ]
+      },
+      "result": [
+        1,
+        2,
+        3,
+        0,
+        -1,
+        -2,
+        2,
+        1000000000000001
+      ]
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "roundMoney",
+        "args": [
+          0.30000000000000004
+        ]
+      },
+      "result": 0.3
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "roundMoney",
+        "args": [
+          1.005
+        ]
+      },
+      "result": 1.01
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "roundMoney",
+        "args": [
+          2.675
+        ]
+      },
+      "result": 2.68
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "roundMoney",
+        "args": [
+          -1.005
+        ]
+      },
+      "result": -1
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "roundMoney",
+        "args": [
+          1234.5678
+        ]
+      },
+      "result": 1234.57
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "roundMoney",
+        "args": [
+          0.285
+        ]
+      },
+      "result": 0.29
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "roundMoney",
+        "args": [
+          "abc"
+        ]
+      },
+      "result": 0
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "roundMoney",
+        "args": [
+          5
+        ]
+      },
+      "result": 5
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "toAmountInput",
+        "args": [
+          null
+        ]
+      },
+      "result": ""
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "toAmountInput",
+        "args": [
+          ""
+        ]
+      },
+      "result": ""
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "toAmountInput",
+        "args": [
+          12.5
+        ]
+      },
+      "result": "12.5"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "toAmountInput",
+        "args": [
+          1500
+        ]
+      },
+      "result": "1500"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "toAmountInput",
+        "args": [
+          "12.345"
+        ]
+      },
+      "result": "12.35"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "toAmountInput",
+        "args": [
+          "abc"
+        ]
+      },
+      "result": ""
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "toAmountInput",
+        "args": [
+          15000000
+        ]
+      },
+      "result": "15000000"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "toAmountInput",
+        "args": [
+          0.1
+        ]
+      },
+      "result": "0.1"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "toAmountInput",
+        "args": [
+          0
+        ]
+      },
+      "result": "0"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "toAmountInput",
+        "args": [
+          1234567.891
+        ]
+      },
+      "result": "1234567.89"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "sanitizeDecimalInput",
+        "args": [
+          "12,5"
+        ]
+      },
+      "result": "12.5"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "sanitizeDecimalInput",
+        "args": [
+          "1.2.3"
+        ]
+      },
+      "result": "1.23"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "sanitizeDecimalInput",
+        "args": [
+          "abc"
+        ]
+      },
+      "result": ""
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "sanitizeDecimalInput",
+        "args": [
+          ".5"
+        ]
+      },
+      "result": "0.5"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "sanitizeDecimalInput",
+        "args": [
+          "12.345"
+        ]
+      },
+      "result": "12.34"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "sanitizeDecimalInput",
+        "args": [
+          ""
+        ]
+      },
+      "result": ""
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "sanitizeDecimalInput",
+        "args": [
+          "0."
+        ]
+      },
+      "result": "0."
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "sanitizeDecimalInput",
+        "args": [
+          "5.5.5"
+        ]
+      },
+      "result": "5.55"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "sanitizeDecimalInput",
+        "args": [
+          "1,234.56"
+        ]
+      },
+      "result": "1.23"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "sanitizeDecimalInput",
+        "args": [
+          "3.14159",
+          4
+        ]
+      },
+      "result": "3.1415"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "sanitizeDecimalInput",
+        "args": [
+          "7.",
+          0
+        ]
+      },
+      "result": "7."
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "sanitizeIntegerInput",
+        "args": [
+          "12a3"
+        ]
+      },
+      "result": "123"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "sanitizeIntegerInput",
+        "args": [
+          "--"
+        ]
+      },
+      "result": ""
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "sanitizeIntegerInput",
+        "args": [
+          "0042"
+        ]
+      },
+      "result": "0042"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "toLocalDateStr",
+        "args": [
+          {
+            "$date": "2026-03-05T23:59:00"
+          }
+        ]
+      },
+      "result": "2026-03-05"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "toLocalDateStr",
+        "args": [
+          {
+            "$date": "2026-12-31T00:00:00"
+          }
+        ]
+      },
+      "result": "2026-12-31"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "formatMonths",
+        "args": [
+          1
+        ]
+      },
+      "result": "1 mes"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "formatMonths",
+        "args": [
+          3
+        ]
+      },
+      "result": "3 meses"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "formatMonths",
+        "args": [
+          0
+        ]
+      },
+      "result": "0 meses"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "getMonthName",
+        "args": [
+          1
+        ]
+      },
+      "result": "Enero"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "getMonthName",
+        "args": [
+          12
+        ]
+      },
+      "result": "Diciembre"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "getMonthName",
+        "args": [
+          0
+        ]
+      },
+      "result": ""
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "getMonthName",
+        "args": [
+          13
+        ]
+      },
+      "result": ""
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "getWeekNumber",
+        "args": [
+          {
+            "$date": "2026-01-01T10:00:00"
+          }
+        ]
+      },
+      "result": 1
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "getWeekNumber",
+        "args": [
+          {
+            "$date": "2026-11-17T10:00:00"
+          }
+        ]
+      },
+      "result": 47
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "getWeekNumber",
+        "args": [
+          {
+            "$date": "2026-12-31T10:00:00"
+          }
+        ]
+      },
+      "result": 53
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "getWeekNumber",
+        "args": [
+          {
+            "$date": "2027-01-03T10:00:00"
+          }
+        ]
+      },
+      "result": 53
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "getWeekNumber",
+        "args": [
+          {
+            "$date": "2024-12-30T10:00:00"
+          }
+        ]
+      },
+      "result": 1
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "getWeekNumber",
+        "args": [
+          {
+            "$date": "2021-01-03T10:00:00"
+          }
+        ]
+      },
+      "result": 53
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "getDaysInMonth",
+        "args": [
+          2026,
+          2
+        ]
+      },
+      "result": 28
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "getDaysInMonth",
+        "args": [
+          2028,
+          2
+        ]
+      },
+      "result": 29
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "getDaysInMonth",
+        "args": [
+          2026,
+          11
+        ]
+      },
+      "result": 30
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "getDaysInMonth",
+        "args": [
+          2026,
+          12
+        ]
+      },
+      "result": 31
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "daysUntil",
+        "args": [
+          "2026-11-17"
+        ]
+      },
+      "result": 0
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "daysUntil",
+        "args": [
+          "2026-11-18"
+        ]
+      },
+      "result": 1
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "daysUntil",
+        "args": [
+          "2026-11-16"
+        ]
+      },
+      "result": -1
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "daysUntil",
+        "args": [
+          "2027-02-28"
+        ]
+      },
+      "result": 103
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "daysUntil",
+        "args": [
+          "2025-12-25"
+        ]
+      },
+      "result": -327
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "nextDateForDay",
+        "args": [
+          15,
+          {
+            "$date": "2026-11-17T12:00:00"
+          }
+        ]
+      },
+      "result": "2026-12-15"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "nextDateForDay",
+        "args": [
+          17,
+          {
+            "$date": "2026-11-17T12:00:00"
+          }
+        ]
+      },
+      "result": "2026-11-17"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "nextDateForDay",
+        "args": [
+          31,
+          {
+            "$date": "2026-11-17T12:00:00"
+          }
+        ]
+      },
+      "result": "2026-11-30"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "nextDateForDay",
+        "args": [
+          31,
+          {
+            "$date": "2026-01-31T12:00:00"
+          }
+        ]
+      },
+      "result": "2026-01-31"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "nextDateForDay",
+        "args": [
+          30,
+          {
+            "$date": "2026-02-10T12:00:00"
+          }
+        ]
+      },
+      "result": "2026-02-28"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "nextDateForDay",
+        "args": [
+          31,
+          {
+            "$date": "2026-12-20T12:00:00"
+          }
+        ]
+      },
+      "result": "2026-12-31"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "nextDateForDay",
+        "args": [
+          0,
+          {
+            "$date": "2026-11-17T12:00:00"
+          }
+        ]
+      },
+      "result": "2026-12-01"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "nextDateForDay",
+        "args": [
+          45,
+          {
+            "$date": "2026-11-17T12:00:00"
+          }
+        ]
+      },
+      "result": "2026-11-30"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "nextDateForDay",
+        "args": [
+          5
+        ]
+      },
+      "result": "2026-12-05"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "lastDateForDay",
+        "args": [
+          15,
+          {
+            "$date": "2026-11-17T12:00:00"
+          }
+        ]
+      },
+      "result": "2026-11-15"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "lastDateForDay",
+        "args": [
+          20,
+          {
+            "$date": "2026-11-17T12:00:00"
+          }
+        ]
+      },
+      "result": "2026-10-20"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "lastDateForDay",
+        "args": [
+          31,
+          {
+            "$date": "2026-03-01T12:00:00"
+          }
+        ]
+      },
+      "result": "2026-02-28"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "lastDateForDay",
+        "args": [
+          31,
+          {
+            "$date": "2026-01-10T12:00:00"
+          }
+        ]
+      },
+      "result": "2025-12-31"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "lastDateForDay",
+        "args": [
+          17,
+          {
+            "$date": "2026-11-17T12:00:00"
+          }
+        ]
+      },
+      "result": "2026-11-17"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "nextDateForMonthDay",
+        "args": [
+          12,
+          25,
+          {
+            "$date": "2026-11-17T12:00:00"
+          }
+        ]
+      },
+      "result": "2026-12-25"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "nextDateForMonthDay",
+        "args": [
+          2,
+          29,
+          {
+            "$date": "2026-11-17T12:00:00"
+          }
+        ]
+      },
+      "result": "2027-02-28"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "nextDateForMonthDay",
+        "args": [
+          2,
+          29,
+          {
+            "$date": "2027-03-01T12:00:00"
+          }
+        ]
+      },
+      "result": "2028-02-29"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "nextDateForMonthDay",
+        "args": [
+          11,
+          17,
+          {
+            "$date": "2026-11-17T12:00:00"
+          }
+        ]
+      },
+      "result": "2026-11-17"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "nextDateForMonthDay",
+        "args": [
+          11,
+          16,
+          {
+            "$date": "2026-11-17T12:00:00"
+          }
+        ]
+      },
+      "result": "2027-11-16"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "nextDateForMonthDay",
+        "args": [
+          13,
+          5,
+          {
+            "$date": "2026-11-17T12:00:00"
+          }
+        ]
+      },
+      "result": "2026-12-05"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "getToday",
+        "args": []
+      },
+      "result": "2026-11-17"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "getNow",
+        "args": []
+      },
+      "result": "12:00"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "formatPercent",
+        "args": [
+          0.12345
+        ]
+      },
+      "result": "12.3%"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "formatPercent",
+        "args": [
+          0.0025
+        ]
+      },
+      "result": "0.3%"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "formatPercent",
+        "args": [
+          0.00125
+        ]
+      },
+      "result": "0.1%"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "formatPercent",
+        "args": [
+          1
+        ]
+      },
+      "result": "100.0%"
+    },
+    {
+      "op": "fn",
+      "args": {
+        "name": "formatPercent",
+        "args": [
+          0
+        ]
+      },
+      "result": "0.0%"
+    }
+  ],
+  "final": {
+    "salary": [],
+    "expenses": [],
+    "income": [],
+    "loans": [],
+    "creditCards": [],
+    "reminders": [],
+    "accounts": [],
+    "categories": [],
+    "investments": [],
+    "settings": []
+  }
+}

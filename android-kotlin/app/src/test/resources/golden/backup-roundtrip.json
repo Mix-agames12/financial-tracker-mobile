@@ -1,0 +1,331 @@
+{
+  "name": "backup-roundtrip",
+  "description": "Exportar, borrar todo (se conservan los ajustes), importar parcial y hasAnyData",
+  "clock": "2026-11-17T12:00:00",
+  "seed": {
+    "accounts": [
+      {
+        "id": "acc-1",
+        "name": "Ahorros",
+        "bankName": "Banco X",
+        "accountType": "Ahorro",
+        "initialBalance": 100,
+        "referenceNumber": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "income": [
+      {
+        "id": "i-1",
+        "amount": 10,
+        "source": "Extra",
+        "detail": "Extra",
+        "bankAccount": "Ahorros - Banco X",
+        "bankName": "Banco X",
+        "date": "2026-11-01",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "expenses": [
+      {
+        "id": "e-1",
+        "amount": 5,
+        "date": "2026-11-02",
+        "category": "Otros",
+        "detail": "X",
+        "paymentMethod": "Efectivo",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "categories": [
+      {
+        "id": "c-1",
+        "name": "Otros",
+        "type": "expense",
+        "color": "#64748b",
+        "icon": "ellipsis-horizontal"
+      }
+    ],
+    "reminders": [
+      {
+        "id": "r-1",
+        "note": "campo desconocido",
+        "when": 123
+      }
+    ],
+    "settings": [
+      {
+        "id": "default",
+        "appName": "Backup",
+        "monthlyGoal": 0,
+        "theme": "dark",
+        "currency": "USD",
+        "currencyLocale": "es-EC",
+        "onboardingCompleted": true
+      }
+    ]
+  },
+  "steps": [
+    {
+      "op": "hasAnyData",
+      "args": {},
+      "result": true
+    },
+    {
+      "op": "exportAllData",
+      "args": {},
+      "result": {
+        "salary": [],
+        "expenses": [
+          {
+            "id": "e-1",
+            "amount": 5,
+            "date": "2026-11-02",
+            "category": "Otros",
+            "detail": "X",
+            "paymentMethod": "Efectivo",
+            "createdAt": "2026-01-01T00:00:00.000Z"
+          }
+        ],
+        "income": [
+          {
+            "id": "i-1",
+            "amount": 10,
+            "source": "Extra",
+            "detail": "Extra",
+            "bankAccount": "Ahorros - Banco X",
+            "bankName": "Banco X",
+            "date": "2026-11-01",
+            "createdAt": "2026-01-01T00:00:00.000Z"
+          }
+        ],
+        "loans": [],
+        "creditCards": [],
+        "reminders": [
+          {
+            "id": "r-1",
+            "note": "campo desconocido",
+            "when": 123
+          }
+        ],
+        "accounts": [
+          {
+            "id": "acc-1",
+            "name": "Ahorros",
+            "bankName": "Banco X",
+            "accountType": "Ahorro",
+            "initialBalance": 100,
+            "referenceNumber": "",
+            "createdAt": "2026-01-01T00:00:00.000Z"
+          }
+        ],
+        "categories": [
+          {
+            "id": "c-1",
+            "name": "Otros",
+            "type": "expense",
+            "color": "#64748b",
+            "icon": "ellipsis-horizontal"
+          }
+        ],
+        "investments": [],
+        "settings": [
+          {
+            "id": "default",
+            "appName": "Backup",
+            "monthlyGoal": 0,
+            "theme": "dark",
+            "currency": "USD",
+            "currencyLocale": "es-EC",
+            "onboardingCompleted": true
+          }
+        ],
+        "_exportDate": "<exportDate>"
+      }
+    },
+    {
+      "op": "clearAllData",
+      "args": {},
+      "result": null
+    },
+    {
+      "op": "hasAnyData",
+      "args": {},
+      "result": false
+    },
+    {
+      "op": "getSettings",
+      "args": {},
+      "result": {
+        "id": "default",
+        "appName": "Backup",
+        "monthlyGoal": 0,
+        "theme": "dark",
+        "currency": "USD",
+        "currencyLocale": "es-EC",
+        "onboardingCompleted": true
+      }
+    },
+    {
+      "op": "importAllData",
+      "args": {
+        "data": {
+          "_exportDate": "2026-11-01T00:00:00.000Z",
+          "accounts": [
+            {
+              "id": "acc-9",
+              "name": "Nueva",
+              "bankName": "Banco N",
+              "accountType": "Ahorro",
+              "initialBalance": 1,
+              "referenceNumber": "",
+              "createdAt": "2026-01-01T00:00:00.000Z"
+            }
+          ],
+          "expenses": "no-es-un-arreglo",
+          "loans": [
+            {
+              "id": "l-9",
+              "name": "Importado",
+              "totalAmount": 100,
+              "installments": 2,
+              "paidInstallments": 0,
+              "monthlyQuota": 50,
+              "interestRate": 0,
+              "status": "active",
+              "createdAt": "2026-01-01T00:00:00.000Z"
+            }
+          ],
+          "settings": [
+            {
+              "id": "default",
+              "appName": "Importado",
+              "monthlyGoal": 0,
+              "theme": "dark",
+              "currency": "COP",
+              "currencyLocale": "es-CO",
+              "onboardingCompleted": true
+            }
+          ],
+          "desconocida": [
+            {
+              "id": "x"
+            }
+          ]
+        }
+      },
+      "result": null
+    },
+    {
+      "op": "hasAnyData",
+      "args": {},
+      "result": true
+    },
+    {
+      "op": "getSettings",
+      "args": {},
+      "result": {
+        "id": "default",
+        "appName": "Importado",
+        "monthlyGoal": 0,
+        "theme": "dark",
+        "currency": "COP",
+        "currencyLocale": "es-CO",
+        "onboardingCompleted": true
+      }
+    },
+    {
+      "op": "exportAllData",
+      "args": {},
+      "result": {
+        "salary": [],
+        "expenses": [],
+        "income": [],
+        "loans": [
+          {
+            "id": "gen-1",
+            "name": "Importado",
+            "totalAmount": 100,
+            "installments": 2,
+            "paidInstallments": 0,
+            "monthlyQuota": 50,
+            "interestRate": 0,
+            "status": "active",
+            "createdAt": "2026-01-01T00:00:00.000Z"
+          }
+        ],
+        "creditCards": [],
+        "reminders": [],
+        "accounts": [
+          {
+            "id": "gen-2",
+            "name": "Nueva",
+            "bankName": "Banco N",
+            "accountType": "Ahorro",
+            "initialBalance": 1,
+            "referenceNumber": "",
+            "createdAt": "2026-01-01T00:00:00.000Z"
+          }
+        ],
+        "categories": [],
+        "investments": [],
+        "settings": [
+          {
+            "id": "default",
+            "appName": "Importado",
+            "monthlyGoal": 0,
+            "theme": "dark",
+            "currency": "COP",
+            "currencyLocale": "es-CO",
+            "onboardingCompleted": true
+          }
+        ],
+        "_exportDate": "<exportDate>"
+      }
+    }
+  ],
+  "final": {
+    "salary": [],
+    "expenses": [],
+    "income": [],
+    "loans": [
+      {
+        "id": "gen-1",
+        "name": "Importado",
+        "totalAmount": 100,
+        "installments": 2,
+        "paidInstallments": 0,
+        "monthlyQuota": 50,
+        "interestRate": 0,
+        "status": "active",
+        "createdAt": "<createdAt>"
+      }
+    ],
+    "creditCards": [],
+    "reminders": [],
+    "accounts": [
+      {
+        "id": "gen-2",
+        "name": "Nueva",
+        "bankName": "Banco N",
+        "accountType": "Ahorro",
+        "initialBalance": 1,
+        "referenceNumber": "",
+        "createdAt": "<createdAt>"
+      }
+    ],
+    "categories": [],
+    "investments": [],
+    "settings": [
+      {
+        "id": "default",
+        "appName": "Importado",
+        "monthlyGoal": 0,
+        "theme": "dark",
+        "currency": "COP",
+        "currencyLocale": "es-CO",
+        "onboardingCompleted": true
+      }
+    ]
+  }
+}

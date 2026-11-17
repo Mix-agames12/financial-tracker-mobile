@@ -1,0 +1,539 @@
+{
+  "name": "card-flow-deferred",
+  "description": "Compra diferida con impuestos en tarjeta: alta, resumen de ciclo, pago de cuota, edición, validaciones y borrado",
+  "clock": "2026-11-17T12:00:00",
+  "seed": {
+    "accounts": [
+      {
+        "id": "acc-1",
+        "name": "Ahorros",
+        "bankName": "Banco Pichincha",
+        "accountType": "Ahorro",
+        "initialBalance": 1000,
+        "referenceNumber": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "creditCards": [
+      {
+        "id": "card-1",
+        "name": "Visa Oro",
+        "bankName": "Banco X",
+        "cutOffDay": 15,
+        "paymentDueDay": 5,
+        "creditLimit": 5000,
+        "currentBalance": 200,
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "settings": [
+      {
+        "id": "default",
+        "appName": "Mi Dinero",
+        "monthlyGoal": 0,
+        "theme": "dark",
+        "currency": "USD",
+        "currencyLocale": "es-EC",
+        "onboardingCompleted": true
+      }
+    ]
+  },
+  "steps": [
+    {
+      "op": "saveExpense",
+      "args": {
+        "as": "e1",
+        "editingId": null,
+        "taxesConfig": {
+          "enabled": true,
+          "ivaRate": 15,
+          "comisionRate": 2,
+          "isdRate": 5,
+          "applyTo": [
+            "Gastos:Tecnología",
+            "Préstamos",
+            "Inversiones"
+          ]
+        },
+        "form": {
+          "amountStr": "300",
+          "categoryType": "Tecnología",
+          "detail": "Laptop",
+          "paymentMethod": "Crédito",
+          "selectedDebit": "",
+          "selectedCredit": "Visa Oro",
+          "isDeferred": true,
+          "deferredMonths": "3",
+          "dateStr": "2026-11-10",
+          "timeStr": "10:30",
+          "tags": "trabajo, equipo",
+          "isRecurring": false,
+          "recurringFrequency": "monthly",
+          "recurringDay": "",
+          "recurringDate": "",
+          "subscriptionType": ""
+        }
+      },
+      "result": {
+        "saved": true
+      }
+    },
+    {
+      "op": "getCardCycleSummary",
+      "args": {
+        "cardId": "card-1"
+      },
+      "result": {
+        "lastCutOff": "2026-11-15",
+        "nextDueDate": "2026-12-05",
+        "dueAmount": 107.3,
+        "activeDebt": 214.6,
+        "totalPending": 321.9,
+        "available": 4478.1,
+        "hasOverdue": false,
+        "purchases": [
+          {
+            "loanId": "gen-3",
+            "expenseId": "gen-1",
+            "title": "Laptop",
+            "pending": 321.9,
+            "isPaid": false
+          }
+        ]
+      }
+    },
+    {
+      "op": "loanDerived",
+      "args": {
+        "loanOfExpense": "$e1"
+      },
+      "result": {
+        "outstanding": 321.9,
+        "remainingDebt": 321.9
+      }
+    },
+    {
+      "op": "payInstallment",
+      "args": {
+        "loanOfExpense": "$e1",
+        "paymentAccount": "Ahorros",
+        "taxesConfig": {
+          "enabled": true,
+          "ivaRate": 15,
+          "comisionRate": 2,
+          "isdRate": 5,
+          "applyTo": [
+            "Gastos:Tecnología",
+            "Préstamos",
+            "Inversiones"
+          ]
+        }
+      },
+      "result": {
+        "alert": [
+          "Éxito",
+          "Cuota de $107,30 descontada del balance general y del saldo de la tarjeta"
+        ]
+      }
+    },
+    {
+      "op": "getCardCycleSummary",
+      "args": {
+        "cardId": "card-1"
+      },
+      "result": {
+        "lastCutOff": "2026-11-15",
+        "nextDueDate": "2026-12-05",
+        "dueAmount": 0,
+        "activeDebt": 214.6,
+        "totalPending": 214.6,
+        "available": 4585.4,
+        "hasOverdue": false,
+        "purchases": [
+          {
+            "loanId": "gen-3",
+            "expenseId": "gen-1",
+            "title": "Laptop",
+            "pending": 214.6,
+            "isPaid": false
+          }
+        ]
+      }
+    },
+    {
+      "op": "loanDerived",
+      "args": {
+        "loanOfExpense": "$e1"
+      },
+      "result": {
+        "outstanding": 214.6,
+        "remainingDebt": 214.6
+      }
+    },
+    {
+      "op": "saveExpense",
+      "args": {
+        "editingId": "$e1",
+        "taxesConfig": {
+          "enabled": true,
+          "ivaRate": 15,
+          "comisionRate": 2,
+          "isdRate": 5,
+          "applyTo": [
+            "Gastos:Tecnología",
+            "Préstamos",
+            "Inversiones"
+          ]
+        },
+        "form": {
+          "amountStr": "420",
+          "categoryType": "Tecnología",
+          "detail": "Laptop gamer",
+          "paymentMethod": "Crédito",
+          "selectedDebit": "",
+          "selectedCredit": "Visa Oro",
+          "isDeferred": true,
+          "deferredMonths": "4",
+          "dateStr": "2026-11-10",
+          "timeStr": "10:30",
+          "tags": "trabajo",
+          "isRecurring": false,
+          "recurringFrequency": "monthly",
+          "recurringDay": "",
+          "recurringDate": "",
+          "subscriptionType": ""
+        }
+      },
+      "result": {
+        "saved": true
+      }
+    },
+    {
+      "op": "getCardCycleSummary",
+      "args": {
+        "cardId": "card-1"
+      },
+      "result": {
+        "lastCutOff": "2026-11-15",
+        "nextDueDate": "2026-12-05",
+        "dueAmount": 0,
+        "activeDebt": 334.59,
+        "totalPending": 334.59,
+        "available": 4465.4,
+        "hasOverdue": false,
+        "purchases": [
+          {
+            "loanId": "gen-3",
+            "expenseId": "gen-1",
+            "title": "Laptop gamer",
+            "pending": 334.59,
+            "isPaid": false
+          }
+        ]
+      }
+    },
+    {
+      "op": "getTotalBalance",
+      "args": {},
+      "result": {
+        "totalIncome": 0,
+        "totalExpenses": 557.03,
+        "balance": 442.97,
+        "salaryAmount": 0,
+        "extraIncome": 0
+      }
+    },
+    {
+      "op": "getAccountBalances",
+      "args": {},
+      "result": {
+        "acc-1": 884.87
+      }
+    },
+    {
+      "op": "saveExpense",
+      "args": {
+        "editingId": null,
+        "taxesConfig": {
+          "enabled": true,
+          "ivaRate": 15,
+          "comisionRate": 2,
+          "isdRate": 5,
+          "applyTo": [
+            "Gastos:Tecnología",
+            "Préstamos",
+            "Inversiones"
+          ]
+        },
+        "form": {
+          "amountStr": "9000",
+          "categoryType": "Tecnología",
+          "detail": "Carro",
+          "paymentMethod": "Crédito",
+          "selectedDebit": "",
+          "selectedCredit": "Visa Oro",
+          "isDeferred": false,
+          "deferredMonths": "",
+          "dateStr": "2026-11-17",
+          "timeStr": "12:00",
+          "tags": "",
+          "isRecurring": false,
+          "recurringFrequency": "monthly",
+          "recurringDay": "",
+          "recurringDate": "",
+          "subscriptionType": ""
+        }
+      },
+      "result": {
+        "alert": [
+          "Cupo excedido",
+          "El gasto supera el límite. Disponible estimado: $4.465,40"
+        ]
+      }
+    },
+    {
+      "op": "saveExpense",
+      "args": {
+        "editingId": null,
+        "taxesConfig": {
+          "enabled": true,
+          "ivaRate": 15,
+          "comisionRate": 2,
+          "isdRate": 5,
+          "applyTo": [
+            "Gastos:Tecnología",
+            "Préstamos",
+            "Inversiones"
+          ]
+        },
+        "form": {
+          "amountStr": "5000",
+          "categoryType": "Alimentación",
+          "detail": "Banquete",
+          "paymentMethod": "Débito",
+          "selectedDebit": "Ahorros",
+          "selectedCredit": "",
+          "isDeferred": false,
+          "deferredMonths": "",
+          "dateStr": "2026-11-17",
+          "timeStr": "12:00",
+          "tags": "",
+          "isRecurring": false,
+          "recurringFrequency": "monthly",
+          "recurringDay": "",
+          "recurringDate": "",
+          "subscriptionType": ""
+        }
+      },
+      "result": {
+        "alert": [
+          "Saldo Insuficiente",
+          "La cuenta Ahorros no tiene fondos suficientes. Disponible estimado: $884,87"
+        ]
+      }
+    },
+    {
+      "op": "saveExpense",
+      "args": {
+        "editingId": null,
+        "taxesConfig": null,
+        "form": {
+          "amountStr": "0",
+          "categoryType": "Alimentación",
+          "detail": "Compra",
+          "paymentMethod": "Efectivo",
+          "selectedDebit": "",
+          "selectedCredit": "",
+          "isDeferred": false,
+          "deferredMonths": "",
+          "dateStr": "2026-11-17",
+          "timeStr": "12:00",
+          "tags": "",
+          "isRecurring": false,
+          "recurringFrequency": "monthly",
+          "recurringDay": "",
+          "recurringDate": "",
+          "subscriptionType": ""
+        }
+      },
+      "result": {
+        "alert": [
+          "Error",
+          "Ingresa un monto válido"
+        ]
+      }
+    },
+    {
+      "op": "saveExpense",
+      "args": {
+        "editingId": null,
+        "taxesConfig": null,
+        "form": {
+          "amountStr": "100",
+          "categoryType": "",
+          "detail": "Compra",
+          "paymentMethod": "Efectivo",
+          "selectedDebit": "",
+          "selectedCredit": "",
+          "isDeferred": false,
+          "deferredMonths": "",
+          "dateStr": "2026-11-17",
+          "timeStr": "12:00",
+          "tags": "",
+          "isRecurring": false,
+          "recurringFrequency": "monthly",
+          "recurringDay": "",
+          "recurringDate": "",
+          "subscriptionType": ""
+        }
+      },
+      "result": {
+        "alert": [
+          "Error",
+          "Selecciona una categoría"
+        ]
+      }
+    },
+    {
+      "op": "saveExpense",
+      "args": {
+        "editingId": null,
+        "taxesConfig": null,
+        "form": {
+          "amountStr": "100",
+          "categoryType": "Alimentación",
+          "detail": "   ",
+          "paymentMethod": "Efectivo",
+          "selectedDebit": "",
+          "selectedCredit": "",
+          "isDeferred": false,
+          "deferredMonths": "",
+          "dateStr": "2026-11-17",
+          "timeStr": "12:00",
+          "tags": "",
+          "isRecurring": false,
+          "recurringFrequency": "monthly",
+          "recurringDay": "",
+          "recurringDate": "",
+          "subscriptionType": ""
+        }
+      },
+      "result": {
+        "alert": [
+          "Error",
+          "Ingresa el detalle del gasto"
+        ]
+      }
+    },
+    {
+      "op": "deleteExpenseWithCardSync",
+      "args": {
+        "expenseId": "$e1"
+      },
+      "result": null
+    },
+    {
+      "op": "getCardCycleSummary",
+      "args": {
+        "cardId": "card-1"
+      },
+      "result": {
+        "lastCutOff": "2026-11-15",
+        "nextDueDate": "2026-12-05",
+        "dueAmount": 0,
+        "activeDebt": 0,
+        "totalPending": 0,
+        "available": 4800,
+        "hasOverdue": false,
+        "purchases": []
+      }
+    },
+    {
+      "op": "getTotalBalance",
+      "args": {},
+      "result": {
+        "totalIncome": 0,
+        "totalExpenses": 115.13,
+        "balance": 884.87,
+        "salaryAmount": 0,
+        "extraIncome": 0
+      }
+    }
+  ],
+  "final": {
+    "salary": [],
+    "expenses": [
+      {
+        "amount": 107.3,
+        "category": "Préstamo",
+        "detail": "Cuota 1/3 — Diferido: Laptop",
+        "accountName": "Ahorros",
+        "paymentMethod": "Débito",
+        "date": "2026-11-17",
+        "isLoanPayment": true,
+        "loanId": "gen-3",
+        "time": "12:00",
+        "tags": [
+          "préstamo",
+          "cuota"
+        ],
+        "id": "gen-4",
+        "createdAt": "<createdAt>"
+      },
+      {
+        "amount": 7.83,
+        "category": "Otros",
+        "detail": "Cuota 1/3 (Retenciones) — Diferido: Laptop",
+        "accountName": "Ahorros",
+        "paymentMethod": "Débito",
+        "date": "2026-11-17",
+        "time": "12:00",
+        "tags": [
+          "impuestos",
+          "préstamo"
+        ],
+        "id": "gen-5",
+        "createdAt": "<createdAt>"
+      }
+    ],
+    "income": [],
+    "loans": [],
+    "creditCards": [
+      {
+        "id": "card-1",
+        "name": "Visa Oro",
+        "bankName": "Banco X",
+        "cutOffDay": 15,
+        "paymentDueDay": 5,
+        "creditLimit": 5000,
+        "currentBalance": 200,
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "reminders": [],
+    "accounts": [
+      {
+        "id": "acc-1",
+        "name": "Ahorros",
+        "bankName": "Banco Pichincha",
+        "accountType": "Ahorro",
+        "initialBalance": 1000,
+        "referenceNumber": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "categories": [],
+    "investments": [],
+    "settings": [
+      {
+        "id": "default",
+        "appName": "Mi Dinero",
+        "monthlyGoal": 0,
+        "theme": "dark",
+        "currency": "USD",
+        "currencyLocale": "es-EC",
+        "onboardingCompleted": true
+      }
+    ]
+  }
+}

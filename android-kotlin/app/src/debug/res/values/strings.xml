@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Distingue el build debug de la app React Native cuando conviven en el mismo teléfono. -->
+    <string name="app_name">tracker-rn-temp (Kotlin)</string>
+</resources>

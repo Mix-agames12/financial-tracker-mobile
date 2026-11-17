@@ -1,0 +1,5 @@
+# El wrapper de Gradle debe conservar sus finales de línea en cualquier sistema:
+# gradlew (shell) con LF y gradlew.bat con CRLF.
+gradlew text eol=lf
+gradlew.bat text eol=crlf
+*.jar binary

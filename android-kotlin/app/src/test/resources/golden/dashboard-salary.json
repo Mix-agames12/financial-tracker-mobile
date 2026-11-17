@@ -1,0 +1,711 @@
+{
+  "name": "dashboard-salary",
+  "description": "Aviso de día de sueldo según tipo de pago, mes y posposición; deuda activa y últimas transacciones",
+  "clock": "2026-11-17T12:00:00",
+  "seed": {
+    "accounts": [
+      {
+        "id": "acc-1",
+        "name": "Ahorros",
+        "bankName": "Banco X",
+        "accountType": "Ahorro",
+        "initialBalance": 100,
+        "referenceNumber": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "salary": [
+      {
+        "id": "salary-1",
+        "amount": 1200,
+        "payDateType": "specific",
+        "payDate": "15",
+        "recurrence": "Mensual",
+        "bankAccount": "Ahorros",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "loans": [
+      {
+        "id": "l-1",
+        "name": "A",
+        "totalAmount": 1000,
+        "installments": 10,
+        "paidInstallments": 2,
+        "monthlyQuota": 100,
+        "interestRate": 0,
+        "status": "active",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "l-2",
+        "name": "B",
+        "totalAmount": 100,
+        "installments": 2,
+        "paidInstallments": 2,
+        "monthlyQuota": 50,
+        "interestRate": 0,
+        "status": "paid",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "l-3",
+        "name": "C",
+        "totalAmount": 300,
+        "installments": 3,
+        "paidInstallments": 0,
+        "monthlyQuota": 100,
+        "interestRate": 0,
+        "status": "active",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "expenses": [
+      {
+        "id": "e-1",
+        "amount": 10,
+        "date": "2026-11-17",
+        "category": "Otros",
+        "detail": "Con hora",
+        "paymentMethod": "Efectivo",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "time": "08:00"
+      },
+      {
+        "id": "e-2",
+        "amount": 20,
+        "date": "2026-11-17",
+        "category": "Otros",
+        "detail": "Sin hora",
+        "paymentMethod": "Efectivo",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "e-3",
+        "amount": 5,
+        "date": "2026-11-16",
+        "category": "Otros",
+        "detail": "Ayer",
+        "paymentMethod": "Efectivo",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "time": "23:00"
+      }
+    ],
+    "income": [
+      {
+        "id": "i-1",
+        "amount": 100,
+        "source": "Extra",
+        "detail": "Extra",
+        "bankAccount": "Ahorros - Banco X",
+        "bankName": "Banco X",
+        "date": "2026-11-17",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "settings": [
+      {
+        "id": "default",
+        "appName": "Mi Dinero",
+        "monthlyGoal": 0,
+        "theme": "dark",
+        "currency": "USD",
+        "currencyLocale": "es-EC",
+        "onboardingCompleted": true
+      }
+    ]
+  },
+  "steps": [
+    {
+      "op": "setClock",
+      "args": {
+        "at": "2026-11-10T12:00:00"
+      },
+      "result": null
+    },
+    {
+      "op": "dashboard",
+      "args": {},
+      "result": {
+        "totalLoanDebt": 1100,
+        "recentTx": [
+          {
+            "id": "i-1",
+            "txType": "income",
+            "sortKey": "2026-11-17T23:59:59"
+          },
+          {
+            "id": "e-1",
+            "txType": "expense",
+            "sortKey": "2026-11-17T08:00"
+          },
+          {
+            "id": "e-2",
+            "txType": "expense",
+            "sortKey": "2026-11-17T00:00:00"
+          },
+          {
+            "id": "e-3",
+            "txType": "expense",
+            "sortKey": "2026-11-16T23:00"
+          }
+        ],
+        "salaryPrompt": null
+      }
+    },
+    {
+      "op": "setClock",
+      "args": {
+        "at": "2026-11-17T12:00:00"
+      },
+      "result": null
+    },
+    {
+      "op": "dashboard",
+      "args": {},
+      "result": {
+        "totalLoanDebt": 1100,
+        "recentTx": [
+          {
+            "id": "i-1",
+            "txType": "income",
+            "sortKey": "2026-11-17T23:59:59"
+          },
+          {
+            "id": "e-1",
+            "txType": "expense",
+            "sortKey": "2026-11-17T08:00"
+          },
+          {
+            "id": "e-2",
+            "txType": "expense",
+            "sortKey": "2026-11-17T00:00:00"
+          },
+          {
+            "id": "e-3",
+            "txType": "expense",
+            "sortKey": "2026-11-16T23:00"
+          }
+        ],
+        "salaryPrompt": {
+          "amount": 1200,
+          "account": "Ahorros",
+          "configId": "salary-1"
+        }
+      }
+    },
+    {
+      "op": "saveSettings",
+      "args": {
+        "patch": {
+          "salaryPromptPostponedUntil": 1795021200000
+        }
+      },
+      "result": null
+    },
+    {
+      "op": "dashboard",
+      "args": {},
+      "result": {
+        "totalLoanDebt": 1100,
+        "recentTx": [
+          {
+            "id": "i-1",
+            "txType": "income",
+            "sortKey": "2026-11-17T23:59:59"
+          },
+          {
+            "id": "e-1",
+            "txType": "expense",
+            "sortKey": "2026-11-17T08:00"
+          },
+          {
+            "id": "e-2",
+            "txType": "expense",
+            "sortKey": "2026-11-17T00:00:00"
+          },
+          {
+            "id": "e-3",
+            "txType": "expense",
+            "sortKey": "2026-11-16T23:00"
+          }
+        ],
+        "salaryPrompt": null
+      }
+    },
+    {
+      "op": "saveSettings",
+      "args": {
+        "patch": {
+          "salaryPromptPostponedUntil": 1794800000000
+        }
+      },
+      "result": null
+    },
+    {
+      "op": "dashboard",
+      "args": {},
+      "result": {
+        "totalLoanDebt": 1100,
+        "recentTx": [
+          {
+            "id": "i-1",
+            "txType": "income",
+            "sortKey": "2026-11-17T23:59:59"
+          },
+          {
+            "id": "e-1",
+            "txType": "expense",
+            "sortKey": "2026-11-17T08:00"
+          },
+          {
+            "id": "e-2",
+            "txType": "expense",
+            "sortKey": "2026-11-17T00:00:00"
+          },
+          {
+            "id": "e-3",
+            "txType": "expense",
+            "sortKey": "2026-11-16T23:00"
+          }
+        ],
+        "salaryPrompt": {
+          "amount": 1200,
+          "account": "Ahorros",
+          "configId": "salary-1"
+        }
+      }
+    },
+    {
+      "op": "addIncome",
+      "args": {
+        "payload": {
+          "amount": 1200,
+          "source": "Sueldo (Automático)",
+          "detail": "Acreditación confirmada desde notificador de fecha de cobro",
+          "bankAccount": "Ahorros",
+          "bankName": "Ahorros",
+          "date": "2026-11-17",
+          "isSalary": true
+        }
+      },
+      "result": null
+    },
+    {
+      "op": "dashboard",
+      "args": {},
+      "result": {
+        "totalLoanDebt": 1100,
+        "recentTx": [
+          {
+            "id": "i-1",
+            "txType": "income",
+            "sortKey": "2026-11-17T23:59:59"
+          },
+          {
+            "id": "gen-1",
+            "txType": "income",
+            "sortKey": "2026-11-17T23:59:59"
+          },
+          {
+            "id": "e-1",
+            "txType": "expense",
+            "sortKey": "2026-11-17T08:00"
+          },
+          {
+            "id": "e-2",
+            "txType": "expense",
+            "sortKey": "2026-11-17T00:00:00"
+          },
+          {
+            "id": "e-3",
+            "txType": "expense",
+            "sortKey": "2026-11-16T23:00"
+          }
+        ],
+        "salaryPrompt": null
+      }
+    },
+    {
+      "op": "saveSalary",
+      "args": {
+        "data": {
+          "id": "salary-1",
+          "amount": 1200,
+          "payDateType": "last",
+          "payDate": "",
+          "recurrence": "Mensual",
+          "bankAccount": ""
+        }
+      },
+      "result": null
+    },
+    {
+      "op": "setClock",
+      "args": {
+        "at": "2027-02-27T12:00:00"
+      },
+      "result": null
+    },
+    {
+      "op": "dashboard",
+      "args": {},
+      "result": {
+        "totalLoanDebt": 1100,
+        "recentTx": [
+          {
+            "id": "i-1",
+            "txType": "income",
+            "sortKey": "2026-11-17T23:59:59"
+          },
+          {
+            "id": "gen-1",
+            "txType": "income",
+            "sortKey": "2026-11-17T23:59:59"
+          },
+          {
+            "id": "e-1",
+            "txType": "expense",
+            "sortKey": "2026-11-17T08:00"
+          },
+          {
+            "id": "e-2",
+            "txType": "expense",
+            "sortKey": "2026-11-17T00:00:00"
+          },
+          {
+            "id": "e-3",
+            "txType": "expense",
+            "sortKey": "2026-11-16T23:00"
+          }
+        ],
+        "salaryPrompt": null
+      }
+    },
+    {
+      "op": "setClock",
+      "args": {
+        "at": "2027-02-28T12:00:00"
+      },
+      "result": null
+    },
+    {
+      "op": "dashboard",
+      "args": {},
+      "result": {
+        "totalLoanDebt": 1100,
+        "recentTx": [
+          {
+            "id": "i-1",
+            "txType": "income",
+            "sortKey": "2026-11-17T23:59:59"
+          },
+          {
+            "id": "gen-1",
+            "txType": "income",
+            "sortKey": "2026-11-17T23:59:59"
+          },
+          {
+            "id": "e-1",
+            "txType": "expense",
+            "sortKey": "2026-11-17T08:00"
+          },
+          {
+            "id": "e-2",
+            "txType": "expense",
+            "sortKey": "2026-11-17T00:00:00"
+          },
+          {
+            "id": "e-3",
+            "txType": "expense",
+            "sortKey": "2026-11-16T23:00"
+          }
+        ],
+        "salaryPrompt": {
+          "amount": 1200,
+          "account": "Efectivo",
+          "configId": "salary-1"
+        }
+      }
+    },
+    {
+      "op": "saveSalary",
+      "args": {
+        "data": {
+          "id": "salary-1",
+          "amount": 1200,
+          "payDateType": "specific",
+          "payDate": "31",
+          "recurrence": "Mensual",
+          "bankAccount": "Ahorros"
+        }
+      },
+      "result": null
+    },
+    {
+      "op": "dashboard",
+      "args": {},
+      "result": {
+        "totalLoanDebt": 1100,
+        "recentTx": [
+          {
+            "id": "i-1",
+            "txType": "income",
+            "sortKey": "2026-11-17T23:59:59"
+          },
+          {
+            "id": "gen-1",
+            "txType": "income",
+            "sortKey": "2026-11-17T23:59:59"
+          },
+          {
+            "id": "e-1",
+            "txType": "expense",
+            "sortKey": "2026-11-17T08:00"
+          },
+          {
+            "id": "e-2",
+            "txType": "expense",
+            "sortKey": "2026-11-17T00:00:00"
+          },
+          {
+            "id": "e-3",
+            "txType": "expense",
+            "sortKey": "2026-11-16T23:00"
+          }
+        ],
+        "salaryPrompt": {
+          "amount": 1200,
+          "account": "Ahorros",
+          "configId": "salary-1"
+        }
+      }
+    },
+    {
+      "op": "saveSalary",
+      "args": {
+        "data": {
+          "id": "salary-1",
+          "amount": 1200,
+          "payDateType": "specific",
+          "payDate": "",
+          "recurrence": "Mensual",
+          "bankAccount": "Ahorros"
+        }
+      },
+      "result": null
+    },
+    {
+      "op": "dashboard",
+      "args": {},
+      "result": {
+        "totalLoanDebt": 1100,
+        "recentTx": [
+          {
+            "id": "i-1",
+            "txType": "income",
+            "sortKey": "2026-11-17T23:59:59"
+          },
+          {
+            "id": "gen-1",
+            "txType": "income",
+            "sortKey": "2026-11-17T23:59:59"
+          },
+          {
+            "id": "e-1",
+            "txType": "expense",
+            "sortKey": "2026-11-17T08:00"
+          },
+          {
+            "id": "e-2",
+            "txType": "expense",
+            "sortKey": "2026-11-17T00:00:00"
+          },
+          {
+            "id": "e-3",
+            "txType": "expense",
+            "sortKey": "2026-11-16T23:00"
+          }
+        ],
+        "salaryPrompt": {
+          "amount": 1200,
+          "account": "Ahorros",
+          "configId": "salary-1"
+        }
+      }
+    },
+    {
+      "op": "saveSettings",
+      "args": {
+        "patch": {
+          "onboardingCompleted": false
+        }
+      },
+      "result": null
+    },
+    {
+      "op": "dashboard",
+      "args": {},
+      "result": {
+        "totalLoanDebt": 1100,
+        "recentTx": [
+          {
+            "id": "i-1",
+            "txType": "income",
+            "sortKey": "2026-11-17T23:59:59"
+          },
+          {
+            "id": "gen-1",
+            "txType": "income",
+            "sortKey": "2026-11-17T23:59:59"
+          },
+          {
+            "id": "e-1",
+            "txType": "expense",
+            "sortKey": "2026-11-17T08:00"
+          },
+          {
+            "id": "e-2",
+            "txType": "expense",
+            "sortKey": "2026-11-17T00:00:00"
+          },
+          {
+            "id": "e-3",
+            "txType": "expense",
+            "sortKey": "2026-11-16T23:00"
+          }
+        ],
+        "salaryPrompt": null
+      }
+    }
+  ],
+  "final": {
+    "salary": [
+      {
+        "id": "salary-1",
+        "amount": 1200,
+        "payDateType": "specific",
+        "payDate": "",
+        "recurrence": "Mensual",
+        "bankAccount": "Ahorros",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "expenses": [
+      {
+        "id": "e-1",
+        "amount": 10,
+        "date": "2026-11-17",
+        "category": "Otros",
+        "detail": "Con hora",
+        "paymentMethod": "Efectivo",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "time": "08:00"
+      },
+      {
+        "id": "e-2",
+        "amount": 20,
+        "date": "2026-11-17",
+        "category": "Otros",
+        "detail": "Sin hora",
+        "paymentMethod": "Efectivo",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "e-3",
+        "amount": 5,
+        "date": "2026-11-16",
+        "category": "Otros",
+        "detail": "Ayer",
+        "paymentMethod": "Efectivo",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "time": "23:00"
+      }
+    ],
+    "income": [
+      {
+        "id": "i-1",
+        "amount": 100,
+        "source": "Extra",
+        "detail": "Extra",
+        "bankAccount": "Ahorros - Banco X",
+        "bankName": "Banco X",
+        "date": "2026-11-17",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "amount": 1200,
+        "source": "Sueldo (Automático)",
+        "detail": "Acreditación confirmada desde notificador de fecha de cobro",
+        "bankAccount": "Ahorros",
+        "bankName": "Ahorros",
+        "date": "2026-11-17",
+        "isSalary": true,
+        "id": "gen-1",
+        "createdAt": "<createdAt>"
+      }
+    ],
+    "loans": [
+      {
+        "id": "l-1",
+        "name": "A",
+        "totalAmount": 1000,
+        "installments": 10,
+        "paidInstallments": 2,
+        "monthlyQuota": 100,
+        "interestRate": 0,
+        "status": "active",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "l-2",
+        "name": "B",
+        "totalAmount": 100,
+        "installments": 2,
+        "paidInstallments": 2,
+        "monthlyQuota": 50,
+        "interestRate": 0,
+        "status": "paid",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "l-3",
+        "name": "C",
+        "totalAmount": 300,
+        "installments": 3,
+        "paidInstallments": 0,
+        "monthlyQuota": 100,
+        "interestRate": 0,
+        "status": "active",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "creditCards": [],
+    "reminders": [],
+    "accounts": [
+      {
+        "id": "acc-1",
+        "name": "Ahorros",
+        "bankName": "Banco X",
+        "accountType": "Ahorro",
+        "initialBalance": 100,
+        "referenceNumber": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "categories": [],
+    "investments": [],
+    "settings": [
+      {
+        "id": "default",
+        "appName": "Mi Dinero",
+        "monthlyGoal": 0,
+        "theme": "dark",
+        "currency": "USD",
+        "currencyLocale": "es-EC",
+        "onboardingCompleted": false,
+        "salaryPromptPostponedUntil": 1794800000000
+      }
+    ]
+  }
+}
