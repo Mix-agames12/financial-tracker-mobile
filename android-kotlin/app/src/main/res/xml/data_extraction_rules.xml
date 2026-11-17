@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+: igual que backup_rules.xml (copia en la nube y transferencia entre dispositivos). -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="file" path="documents/" />
+        <exclude domain="cache" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="file" path="documents/" />
+        <exclude domain="cache" />
+    </device-transfer>
+</data-extraction-rules>

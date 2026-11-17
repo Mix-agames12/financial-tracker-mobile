@@ -1,0 +1,601 @@
+{
+  "name": "loans-and-cards-forms",
+  "description": "Alta/edición/borrado de préstamos (incluidos los vinculados a tarjeta) y validaciones de tarjetas",
+  "clock": "2026-11-17T12:00:00",
+  "seed": {
+    "accounts": [
+      {
+        "id": "acc-1",
+        "name": "Ahorros",
+        "bankName": "Banco X",
+        "accountType": "Ahorro",
+        "initialBalance": 20000,
+        "referenceNumber": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "creditCards": [
+      {
+        "id": "card-1",
+        "name": "Visa Oro",
+        "bankName": "Banco X",
+        "cutOffDay": 15,
+        "paymentDueDay": 5,
+        "creditLimit": 5000,
+        "currentBalance": 800,
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "loans": [
+      {
+        "id": "l-card",
+        "name": "TC Visa Oro: Compra",
+        "totalAmount": 800,
+        "installments": 4,
+        "paidInstallments": 1,
+        "monthlyQuota": 200,
+        "interestRate": 0,
+        "status": "active",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "cardId": "card-1",
+        "sourceExpenseId": "e-1",
+        "cardOutstanding": 600,
+        "nextPaymentDate": "2026-12-05"
+      }
+    ],
+    "expenses": [
+      {
+        "id": "e-1",
+        "amount": 800,
+        "date": "2026-10-20",
+        "category": "Tecnología",
+        "detail": "Compra",
+        "paymentMethod": "Crédito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "cardName": "Visa Oro"
+      }
+    ],
+    "settings": [
+      {
+        "id": "default",
+        "appName": "Mi Dinero",
+        "monthlyGoal": 0,
+        "theme": "dark",
+        "currency": "USD",
+        "currencyLocale": "es-EC",
+        "onboardingCompleted": true
+      }
+    ]
+  },
+  "steps": [
+    {
+      "op": "saveLoan",
+      "args": {
+        "as": "l1",
+        "editingLoanId": null,
+        "form": {
+          "name": "Préstamo Auto",
+          "totalAmount": "15000",
+          "interestRate": "10.5",
+          "installments": "24",
+          "paidInstallments": "0",
+          "nextPaymentDate": "2026-12-31"
+        }
+      },
+      "result": {
+        "saved": true
+      }
+    },
+    {
+      "op": "saveLoan",
+      "args": {
+        "editingLoanId": null,
+        "form": {
+          "name": "",
+          "totalAmount": "15000",
+          "interestRate": "",
+          "installments": "24",
+          "paidInstallments": "0",
+          "nextPaymentDate": ""
+        }
+      },
+      "result": {
+        "alert": [
+          "Error",
+          "Completa los campos obligatorios correctamente"
+        ]
+      }
+    },
+    {
+      "op": "saveLoan",
+      "args": {
+        "editingLoanId": null,
+        "form": {
+          "name": "X",
+          "totalAmount": "0",
+          "interestRate": "",
+          "installments": "24",
+          "paidInstallments": "0",
+          "nextPaymentDate": ""
+        }
+      },
+      "result": {
+        "alert": [
+          "Error",
+          "Completa los campos obligatorios correctamente"
+        ]
+      }
+    },
+    {
+      "op": "saveLoan",
+      "args": {
+        "editingLoanId": null,
+        "form": {
+          "name": "X",
+          "totalAmount": "100",
+          "interestRate": "",
+          "installments": "0",
+          "paidInstallments": "0",
+          "nextPaymentDate": ""
+        }
+      },
+      "result": {
+        "alert": [
+          "Error",
+          "Completa los campos obligatorios correctamente"
+        ]
+      }
+    },
+    {
+      "op": "saveLoan",
+      "args": {
+        "editingLoanId": null,
+        "form": {
+          "name": "X",
+          "totalAmount": "100",
+          "interestRate": "",
+          "installments": "4",
+          "paidInstallments": "5",
+          "nextPaymentDate": ""
+        }
+      },
+      "result": {
+        "alert": [
+          "Error",
+          "Las cuotas pagadas no pueden ser negativas ni superan el total de cuotas"
+        ]
+      }
+    },
+    {
+      "op": "saveLoan",
+      "args": {
+        "as": "l2",
+        "editingLoanId": null,
+        "form": {
+          "name": "Pagado",
+          "totalAmount": "100",
+          "interestRate": "0",
+          "installments": "4",
+          "paidInstallments": "4",
+          "nextPaymentDate": ""
+        }
+      },
+      "result": {
+        "saved": true
+      }
+    },
+    {
+      "op": "payInstallment",
+      "args": {
+        "loanId": "$l1",
+        "paymentAccount": "Ahorros",
+        "taxesConfig": {
+          "enabled": true,
+          "ivaRate": 15,
+          "comisionRate": 2,
+          "isdRate": 5,
+          "applyTo": [
+            "Gastos:Tecnología",
+            "Préstamos",
+            "Inversiones"
+          ]
+        }
+      },
+      "result": {
+        "alert": [
+          "Éxito",
+          "Cuota de $690,63 descontada del balance general"
+        ]
+      }
+    },
+    {
+      "op": "payInstallment",
+      "args": {
+        "loanId": "$l1",
+        "paymentAccount": "Ahorros",
+        "taxesConfig": null
+      },
+      "result": {
+        "alert": [
+          "Éxito",
+          "Cuota de $690,63 descontada del balance general"
+        ]
+      }
+    },
+    {
+      "op": "saveLoan",
+      "args": {
+        "editingLoanId": "$l1",
+        "form": {
+          "name": "Préstamo Auto 2",
+          "totalAmount": "15000",
+          "interestRate": "9",
+          "installments": "36",
+          "paidInstallments": "2",
+          "nextPaymentDate": "2027-02-28"
+        }
+      },
+      "result": {
+        "saved": true
+      }
+    },
+    {
+      "op": "saveLoan",
+      "args": {
+        "editingLoanId": "l-card",
+        "form": {
+          "name": "TC Visa Oro: Compra",
+          "totalAmount": "800",
+          "interestRate": "0",
+          "installments": "8",
+          "paidInstallments": "1",
+          "nextPaymentDate": "2026-12-05"
+        }
+      },
+      "result": {
+        "saved": true
+      }
+    },
+    {
+      "op": "getCardCycleSummary",
+      "args": {
+        "cardId": "card-1"
+      },
+      "result": {
+        "lastCutOff": "2026-11-15",
+        "nextDueDate": "2026-12-05",
+        "dueAmount": 100,
+        "activeDebt": 600,
+        "totalPending": 700,
+        "available": 4100,
+        "hasOverdue": false,
+        "purchases": [
+          {
+            "loanId": "l-card",
+            "expenseId": "e-1",
+            "title": "Compra",
+            "pending": 700,
+            "isPaid": false
+          }
+        ]
+      }
+    },
+    {
+      "op": "saveLoan",
+      "args": {
+        "editingLoanId": "l-card",
+        "form": {
+          "name": "TC Visa Oro: Compra",
+          "totalAmount": "800",
+          "interestRate": "0",
+          "installments": "8",
+          "paidInstallments": "8",
+          "nextPaymentDate": ""
+        }
+      },
+      "result": {
+        "saved": true
+      }
+    },
+    {
+      "op": "getCardCycleSummary",
+      "args": {
+        "cardId": "card-1"
+      },
+      "result": {
+        "lastCutOff": "2026-11-15",
+        "nextDueDate": "2026-12-05",
+        "dueAmount": 0,
+        "activeDebt": 0,
+        "totalPending": 0,
+        "available": 4800,
+        "hasOverdue": false,
+        "purchases": [
+          {
+            "loanId": "l-card",
+            "expenseId": "e-1",
+            "title": "Compra",
+            "pending": 0,
+            "isPaid": true
+          }
+        ]
+      }
+    },
+    {
+      "op": "deleteLoan",
+      "args": {
+        "loanId": "l-card"
+      },
+      "result": null
+    },
+    {
+      "op": "deleteLoan",
+      "args": {
+        "loanId": "$l1"
+      },
+      "result": null
+    },
+    {
+      "op": "saveCreditCard",
+      "args": {
+        "as": "c1",
+        "editingCardId": null,
+        "form": {
+          "name": "Nueva",
+          "bankName": "B",
+          "creditLimit": "5000",
+          "available": "3750.50",
+          "cutOffDay": "15",
+          "paymentDay": "5"
+        }
+      },
+      "result": {
+        "saved": true
+      }
+    },
+    {
+      "op": "saveCreditCard",
+      "args": {
+        "editingCardId": null,
+        "form": {
+          "name": "",
+          "bankName": "B",
+          "creditLimit": "5000",
+          "available": "1",
+          "cutOffDay": "",
+          "paymentDay": ""
+        }
+      },
+      "result": {
+        "alert": [
+          "Error",
+          "Nombre y banco son obligatorios"
+        ]
+      }
+    },
+    {
+      "op": "saveCreditCard",
+      "args": {
+        "editingCardId": null,
+        "form": {
+          "name": "N",
+          "bankName": "B",
+          "creditLimit": "0",
+          "available": "1",
+          "cutOffDay": "",
+          "paymentDay": ""
+        }
+      },
+      "result": {
+        "alert": [
+          "Error",
+          "Ingresa el límite de crédito de la tarjeta"
+        ]
+      }
+    },
+    {
+      "op": "saveCreditCard",
+      "args": {
+        "editingCardId": null,
+        "form": {
+          "name": "N",
+          "bankName": "B",
+          "creditLimit": "100",
+          "available": "",
+          "cutOffDay": "",
+          "paymentDay": ""
+        }
+      },
+      "result": {
+        "alert": [
+          "Error",
+          "Ingresa el cupo disponible (0 si ya no te queda cupo)"
+        ]
+      }
+    },
+    {
+      "op": "saveCreditCard",
+      "args": {
+        "editingCardId": null,
+        "form": {
+          "name": "N",
+          "bankName": "B",
+          "creditLimit": "100",
+          "available": "200",
+          "cutOffDay": "",
+          "paymentDay": ""
+        }
+      },
+      "result": {
+        "alert": [
+          "Error",
+          "El cupo disponible no puede ser mayor al límite de crédito"
+        ]
+      }
+    },
+    {
+      "op": "saveCreditCard",
+      "args": {
+        "editingCardId": null,
+        "form": {
+          "name": "N",
+          "bankName": "B",
+          "creditLimit": "100",
+          "available": "50",
+          "cutOffDay": "32",
+          "paymentDay": "5"
+        }
+      },
+      "result": {
+        "alert": [
+          "Error",
+          "Los días de corte y de pago deben estar entre 1 y 31"
+        ]
+      }
+    },
+    {
+      "op": "saveCreditCard",
+      "args": {
+        "editingCardId": "$c1",
+        "form": {
+          "name": "Nueva editada",
+          "bankName": "B2",
+          "creditLimit": "6000",
+          "available": "0",
+          "cutOffDay": "0",
+          "paymentDay": "31"
+        }
+      },
+      "result": {
+        "saved": true
+      }
+    }
+  ],
+  "final": {
+    "salary": [],
+    "expenses": [
+      {
+        "id": "e-1",
+        "amount": 800,
+        "date": "2026-10-20",
+        "category": "Tecnología",
+        "detail": "Compra",
+        "paymentMethod": "Crédito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "cardName": "Visa Oro"
+      },
+      {
+        "amount": 690.63,
+        "category": "Préstamo",
+        "detail": "Cuota 1/24 — Préstamo Auto",
+        "accountName": "Ahorros",
+        "paymentMethod": "Débito",
+        "date": "2026-11-17",
+        "isLoanPayment": true,
+        "loanId": "gen-1",
+        "time": "12:00",
+        "tags": [
+          "préstamo",
+          "cuota"
+        ],
+        "id": "gen-3",
+        "createdAt": "<createdAt>"
+      },
+      {
+        "amount": 50.42,
+        "category": "Otros",
+        "detail": "Cuota 1/24 (Retenciones) — Préstamo Auto",
+        "accountName": "Ahorros",
+        "paymentMethod": "Débito",
+        "date": "2026-11-17",
+        "time": "12:00",
+        "tags": [
+          "impuestos",
+          "préstamo"
+        ],
+        "id": "gen-4",
+        "createdAt": "<createdAt>"
+      },
+      {
+        "amount": 690.63,
+        "category": "Préstamo",
+        "detail": "Cuota 2/24 — Préstamo Auto",
+        "accountName": "Ahorros",
+        "paymentMethod": "Débito",
+        "date": "2026-11-17",
+        "isLoanPayment": true,
+        "loanId": "gen-1",
+        "time": "12:00",
+        "tags": [
+          "préstamo",
+          "cuota"
+        ],
+        "id": "gen-5",
+        "createdAt": "<createdAt>"
+      }
+    ],
+    "income": [],
+    "loans": [
+      {
+        "name": "Pagado",
+        "totalAmount": 100,
+        "interestRate": 0,
+        "installments": 4,
+        "paidInstallments": 4,
+        "monthlyQuota": 25,
+        "totalWithInterest": 100,
+        "nextPaymentDate": "",
+        "status": "paid",
+        "id": "gen-2",
+        "createdAt": "<createdAt>"
+      }
+    ],
+    "creditCards": [
+      {
+        "id": "card-1",
+        "name": "Visa Oro",
+        "bankName": "Banco X",
+        "cutOffDay": 15,
+        "paymentDueDay": 5,
+        "creditLimit": 5000,
+        "currentBalance": 200,
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "name": "Nueva editada",
+        "bankName": "B2",
+        "cutOffDay": 0,
+        "paymentDueDay": 31,
+        "creditLimit": 6000,
+        "currentBalance": 6000,
+        "id": "gen-6",
+        "createdAt": "<createdAt>"
+      }
+    ],
+    "reminders": [],
+    "accounts": [
+      {
+        "id": "acc-1",
+        "name": "Ahorros",
+        "bankName": "Banco X",
+        "accountType": "Ahorro",
+        "initialBalance": 20000,
+        "referenceNumber": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "categories": [],
+    "investments": [],
+    "settings": [
+      {
+        "id": "default",
+        "appName": "Mi Dinero",
+        "monthlyGoal": 0,
+        "theme": "dark",
+        "currency": "USD",
+        "currencyLocale": "es-EC",
+        "onboardingCompleted": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,333 @@
+{
+  "name": "card-single-change-method",
+  "description": "Compra a crédito sin diferir; se cambia de tarjeta, luego a débito y se elimina",
+  "clock": "2026-11-17T12:00:00",
+  "seed": {
+    "accounts": [
+      {
+        "id": "acc-1",
+        "name": "Ahorros",
+        "bankName": "Banco Pichincha",
+        "accountType": "Ahorro",
+        "initialBalance": 2000,
+        "referenceNumber": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "creditCards": [
+      {
+        "id": "card-1",
+        "name": "Visa Oro",
+        "bankName": "Banco X",
+        "cutOffDay": 15,
+        "paymentDueDay": 5,
+        "creditLimit": 3000,
+        "currentBalance": 0,
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "card-2",
+        "name": "Mastercard",
+        "bankName": "Banco Y",
+        "cutOffDay": 28,
+        "paymentDueDay": 12,
+        "creditLimit": 1000,
+        "currentBalance": 100,
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "settings": [
+      {
+        "id": "default",
+        "appName": "Mi Dinero",
+        "monthlyGoal": 0,
+        "theme": "dark",
+        "currency": "USD",
+        "currencyLocale": "es-EC",
+        "onboardingCompleted": true
+      }
+    ]
+  },
+  "steps": [
+    {
+      "op": "saveExpense",
+      "args": {
+        "as": "e1",
+        "editingId": null,
+        "taxesConfig": null,
+        "form": {
+          "amountStr": "120.55",
+          "categoryType": "Ropa",
+          "detail": "Zapatos",
+          "paymentMethod": "Crédito",
+          "selectedDebit": "",
+          "selectedCredit": "Visa Oro",
+          "isDeferred": false,
+          "deferredMonths": "",
+          "dateStr": "2026-11-20",
+          "timeStr": "12:00",
+          "tags": "",
+          "isRecurring": false,
+          "recurringFrequency": "monthly",
+          "recurringDay": "",
+          "recurringDate": "",
+          "subscriptionType": ""
+        }
+      },
+      "result": {
+        "saved": true
+      }
+    },
+    {
+      "op": "getCardCycleSummary",
+      "args": {
+        "cardId": "card-1"
+      },
+      "result": {
+        "lastCutOff": "2026-11-15",
+        "nextDueDate": "2026-12-05",
+        "dueAmount": 0,
+        "activeDebt": 120.55,
+        "totalPending": 120.55,
+        "available": 2879.45,
+        "hasOverdue": false,
+        "purchases": [
+          {
+            "loanId": "gen-2",
+            "expenseId": "gen-1",
+            "title": "Zapatos",
+            "pending": 120.55,
+            "isPaid": false
+          }
+        ]
+      }
+    },
+    {
+      "op": "saveExpense",
+      "args": {
+        "editingId": "$e1",
+        "taxesConfig": null,
+        "form": {
+          "amountStr": "120.55",
+          "categoryType": "Ropa",
+          "detail": "Zapatos",
+          "paymentMethod": "Crédito",
+          "selectedDebit": "",
+          "selectedCredit": "Mastercard",
+          "isDeferred": false,
+          "deferredMonths": "",
+          "dateStr": "2026-11-20",
+          "timeStr": "12:00",
+          "tags": "",
+          "isRecurring": false,
+          "recurringFrequency": "monthly",
+          "recurringDay": "",
+          "recurringDate": "",
+          "subscriptionType": ""
+        }
+      },
+      "result": {
+        "saved": true
+      }
+    },
+    {
+      "op": "getCardCycleSummary",
+      "args": {
+        "cardId": "card-1"
+      },
+      "result": {
+        "lastCutOff": "2026-11-15",
+        "nextDueDate": "2026-12-05",
+        "dueAmount": 0,
+        "activeDebt": 0,
+        "totalPending": 0,
+        "available": 3000,
+        "hasOverdue": false,
+        "purchases": []
+      }
+    },
+    {
+      "op": "getCardCycleSummary",
+      "args": {
+        "cardId": "card-2"
+      },
+      "result": {
+        "lastCutOff": "2026-10-28",
+        "nextDueDate": "2026-12-12",
+        "dueAmount": 120.55,
+        "activeDebt": 0,
+        "totalPending": 120.55,
+        "available": 779.45,
+        "hasOverdue": false,
+        "purchases": [
+          {
+            "loanId": "gen-3",
+            "expenseId": "gen-1",
+            "title": "Zapatos",
+            "pending": 120.55,
+            "isPaid": false
+          }
+        ]
+      }
+    },
+    {
+      "op": "saveExpense",
+      "args": {
+        "editingId": "$e1",
+        "taxesConfig": null,
+        "form": {
+          "amountStr": "99",
+          "categoryType": "Ropa",
+          "detail": "Zapatos",
+          "paymentMethod": "Débito",
+          "selectedDebit": "Ahorros",
+          "selectedCredit": "",
+          "isDeferred": false,
+          "deferredMonths": "",
+          "dateStr": "2026-11-20",
+          "timeStr": "12:00",
+          "tags": "",
+          "isRecurring": false,
+          "recurringFrequency": "monthly",
+          "recurringDay": "",
+          "recurringDate": "",
+          "subscriptionType": ""
+        }
+      },
+      "result": {
+        "saved": true
+      }
+    },
+    {
+      "op": "getCardCycleSummary",
+      "args": {
+        "cardId": "card-2"
+      },
+      "result": {
+        "lastCutOff": "2026-10-28",
+        "nextDueDate": "2026-12-12",
+        "dueAmount": 0,
+        "activeDebt": 0,
+        "totalPending": 0,
+        "available": 900,
+        "hasOverdue": false,
+        "purchases": []
+      }
+    },
+    {
+      "op": "getTotalBalance",
+      "args": {},
+      "result": {
+        "totalIncome": 0,
+        "totalExpenses": 99,
+        "balance": 1901,
+        "salaryAmount": 0,
+        "extraIncome": 0
+      }
+    },
+    {
+      "op": "saveExpense",
+      "args": {
+        "editingId": "$e1",
+        "taxesConfig": null,
+        "form": {
+          "amountStr": "99",
+          "categoryType": "Ropa",
+          "detail": "Zapatos",
+          "paymentMethod": "Crédito",
+          "selectedDebit": "",
+          "selectedCredit": "Mastercard",
+          "isDeferred": false,
+          "deferredMonths": "",
+          "dateStr": "2026-12-31",
+          "timeStr": "12:00",
+          "tags": "",
+          "isRecurring": true,
+          "recurringFrequency": "yearly",
+          "recurringDay": "",
+          "recurringDate": "2026-12-31",
+          "subscriptionType": ""
+        }
+      },
+      "result": {
+        "saved": true
+      }
+    },
+    {
+      "op": "deleteExpenseWithCardSync",
+      "args": {
+        "expenseId": "$e1"
+      },
+      "result": null
+    },
+    {
+      "op": "getCardCycleSummary",
+      "args": {
+        "cardId": "card-2"
+      },
+      "result": {
+        "lastCutOff": "2026-10-28",
+        "nextDueDate": "2026-12-12",
+        "dueAmount": 0,
+        "activeDebt": 0,
+        "totalPending": 0,
+        "available": 900,
+        "hasOverdue": false,
+        "purchases": []
+      }
+    }
+  ],
+  "final": {
+    "salary": [],
+    "expenses": [],
+    "income": [],
+    "loans": [],
+    "creditCards": [
+      {
+        "id": "card-1",
+        "name": "Visa Oro",
+        "bankName": "Banco X",
+        "cutOffDay": 15,
+        "paymentDueDay": 5,
+        "creditLimit": 3000,
+        "currentBalance": 0,
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "card-2",
+        "name": "Mastercard",
+        "bankName": "Banco Y",
+        "cutOffDay": 28,
+        "paymentDueDay": 12,
+        "creditLimit": 1000,
+        "currentBalance": 100,
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "reminders": [],
+    "accounts": [
+      {
+        "id": "acc-1",
+        "name": "Ahorros",
+        "bankName": "Banco Pichincha",
+        "accountType": "Ahorro",
+        "initialBalance": 2000,
+        "referenceNumber": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "categories": [],
+    "investments": [],
+    "settings": [
+      {
+        "id": "default",
+        "appName": "Mi Dinero",
+        "monthlyGoal": 0,
+        "theme": "dark",
+        "currency": "USD",
+        "currencyLocale": "es-EC",
+        "onboardingCompleted": true
+      }
+    ]
+  }
+}

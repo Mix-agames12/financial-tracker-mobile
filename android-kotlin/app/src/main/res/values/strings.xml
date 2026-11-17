@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Igual que el nombre de app.json; es un cambio de una línea antes de publicar. -->
+    <string name="app_name">tracker-rn-temp</string>
+
+    <!-- Canal de notificaciones (useNotifications.ts) -->
+    <string name="notification_channel_name">Recordatorios y alertas</string>
+
+    <!-- Widget "Resumen financiero" (app.json -> react-native-android-widget) -->
+    <string name="widget_label">Resumen financiero</string>
+    <string name="widget_description">Balance total, ingresos y gastos del mes</string>
+</resources>

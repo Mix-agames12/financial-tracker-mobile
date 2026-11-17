@@ -1,0 +1,628 @@
+{
+  "name": "aggregates",
+  "description": "Balance total, saldos por cuenta y resumen mensual",
+  "clock": "2026-11-17T12:00:00",
+  "seed": {
+    "accounts": [
+      {
+        "id": "acc-1",
+        "name": "Ahorros",
+        "bankName": "Banco X",
+        "accountType": "Ahorro",
+        "initialBalance": 1000,
+        "referenceNumber": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "acc-2",
+        "name": "Corriente",
+        "bankName": "Banco Y",
+        "accountType": "Ahorro",
+        "initialBalance": 250.5,
+        "referenceNumber": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "acc-3",
+        "name": "Aho",
+        "bankName": "Banco Z",
+        "accountType": "Ahorro",
+        "initialBalance": 0,
+        "referenceNumber": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "income": [
+      {
+        "id": "i-1",
+        "amount": 1500,
+        "source": "Sueldo",
+        "detail": "Sueldo",
+        "bankAccount": "Ahorros - Banco X",
+        "bankName": "Banco X",
+        "date": "2026-11-05",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "isSalary": true
+      },
+      {
+        "id": "i-2",
+        "amount": 200.25,
+        "source": "Venta",
+        "detail": "Venta",
+        "bankAccount": "Corriente - Banco Y",
+        "bankName": "Banco Y",
+        "date": "2026-11-10",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "i-3",
+        "amount": 80,
+        "source": "Regalo",
+        "detail": "Regalo",
+        "bankAccount": "Ahorros - Banco X",
+        "bankName": "Banco X",
+        "date": "2026-10-30",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "i-4",
+        "amount": 50,
+        "source": "Sin cuenta",
+        "detail": "Sin cuenta",
+        "bankAccount": "",
+        "bankName": "",
+        "date": "2026-11-12",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "i-5",
+        "amount": 10,
+        "source": "Otro banco",
+        "detail": "Otro banco",
+        "bankAccount": "Aho - Banco Z",
+        "bankName": "Banco Z",
+        "date": "2026-02-28",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "expenses": [
+      {
+        "id": "e-1",
+        "amount": 100,
+        "date": "2026-11-02",
+        "category": "Alimentación",
+        "detail": "Super",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "accountName": "Ahorros"
+      },
+      {
+        "id": "e-2",
+        "amount": 30.5,
+        "date": "2026-11-17",
+        "category": "Transporte",
+        "detail": "Taxi",
+        "paymentMethod": "Efectivo",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "e-3",
+        "amount": 200,
+        "date": "2026-11-20",
+        "category": "Tecnología",
+        "detail": "Auricular",
+        "paymentMethod": "Crédito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "cardName": "Visa Oro"
+      },
+      {
+        "id": "e-4",
+        "amount": 45,
+        "date": "2026-10-31",
+        "category": "Salud",
+        "detail": "Farmacia",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "accountName": "Corriente"
+      },
+      {
+        "id": "e-5",
+        "amount": 12,
+        "date": "2026-02-28",
+        "category": "Otros",
+        "detail": "Algo",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "accountName": "Aho"
+      },
+      {
+        "id": "e-6",
+        "amount": 7,
+        "date": "2026-11-30",
+        "category": "",
+        "detail": "Sin categoría",
+        "paymentMethod": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "e-7",
+        "amount": 3,
+        "date": "2026-11-30",
+        "category": "Alimentación",
+        "detail": "Café",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "salary": [
+      {
+        "id": "salary-1",
+        "amount": 1500,
+        "payDateType": "specific",
+        "payDate": "5",
+        "recurrence": "Mensual",
+        "bankAccount": "Ahorros"
+      }
+    ],
+    "settings": [
+      {
+        "id": "default",
+        "appName": "Mi Dinero",
+        "monthlyGoal": 0,
+        "theme": "dark",
+        "currency": "USD",
+        "currencyLocale": "es-EC",
+        "onboardingCompleted": true
+      }
+    ]
+  },
+  "steps": [
+    {
+      "op": "getTotalBalance",
+      "args": {},
+      "result": {
+        "totalIncome": 1840.25,
+        "totalExpenses": 397.5,
+        "balance": 2693.25,
+        "salaryAmount": 1500,
+        "extraIncome": 1840.25
+      }
+    },
+    {
+      "op": "getAccountBalances",
+      "args": {},
+      "result": {
+        "acc-1": 2480,
+        "acc-2": 405.75,
+        "acc-3": 1578
+      }
+    },
+    {
+      "op": "getMonthlySummary",
+      "args": {
+        "year": 2026,
+        "month": 11
+      },
+      "result": {
+        "totalExpenses": 340.5,
+        "totalIncome": 1750.25,
+        "salaryAmount": 1500,
+        "byCategory": {
+          "Alimentación": 103,
+          "Transporte": 30.5,
+          "Tecnología": 200,
+          "Sin categoría": 7
+        },
+        "byPaymentMethod": {
+          "Débito": 103,
+          "Efectivo": 30.5,
+          "Crédito": 200,
+          "Otro": 7
+        },
+        "byAccount": {
+          "Ahorros": 100,
+          "Sin cuenta": 40.5,
+          "Visa Oro": 200
+        },
+        "incomeByAccount": {
+          "Ahorros - Banco X": 1500,
+          "Corriente - Banco Y": 200.25,
+          "Sin cuenta": 50
+        },
+        "expenses": [
+          {
+            "id": "e-1",
+            "amount": 100,
+            "date": "2026-11-02",
+            "category": "Alimentación",
+            "detail": "Super",
+            "paymentMethod": "Débito",
+            "createdAt": "2026-01-01T00:00:00.000Z",
+            "accountName": "Ahorros"
+          },
+          {
+            "id": "e-2",
+            "amount": 30.5,
+            "date": "2026-11-17",
+            "category": "Transporte",
+            "detail": "Taxi",
+            "paymentMethod": "Efectivo",
+            "createdAt": "2026-01-01T00:00:00.000Z"
+          },
+          {
+            "id": "e-3",
+            "amount": 200,
+            "date": "2026-11-20",
+            "category": "Tecnología",
+            "detail": "Auricular",
+            "paymentMethod": "Crédito",
+            "createdAt": "2026-01-01T00:00:00.000Z",
+            "cardName": "Visa Oro"
+          },
+          {
+            "id": "e-6",
+            "amount": 7,
+            "date": "2026-11-30",
+            "category": "",
+            "detail": "Sin categoría",
+            "paymentMethod": "",
+            "createdAt": "2026-01-01T00:00:00.000Z"
+          },
+          {
+            "id": "e-7",
+            "amount": 3,
+            "date": "2026-11-30",
+            "category": "Alimentación",
+            "detail": "Café",
+            "paymentMethod": "Débito",
+            "createdAt": "2026-01-01T00:00:00.000Z"
+          }
+        ],
+        "incomes": [
+          {
+            "id": "i-1",
+            "amount": 1500,
+            "source": "Sueldo",
+            "detail": "Sueldo",
+            "bankAccount": "Ahorros - Banco X",
+            "bankName": "Banco X",
+            "date": "2026-11-05",
+            "createdAt": "2026-01-01T00:00:00.000Z",
+            "isSalary": true
+          },
+          {
+            "id": "i-2",
+            "amount": 200.25,
+            "source": "Venta",
+            "detail": "Venta",
+            "bankAccount": "Corriente - Banco Y",
+            "bankName": "Banco Y",
+            "date": "2026-11-10",
+            "createdAt": "2026-01-01T00:00:00.000Z"
+          },
+          {
+            "id": "i-4",
+            "amount": 50,
+            "source": "Sin cuenta",
+            "detail": "Sin cuenta",
+            "bankAccount": "",
+            "bankName": "",
+            "date": "2026-11-12",
+            "createdAt": "2026-01-01T00:00:00.000Z"
+          }
+        ]
+      }
+    },
+    {
+      "op": "getMonthlySummary",
+      "args": {
+        "year": 2026,
+        "month": 10
+      },
+      "result": {
+        "totalExpenses": 45,
+        "totalIncome": 80,
+        "salaryAmount": 1500,
+        "byCategory": {
+          "Salud": 45
+        },
+        "byPaymentMethod": {
+          "Débito": 45
+        },
+        "byAccount": {
+          "Corriente": 45
+        },
+        "incomeByAccount": {
+          "Ahorros - Banco X": 80
+        },
+        "expenses": [
+          {
+            "id": "e-4",
+            "amount": 45,
+            "date": "2026-10-31",
+            "category": "Salud",
+            "detail": "Farmacia",
+            "paymentMethod": "Débito",
+            "createdAt": "2026-01-01T00:00:00.000Z",
+            "accountName": "Corriente"
+          }
+        ],
+        "incomes": [
+          {
+            "id": "i-3",
+            "amount": 80,
+            "source": "Regalo",
+            "detail": "Regalo",
+            "bankAccount": "Ahorros - Banco X",
+            "bankName": "Banco X",
+            "date": "2026-10-30",
+            "createdAt": "2026-01-01T00:00:00.000Z"
+          }
+        ]
+      }
+    },
+    {
+      "op": "getMonthlySummary",
+      "args": {
+        "year": 2026,
+        "month": 2
+      },
+      "result": {
+        "totalExpenses": 12,
+        "totalIncome": 10,
+        "salaryAmount": 1500,
+        "byCategory": {
+          "Otros": 12
+        },
+        "byPaymentMethod": {
+          "Débito": 12
+        },
+        "byAccount": {
+          "Aho": 12
+        },
+        "incomeByAccount": {
+          "Aho - Banco Z": 10
+        },
+        "expenses": [
+          {
+            "id": "e-5",
+            "amount": 12,
+            "date": "2026-02-28",
+            "category": "Otros",
+            "detail": "Algo",
+            "paymentMethod": "Débito",
+            "createdAt": "2026-01-01T00:00:00.000Z",
+            "accountName": "Aho"
+          }
+        ],
+        "incomes": [
+          {
+            "id": "i-5",
+            "amount": 10,
+            "source": "Otro banco",
+            "detail": "Otro banco",
+            "bankAccount": "Aho - Banco Z",
+            "bankName": "Banco Z",
+            "date": "2026-02-28",
+            "createdAt": "2026-01-01T00:00:00.000Z"
+          }
+        ]
+      }
+    },
+    {
+      "op": "getMonthlySummary",
+      "args": {
+        "year": 2027,
+        "month": 1
+      },
+      "result": {
+        "totalExpenses": 0,
+        "totalIncome": 0,
+        "salaryAmount": 1500,
+        "byCategory": {},
+        "byPaymentMethod": {},
+        "byAccount": {},
+        "incomeByAccount": {},
+        "expenses": [],
+        "incomes": []
+      }
+    },
+    {
+      "op": "getMonthlySummary",
+      "args": {
+        "year": 2028,
+        "month": 2
+      },
+      "result": {
+        "totalExpenses": 0,
+        "totalIncome": 0,
+        "salaryAmount": 1500,
+        "byCategory": {},
+        "byPaymentMethod": {},
+        "byAccount": {},
+        "incomeByAccount": {},
+        "expenses": [],
+        "incomes": []
+      }
+    }
+  ],
+  "final": {
+    "salary": [
+      {
+        "id": "salary-1",
+        "amount": 1500,
+        "payDateType": "specific",
+        "payDate": "5",
+        "recurrence": "Mensual",
+        "bankAccount": "Ahorros"
+      }
+    ],
+    "expenses": [
+      {
+        "id": "e-1",
+        "amount": 100,
+        "date": "2026-11-02",
+        "category": "Alimentación",
+        "detail": "Super",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "accountName": "Ahorros"
+      },
+      {
+        "id": "e-2",
+        "amount": 30.5,
+        "date": "2026-11-17",
+        "category": "Transporte",
+        "detail": "Taxi",
+        "paymentMethod": "Efectivo",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "e-3",
+        "amount": 200,
+        "date": "2026-11-20",
+        "category": "Tecnología",
+        "detail": "Auricular",
+        "paymentMethod": "Crédito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "cardName": "Visa Oro"
+      },
+      {
+        "id": "e-4",
+        "amount": 45,
+        "date": "2026-10-31",
+        "category": "Salud",
+        "detail": "Farmacia",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "accountName": "Corriente"
+      },
+      {
+        "id": "e-5",
+        "amount": 12,
+        "date": "2026-02-28",
+        "category": "Otros",
+        "detail": "Algo",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "accountName": "Aho"
+      },
+      {
+        "id": "e-6",
+        "amount": 7,
+        "date": "2026-11-30",
+        "category": "",
+        "detail": "Sin categoría",
+        "paymentMethod": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "e-7",
+        "amount": 3,
+        "date": "2026-11-30",
+        "category": "Alimentación",
+        "detail": "Café",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "income": [
+      {
+        "id": "i-1",
+        "amount": 1500,
+        "source": "Sueldo",
+        "detail": "Sueldo",
+        "bankAccount": "Ahorros - Banco X",
+        "bankName": "Banco X",
+        "date": "2026-11-05",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "isSalary": true
+      },
+      {
+        "id": "i-2",
+        "amount": 200.25,
+        "source": "Venta",
+        "detail": "Venta",
+        "bankAccount": "Corriente - Banco Y",
+        "bankName": "Banco Y",
+        "date": "2026-11-10",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "i-3",
+        "amount": 80,
+        "source": "Regalo",
+        "detail": "Regalo",
+        "bankAccount": "Ahorros - Banco X",
+        "bankName": "Banco X",
+        "date": "2026-10-30",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "i-4",
+        "amount": 50,
+        "source": "Sin cuenta",
+        "detail": "Sin cuenta",
+        "bankAccount": "",
+        "bankName": "",
+        "date": "2026-11-12",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "i-5",
+        "amount": 10,
+        "source": "Otro banco",
+        "detail": "Otro banco",
+        "bankAccount": "Aho - Banco Z",
+        "bankName": "Banco Z",
+        "date": "2026-02-28",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "loans": [],
+    "creditCards": [],
+    "reminders": [],
+    "accounts": [
+      {
+        "id": "acc-1",
+        "name": "Ahorros",
+        "bankName": "Banco X",
+        "accountType": "Ahorro",
+        "initialBalance": 1000,
+        "referenceNumber": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "acc-2",
+        "name": "Corriente",
+        "bankName": "Banco Y",
+        "accountType": "Ahorro",
+        "initialBalance": 250.5,
+        "referenceNumber": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "acc-3",
+        "name": "Aho",
+        "bankName": "Banco Z",
+        "accountType": "Ahorro",
+        "initialBalance": 0,
+        "referenceNumber": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "categories": [],
+    "investments": [],
+    "settings": [
+      {
+        "id": "default",
+        "appName": "Mi Dinero",
+        "monthlyGoal": 0,
+        "theme": "dark",
+        "currency": "USD",
+        "currencyLocale": "es-EC",
+        "onboardingCompleted": true
+      }
+    ]
+  }
+}

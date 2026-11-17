@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11-: la copia automática incluye los datos de la app (las colecciones JSON de files/stores). -->
+<full-backup-content>
+    <exclude domain="file" path="documents/" />
+    <exclude domain="cache" />
+</full-backup-content>

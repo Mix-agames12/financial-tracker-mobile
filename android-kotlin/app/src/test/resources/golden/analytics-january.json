@@ -1,0 +1,986 @@
+{
+  "name": "analytics-january",
+  "description": "Mes de enero (la comparativa por defecto de Análisis cae sobre el mismo mes)",
+  "clock": "2027-01-31T10:00:00",
+  "seed": {
+    "accounts": [
+      {
+        "id": "acc-1",
+        "name": "Ahorros",
+        "bankName": "Banco X",
+        "accountType": "Ahorro",
+        "initialBalance": 500,
+        "referenceNumber": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "acc-2",
+        "name": "Corriente",
+        "bankName": "Banco Y",
+        "accountType": "Ahorro",
+        "initialBalance": 0,
+        "referenceNumber": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "categories": [
+      {
+        "id": "c-1",
+        "name": "Alimentación",
+        "type": "expense",
+        "color": "#f59e0b",
+        "icon": "restaurant"
+      },
+      {
+        "id": "c-2",
+        "name": "Transporte",
+        "type": "expense",
+        "color": "#123456",
+        "icon": "car",
+        "isCustomColor": true
+      }
+    ],
+    "income": [
+      {
+        "id": "i-1",
+        "amount": 1500,
+        "source": "Sueldo",
+        "detail": "Sueldo",
+        "bankAccount": "Ahorros - Banco X",
+        "bankName": "Banco X",
+        "date": "2026-11-05",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "i-2",
+        "amount": 300,
+        "source": "Venta",
+        "detail": "Venta",
+        "bankAccount": "Corriente - Banco Y",
+        "bankName": "Banco Y",
+        "date": "2026-11-16",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "i-3",
+        "amount": 1500,
+        "source": "Sueldo",
+        "detail": "Sueldo",
+        "bankAccount": "Ahorros - Banco X",
+        "bankName": "Banco X",
+        "date": "2026-10-05",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "i-4",
+        "amount": 90,
+        "source": "",
+        "detail": "",
+        "bankAccount": "",
+        "bankName": "",
+        "date": "2026-10-20",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "i-5",
+        "amount": 1500,
+        "source": "Sueldo",
+        "detail": "Sueldo",
+        "bankAccount": "Ahorros - Banco X",
+        "bankName": "Banco X",
+        "date": "2026-03-05",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "i-6",
+        "amount": 40,
+        "source": "Venta",
+        "detail": "Venta",
+        "bankAccount": "Corriente - Banco Y",
+        "bankName": "Banco Y",
+        "date": "2025-12-31",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "expenses": [
+      {
+        "id": "e-1",
+        "amount": 25.5,
+        "date": "2026-11-17",
+        "category": "Alimentación",
+        "detail": "Almuerzo",
+        "paymentMethod": "Efectivo",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "e-2",
+        "amount": 60,
+        "date": "2026-11-16",
+        "category": "Transporte",
+        "detail": "Gasolina",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "accountName": "Ahorros"
+      },
+      {
+        "id": "e-3",
+        "amount": 15,
+        "date": "2026-11-15",
+        "category": "Alimentación",
+        "detail": "Cena",
+        "paymentMethod": "Crédito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "cardName": "Visa"
+      },
+      {
+        "id": "e-4",
+        "amount": 200,
+        "date": "2026-11-02",
+        "category": "Tecnología de la información avanzada",
+        "detail": "Teclado",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "accountName": "Corriente"
+      },
+      {
+        "id": "e-5",
+        "amount": 12.25,
+        "date": "2026-10-28",
+        "category": "Alimentación",
+        "detail": "Snack",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "accountName": "Ahorros"
+      },
+      {
+        "id": "e-6",
+        "amount": 44,
+        "date": "2026-10-01",
+        "category": "Salud",
+        "detail": "Médico",
+        "paymentMethod": "Efectivo",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "e-7",
+        "amount": 80,
+        "date": "2026-03-10",
+        "category": "Transporte",
+        "detail": "Pasaje",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "accountName": "Fantasma"
+      },
+      {
+        "id": "e-8",
+        "amount": 5,
+        "date": "2026-11-17",
+        "category": "",
+        "detail": "Sin categoría",
+        "paymentMethod": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "e-9",
+        "amount": 33.33,
+        "date": "2026-11-10",
+        "category": "Alimentación",
+        "detail": "Cena 2",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "accountName": "Ahorros"
+      },
+      {
+        "id": "e-10",
+        "amount": 18,
+        "date": "2026-11-09",
+        "category": "Transporte",
+        "detail": "Bus",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "accountName": "Ahorros"
+      }
+    ],
+    "settings": [
+      {
+        "id": "default",
+        "appName": "Mi Dinero",
+        "monthlyGoal": 0,
+        "theme": "dark",
+        "currency": "USD",
+        "currencyLocale": "es-EC",
+        "onboardingCompleted": true
+      }
+    ]
+  },
+  "steps": [
+    {
+      "op": "analytics",
+      "args": {
+        "period": "daily"
+      },
+      "result": {
+        "labels": [
+          "2/1",
+          "3/1",
+          "4/1",
+          "5/1",
+          "6/1",
+          "7/1",
+          "8/1",
+          "9/1",
+          "10/1",
+          "11/1",
+          "12/1",
+          "13/1",
+          "14/1",
+          "15/1",
+          "16/1",
+          "17/1",
+          "18/1",
+          "19/1",
+          "20/1",
+          "21/1",
+          "22/1",
+          "23/1",
+          "24/1",
+          "25/1",
+          "26/1",
+          "27/1",
+          "28/1",
+          "29/1",
+          "30/1",
+          "31/1"
+        ],
+        "expData": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "incData": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "tSpent": 0,
+        "tIncome": 0,
+        "pieCategory": [
+          {
+            "name": "Tecnología de la..",
+            "population": 200,
+            "color": "#f43f5e"
+          },
+          {
+            "name": "Transporte",
+            "population": 158,
+            "color": "#123456"
+          },
+          {
+            "name": "Alimentación",
+            "population": 86.08,
+            "color": "#f59e0b"
+          },
+          {
+            "name": "Salud",
+            "population": 44,
+            "color": "#f59e0b"
+          },
+          {
+            "name": "Sin categoría",
+            "population": 5,
+            "color": "#8b5cf6"
+          }
+        ],
+        "pieMethod": [
+          {
+            "name": "Efectivo",
+            "population": 69.5,
+            "color": "#f59e0b"
+          },
+          {
+            "name": "Débito",
+            "population": 403.58,
+            "color": "#8b5cf6"
+          },
+          {
+            "name": "Crédito",
+            "population": 15,
+            "color": "#06b6d4"
+          },
+          {
+            "name": "Otro",
+            "population": 5,
+            "color": "#ec4899"
+          }
+        ],
+        "byAccountExp": [
+          [
+            "Ahorros",
+            123.58
+          ],
+          [
+            "Corriente",
+            200
+          ]
+        ],
+        "optCategories": [
+          "Alimentación",
+          "Transporte",
+          "Tecnología de la información avanzada",
+          "Salud",
+          "Sin categoría"
+        ],
+        "optMethods": [
+          "Efectivo",
+          "Débito",
+          "Crédito",
+          "Otro"
+        ],
+        "optIncomeSources": [
+          "Sueldo",
+          "Venta",
+          "Otro"
+        ]
+      }
+    },
+    {
+      "op": "analytics",
+      "args": {
+        "period": "weekly"
+      },
+      "result": {
+        "labels": [
+          "S47",
+          "S48",
+          "S49",
+          "S50",
+          "S51",
+          "S52",
+          "S53",
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5"
+        ],
+        "expData": [
+          90.5,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "incData": [
+          300,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "tSpent": 90.5,
+        "tIncome": 300,
+        "pieCategory": [
+          {
+            "name": "Tecnología de la..",
+            "population": 200,
+            "color": "#f43f5e"
+          },
+          {
+            "name": "Transporte",
+            "population": 158,
+            "color": "#123456"
+          },
+          {
+            "name": "Alimentación",
+            "population": 86.08,
+            "color": "#f59e0b"
+          },
+          {
+            "name": "Salud",
+            "population": 44,
+            "color": "#f59e0b"
+          },
+          {
+            "name": "Sin categoría",
+            "population": 5,
+            "color": "#8b5cf6"
+          }
+        ],
+        "pieMethod": [
+          {
+            "name": "Efectivo",
+            "population": 69.5,
+            "color": "#f59e0b"
+          },
+          {
+            "name": "Débito",
+            "population": 403.58,
+            "color": "#8b5cf6"
+          },
+          {
+            "name": "Crédito",
+            "population": 15,
+            "color": "#06b6d4"
+          },
+          {
+            "name": "Otro",
+            "population": 5,
+            "color": "#ec4899"
+          }
+        ],
+        "byAccountExp": [
+          [
+            "Ahorros",
+            123.58
+          ],
+          [
+            "Corriente",
+            200
+          ]
+        ],
+        "optCategories": [
+          "Alimentación",
+          "Transporte",
+          "Tecnología de la información avanzada",
+          "Salud",
+          "Sin categoría"
+        ],
+        "optMethods": [
+          "Efectivo",
+          "Débito",
+          "Crédito",
+          "Otro"
+        ],
+        "optIncomeSources": [
+          "Sueldo",
+          "Venta",
+          "Otro"
+        ]
+      }
+    },
+    {
+      "op": "analytics",
+      "args": {
+        "period": "monthly"
+      },
+      "result": {
+        "labels": [
+          "Feb",
+          "Mar",
+          "Abr",
+          "May",
+          "Jun",
+          "Jul",
+          "Ago",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dic",
+          "Ene"
+        ],
+        "expData": [
+          0,
+          80,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          56.25,
+          356.83,
+          0,
+          0
+        ],
+        "incData": [
+          0,
+          1500,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1590,
+          1800,
+          0,
+          0
+        ],
+        "tSpent": 493.08,
+        "tIncome": 4890,
+        "pieCategory": [
+          {
+            "name": "Tecnología de la..",
+            "population": 200,
+            "color": "#f43f5e"
+          },
+          {
+            "name": "Transporte",
+            "population": 158,
+            "color": "#123456"
+          },
+          {
+            "name": "Alimentación",
+            "population": 86.08,
+            "color": "#f59e0b"
+          },
+          {
+            "name": "Salud",
+            "population": 44,
+            "color": "#f59e0b"
+          },
+          {
+            "name": "Sin categoría",
+            "population": 5,
+            "color": "#8b5cf6"
+          }
+        ],
+        "pieMethod": [
+          {
+            "name": "Efectivo",
+            "population": 69.5,
+            "color": "#f59e0b"
+          },
+          {
+            "name": "Débito",
+            "population": 403.58,
+            "color": "#8b5cf6"
+          },
+          {
+            "name": "Crédito",
+            "population": 15,
+            "color": "#06b6d4"
+          },
+          {
+            "name": "Otro",
+            "population": 5,
+            "color": "#ec4899"
+          }
+        ],
+        "byAccountExp": [
+          [
+            "Ahorros",
+            123.58
+          ],
+          [
+            "Corriente",
+            200
+          ]
+        ],
+        "optCategories": [
+          "Alimentación",
+          "Transporte",
+          "Tecnología de la información avanzada",
+          "Salud",
+          "Sin categoría"
+        ],
+        "optMethods": [
+          "Efectivo",
+          "Débito",
+          "Crédito",
+          "Otro"
+        ],
+        "optIncomeSources": [
+          "Sueldo",
+          "Venta",
+          "Otro"
+        ]
+      }
+    },
+    {
+      "op": "comparison",
+      "args": {
+        "compareP1": "2026-11",
+        "compareP2": "2026-10"
+      },
+      "result": {
+        "y1": 2026,
+        "m1": 11,
+        "y2": 2026,
+        "m2": 10,
+        "s1Exp": 356.83,
+        "s1Inc": 1800,
+        "s2Exp": 56.25,
+        "s2Inc": 1590,
+        "diff": 300.58,
+        "diffPercent": 534.4
+      }
+    },
+    {
+      "op": "comparison",
+      "args": {
+        "compareP1": "2026-10",
+        "compareP2": "2026-11",
+        "compCategory": "alim"
+      },
+      "result": {
+        "y1": 2026,
+        "m1": 10,
+        "y2": 2026,
+        "m2": 11,
+        "s1Exp": 12.25,
+        "s1Inc": 1590,
+        "s2Exp": 73.83,
+        "s2Inc": 1800,
+        "diff": -61.58,
+        "diffPercent": -83.4
+      }
+    },
+    {
+      "op": "comparison",
+      "args": {
+        "compareP1": "2026-11",
+        "compareP2": "2026-10",
+        "compMethod": "déb",
+        "compIncomeSource": "sueldo"
+      },
+      "result": {
+        "y1": 2026,
+        "m1": 11,
+        "y2": 2026,
+        "m2": 10,
+        "s1Exp": 311.33,
+        "s1Inc": 1500,
+        "s2Exp": 12.25,
+        "s2Inc": 1500,
+        "diff": 299.08,
+        "diffPercent": 2441.5
+      }
+    },
+    {
+      "op": "comparison",
+      "args": {
+        "compareP1": "2026-11",
+        "compareP2": "2026-11"
+      },
+      "result": {
+        "y1": 2026,
+        "m1": 11,
+        "y2": 2026,
+        "m2": 11,
+        "s1Exp": 356.83,
+        "s1Inc": 1800,
+        "s2Exp": 356.83,
+        "s2Inc": 1800,
+        "diff": 0,
+        "diffPercent": 0
+      }
+    },
+    {
+      "op": "comparison",
+      "args": {
+        "compareP1": "2027-01",
+        "compareP2": "2027-01"
+      },
+      "result": {
+        "y1": 2027,
+        "m1": 1,
+        "y2": 2027,
+        "m2": 1,
+        "s1Exp": 0,
+        "s1Inc": 0,
+        "s2Exp": 0,
+        "s2Inc": 0,
+        "diff": 0,
+        "diffPercent": 0
+      }
+    },
+    {
+      "op": "comparison",
+      "args": {
+        "compareP1": "abc",
+        "compareP2": "2026-10"
+      },
+      "result": {
+        "alert": [
+          "Error",
+          "Usa el formato YYYY-MM para comparar"
+        ]
+      }
+    }
+  ],
+  "final": {
+    "salary": [],
+    "expenses": [
+      {
+        "id": "e-1",
+        "amount": 25.5,
+        "date": "2026-11-17",
+        "category": "Alimentación",
+        "detail": "Almuerzo",
+        "paymentMethod": "Efectivo",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "e-2",
+        "amount": 60,
+        "date": "2026-11-16",
+        "category": "Transporte",
+        "detail": "Gasolina",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "accountName": "Ahorros"
+      },
+      {
+        "id": "e-3",
+        "amount": 15,
+        "date": "2026-11-15",
+        "category": "Alimentación",
+        "detail": "Cena",
+        "paymentMethod": "Crédito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "cardName": "Visa"
+      },
+      {
+        "id": "e-4",
+        "amount": 200,
+        "date": "2026-11-02",
+        "category": "Tecnología de la información avanzada",
+        "detail": "Teclado",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "accountName": "Corriente"
+      },
+      {
+        "id": "e-5",
+        "amount": 12.25,
+        "date": "2026-10-28",
+        "category": "Alimentación",
+        "detail": "Snack",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "accountName": "Ahorros"
+      },
+      {
+        "id": "e-6",
+        "amount": 44,
+        "date": "2026-10-01",
+        "category": "Salud",
+        "detail": "Médico",
+        "paymentMethod": "Efectivo",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "e-7",
+        "amount": 80,
+        "date": "2026-03-10",
+        "category": "Transporte",
+        "detail": "Pasaje",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "accountName": "Fantasma"
+      },
+      {
+        "id": "e-8",
+        "amount": 5,
+        "date": "2026-11-17",
+        "category": "",
+        "detail": "Sin categoría",
+        "paymentMethod": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "e-9",
+        "amount": 33.33,
+        "date": "2026-11-10",
+        "category": "Alimentación",
+        "detail": "Cena 2",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "accountName": "Ahorros"
+      },
+      {
+        "id": "e-10",
+        "amount": 18,
+        "date": "2026-11-09",
+        "category": "Transporte",
+        "detail": "Bus",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "accountName": "Ahorros"
+      }
+    ],
+    "income": [
+      {
+        "id": "i-1",
+        "amount": 1500,
+        "source": "Sueldo",
+        "detail": "Sueldo",
+        "bankAccount": "Ahorros - Banco X",
+        "bankName": "Banco X",
+        "date": "2026-11-05",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "i-2",
+        "amount": 300,
+        "source": "Venta",
+        "detail": "Venta",
+        "bankAccount": "Corriente - Banco Y",
+        "bankName": "Banco Y",
+        "date": "2026-11-16",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "i-3",
+        "amount": 1500,
+        "source": "Sueldo",
+        "detail": "Sueldo",
+        "bankAccount": "Ahorros - Banco X",
+        "bankName": "Banco X",
+        "date": "2026-10-05",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "i-4",
+        "amount": 90,
+        "source": "",
+        "detail": "",
+        "bankAccount": "",
+        "bankName": "",
+        "date": "2026-10-20",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "i-5",
+        "amount": 1500,
+        "source": "Sueldo",
+        "detail": "Sueldo",
+        "bankAccount": "Ahorros - Banco X",
+        "bankName": "Banco X",
+        "date": "2026-03-05",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "i-6",
+        "amount": 40,
+        "source": "Venta",
+        "detail": "Venta",
+        "bankAccount": "Corriente - Banco Y",
+        "bankName": "Banco Y",
+        "date": "2025-12-31",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "loans": [],
+    "creditCards": [],
+    "reminders": [],
+    "accounts": [
+      {
+        "id": "acc-1",
+        "name": "Ahorros",
+        "bankName": "Banco X",
+        "accountType": "Ahorro",
+        "initialBalance": 500,
+        "referenceNumber": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "acc-2",
+        "name": "Corriente",
+        "bankName": "Banco Y",
+        "accountType": "Ahorro",
+        "initialBalance": 0,
+        "referenceNumber": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "categories": [
+      {
+        "id": "c-1",
+        "name": "Alimentación",
+        "type": "expense",
+        "color": "#f59e0b",
+        "icon": "restaurant"
+      },
+      {
+        "id": "c-2",
+        "name": "Transporte",
+        "type": "expense",
+        "color": "#123456",
+        "icon": "car",
+        "isCustomColor": true
+      }
+    ],
+    "investments": [],
+    "settings": [
+      {
+        "id": "default",
+        "appName": "Mi Dinero",
+        "monthlyGoal": 0,
+        "theme": "dark",
+        "currency": "USD",
+        "currencyLocale": "es-EC",
+        "onboardingCompleted": true
+      }
+    ]
+  }
+}

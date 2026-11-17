@@ -1,0 +1,348 @@
+{
+  "name": "categories-and-settings",
+  "description": "seedDefaults (sin pisar colores personalizados), ajustes parciales y sueldo (alta + actualización)",
+  "clock": "2026-11-17T12:00:00",
+  "seed": {
+    "categories": [
+      {
+        "id": "c-1",
+        "name": "Alimentación",
+        "type": "expense",
+        "color": "#000001",
+        "icon": "old-icon"
+      },
+      {
+        "id": "c-2",
+        "name": "Transporte",
+        "type": "expense",
+        "color": "#000002",
+        "icon": "car",
+        "isCustomColor": true
+      },
+      {
+        "id": "c-3",
+        "name": "Mi categoría",
+        "type": "expense",
+        "color": "#000003",
+        "icon": "star"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "op": "getSettings",
+      "args": {},
+      "result": {
+        "id": "default",
+        "appName": "Mi Dinero",
+        "monthlyGoal": 0,
+        "theme": "dark"
+      }
+    },
+    {
+      "op": "seedDefaults",
+      "args": {},
+      "result": null
+    },
+    {
+      "op": "seedDefaults",
+      "args": {},
+      "result": null
+    },
+    {
+      "op": "updateCategoryByName",
+      "args": {
+        "name": "Salud",
+        "patch": {
+          "color": "#ffffff",
+          "isCustomColor": true
+        }
+      },
+      "result": null
+    },
+    {
+      "op": "seedDefaults",
+      "args": {},
+      "result": null
+    },
+    {
+      "op": "updateCategoryByName",
+      "args": {
+        "name": "Salud",
+        "patch": {
+          "color": "#ef4444",
+          "isCustomColor": false
+        }
+      },
+      "result": null
+    },
+    {
+      "op": "seedDefaults",
+      "args": {},
+      "result": null
+    },
+    {
+      "op": "saveSettings",
+      "args": {
+        "patch": {
+          "currency": "EUR",
+          "currencyLocale": "es-ES"
+        }
+      },
+      "result": null
+    },
+    {
+      "op": "getSettings",
+      "args": {},
+      "result": {
+        "id": "gen-10",
+        "appName": "Mi Dinero",
+        "monthlyGoal": 0,
+        "theme": "dark",
+        "currency": "EUR",
+        "currencyLocale": "es-ES",
+        "createdAt": "2026-11-17T17:00:00.000Z"
+      }
+    },
+    {
+      "op": "saveSettings",
+      "args": {
+        "patch": {
+          "appName": "Mis Finanzas",
+          "monthlyGoal": 750.5
+        }
+      },
+      "result": null
+    },
+    {
+      "op": "saveSettings",
+      "args": {
+        "patch": {
+          "taxes": {
+            "enabled": true,
+            "ivaRate": 15,
+            "comisionRate": 2,
+            "isdRate": 5,
+            "applyTo": [
+              "Préstamos",
+              "Gastos:Ropa"
+            ]
+          }
+        }
+      },
+      "result": null
+    },
+    {
+      "op": "saveSettings",
+      "args": {
+        "patch": {
+          "theme": "light",
+          "lastBudgetAlert": "2026-11:near"
+        }
+      },
+      "result": null
+    },
+    {
+      "op": "getSettings",
+      "args": {},
+      "result": {
+        "id": "gen-10",
+        "appName": "Mis Finanzas",
+        "monthlyGoal": 750.5,
+        "theme": "light",
+        "currency": "EUR",
+        "currencyLocale": "es-ES",
+        "createdAt": "2026-11-17T17:00:00.000Z",
+        "taxes": {
+          "enabled": true,
+          "ivaRate": 15,
+          "comisionRate": 2,
+          "isdRate": 5,
+          "applyTo": [
+            "Préstamos",
+            "Gastos:Ropa"
+          ]
+        },
+        "lastBudgetAlert": "2026-11:near"
+      }
+    },
+    {
+      "op": "saveSalary",
+      "args": {
+        "data": {
+          "id": "salary-1",
+          "amount": 900,
+          "payDateType": "specific",
+          "payDate": "15",
+          "recurrence": "Mensual",
+          "bankAccount": ""
+        }
+      },
+      "result": null
+    },
+    {
+      "op": "saveSalary",
+      "args": {
+        "data": {
+          "id": "salary-1",
+          "amount": 950,
+          "payDateType": "last",
+          "payDate": "",
+          "recurrence": "Quincenal",
+          "bankAccount": "Ahorros"
+        }
+      },
+      "result": null
+    },
+    {
+      "op": "getTotalBalance",
+      "args": {},
+      "result": {
+        "totalIncome": 0,
+        "totalExpenses": 0,
+        "balance": 0,
+        "salaryAmount": 950,
+        "extraIncome": 0
+      }
+    }
+  ],
+  "final": {
+    "salary": [
+      {
+        "id": "gen-11",
+        "amount": 950,
+        "payDateType": "last",
+        "payDate": "",
+        "recurrence": "Quincenal",
+        "bankAccount": "Ahorros",
+        "createdAt": "<createdAt>"
+      }
+    ],
+    "expenses": [],
+    "income": [],
+    "loans": [],
+    "creditCards": [],
+    "reminders": [],
+    "accounts": [],
+    "categories": [
+      {
+        "id": "c-1",
+        "name": "Alimentación",
+        "type": "expense",
+        "color": "#f59e0b",
+        "icon": "restaurant"
+      },
+      {
+        "id": "c-2",
+        "name": "Transporte",
+        "type": "expense",
+        "color": "#000002",
+        "icon": "car",
+        "isCustomColor": true
+      },
+      {
+        "id": "c-3",
+        "name": "Mi categoría",
+        "type": "expense",
+        "color": "#000003",
+        "icon": "star"
+      },
+      {
+        "name": "Vivienda",
+        "icon": "home",
+        "color": "#8b5cf6",
+        "type": "expense",
+        "id": "gen-1",
+        "createdAt": "<createdAt>"
+      },
+      {
+        "name": "Salud",
+        "icon": "heart",
+        "color": "#ef4444",
+        "type": "expense",
+        "id": "gen-2",
+        "createdAt": "<createdAt>",
+        "isCustomColor": false
+      },
+      {
+        "name": "Entretenimiento",
+        "icon": "film",
+        "color": "#ec4899",
+        "type": "expense",
+        "id": "gen-3",
+        "createdAt": "<createdAt>"
+      },
+      {
+        "name": "Educación",
+        "icon": "school",
+        "color": "#06b6d4",
+        "type": "expense",
+        "id": "gen-4",
+        "createdAt": "<createdAt>"
+      },
+      {
+        "name": "Ropa",
+        "icon": "shirt",
+        "color": "#f97316",
+        "type": "expense",
+        "id": "gen-5",
+        "createdAt": "<createdAt>"
+      },
+      {
+        "name": "Tecnología",
+        "icon": "desktop",
+        "color": "#6366f1",
+        "type": "expense",
+        "id": "gen-6",
+        "createdAt": "<createdAt>"
+      },
+      {
+        "name": "Servicios",
+        "icon": "receipt",
+        "color": "#14b8a6",
+        "type": "expense",
+        "id": "gen-7",
+        "createdAt": "<createdAt>"
+      },
+      {
+        "name": "Suscripción",
+        "icon": "card",
+        "color": "#a855f7",
+        "type": "expense",
+        "id": "gen-8",
+        "createdAt": "<createdAt>"
+      },
+      {
+        "name": "Otros",
+        "icon": "ellipsis-horizontal",
+        "color": "#64748b",
+        "type": "expense",
+        "id": "gen-9",
+        "createdAt": "<createdAt>"
+      }
+    ],
+    "investments": [],
+    "settings": [
+      {
+        "id": "gen-10",
+        "appName": "Mis Finanzas",
+        "monthlyGoal": 750.5,
+        "theme": "light",
+        "currency": "EUR",
+        "currencyLocale": "es-ES",
+        "createdAt": "<createdAt>",
+        "taxes": {
+          "enabled": true,
+          "ivaRate": 15,
+          "comisionRate": 2,
+          "isdRate": 5,
+          "applyTo": [
+            "Préstamos",
+            "Gastos:Ropa"
+          ]
+        },
+        "lastBudgetAlert": "2026-11:near"
+      }
+    ]
+  }
+}

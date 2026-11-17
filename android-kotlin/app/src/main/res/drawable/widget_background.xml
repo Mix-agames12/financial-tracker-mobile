@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fondo del widget: borderRadius 20; el color cambia con el tema del sistema (colors.xml / values-night). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/widget_background" />
+    <corners android:radius="20dp" />
+</shape>

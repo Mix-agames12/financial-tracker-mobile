@@ -1,0 +1,559 @@
+{
+  "name": "legacy-link",
+  "description": "Vinculación de préstamos de compras con tarjeta anteriores a cardId (idempotente)",
+  "clock": "2026-11-17T12:00:00",
+  "seed": {
+    "creditCards": [
+      {
+        "id": "card-1",
+        "name": "Visa Oro",
+        "bankName": "Banco X",
+        "cutOffDay": 15,
+        "paymentDueDay": 5,
+        "creditLimit": 5000,
+        "currentBalance": 1000,
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "card-2",
+        "name": "Mastercard",
+        "bankName": "Banco Y",
+        "cutOffDay": 20,
+        "paymentDueDay": 10,
+        "creditLimit": 0,
+        "currentBalance": 800,
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "expenses": [
+      {
+        "id": "e-a",
+        "amount": 500,
+        "date": "2026-09-10",
+        "category": "Vivienda",
+        "detail": "Nevera",
+        "paymentMethod": "Crédito",
+        "createdAt": "2026-09-10T15:00:00.000Z",
+        "cardName": "Visa Oro",
+        "time": "15:00"
+      },
+      {
+        "id": "e-a-tax",
+        "amount": 15,
+        "date": "2026-09-10",
+        "category": "Vivienda",
+        "detail": "Nevera (Impuestos/Comisiones)",
+        "paymentMethod": "Crédito",
+        "createdAt": "2026-09-10T15:00:00.050Z",
+        "cardName": "Visa Oro"
+      },
+      {
+        "id": "e-b",
+        "amount": 600,
+        "date": "2026-10-01",
+        "category": "Tecnología",
+        "detail": "Celular",
+        "paymentMethod": "Crédito",
+        "createdAt": "2026-10-01T09:00:00.000Z",
+        "cardName": "Mastercard",
+        "isDeferred": true,
+        "deferredMonths": 6
+      },
+      {
+        "id": "e-c1",
+        "amount": 30,
+        "date": "2026-10-05",
+        "category": "Alimentación",
+        "detail": "Pizza",
+        "paymentMethod": "Crédito",
+        "createdAt": "2026-10-05T20:00:00.000Z",
+        "cardName": "Visa Oro"
+      },
+      {
+        "id": "e-c2",
+        "amount": 30,
+        "date": "2026-10-06",
+        "category": "Alimentación",
+        "detail": "Pizza",
+        "paymentMethod": "Crédito",
+        "createdAt": "2026-10-06T20:00:00.000Z",
+        "cardName": "Visa Oro"
+      },
+      {
+        "id": "e-d",
+        "amount": 80,
+        "date": "2026-10-07",
+        "category": "Alimentación",
+        "detail": "Sushi",
+        "paymentMethod": "Crédito",
+        "createdAt": "2026-10-07T20:00:00.000Z",
+        "cardName": "Visa Oro"
+      },
+      {
+        "id": "e-e",
+        "amount": 40,
+        "date": "2026-10-08",
+        "category": "Salud",
+        "detail": "Vitaminas",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-10-08T20:00:00.000Z",
+        "accountName": "Ahorros"
+      }
+    ],
+    "loans": [
+      {
+        "id": "l-a",
+        "name": "TC Visa Oro: Nevera",
+        "totalAmount": 515,
+        "installments": 1,
+        "paidInstallments": 0,
+        "monthlyQuota": 515,
+        "interestRate": 0,
+        "status": "active",
+        "createdAt": "2026-09-10T15:00:00.200Z",
+        "nextPaymentDate": "2026-10-05"
+      },
+      {
+        "id": "l-b",
+        "name": "Diferido: Celular",
+        "totalAmount": 600,
+        "installments": 6,
+        "paidInstallments": 1,
+        "monthlyQuota": 100,
+        "interestRate": 0,
+        "status": "active",
+        "createdAt": "2026-10-01T09:00:00.300Z",
+        "nextPaymentDate": "2026-12-10"
+      },
+      {
+        "id": "l-c",
+        "name": "TC Visa Oro: Pizza",
+        "totalAmount": 30,
+        "installments": 1,
+        "paidInstallments": 0,
+        "monthlyQuota": 30,
+        "interestRate": 0,
+        "status": "active",
+        "createdAt": "2026-10-05T21:30:00.000Z",
+        "nextPaymentDate": "2026-11-05"
+      },
+      {
+        "id": "l-d",
+        "name": "TC Visa Oro: Sushi",
+        "totalAmount": 80,
+        "installments": 1,
+        "paidInstallments": 0,
+        "monthlyQuota": 80,
+        "interestRate": 0,
+        "status": "active",
+        "createdAt": "2026-10-07T20:00:30.000Z",
+        "nextPaymentDate": "2026-11-05"
+      },
+      {
+        "id": "l-e",
+        "name": "TC Desconocida: Algo",
+        "totalAmount": 99,
+        "installments": 1,
+        "paidInstallments": 0,
+        "monthlyQuota": 99,
+        "interestRate": 0,
+        "status": "active",
+        "createdAt": "2026-10-07T20:00:30.000Z"
+      },
+      {
+        "id": "l-f",
+        "name": "Préstamo normal",
+        "totalAmount": 1000,
+        "installments": 10,
+        "paidInstallments": 2,
+        "monthlyQuota": 100,
+        "interestRate": 0,
+        "status": "active",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "nextPaymentDate": "2026-12-01"
+      },
+      {
+        "id": "l-g",
+        "name": "Diferido: Sin compra",
+        "totalAmount": 200,
+        "installments": 2,
+        "paidInstallments": 0,
+        "monthlyQuota": 100,
+        "interestRate": 0,
+        "status": "active",
+        "createdAt": "2026-10-09T00:00:00.000Z",
+        "nextPaymentDate": "2026-12-01"
+      }
+    ],
+    "settings": [
+      {
+        "id": "default",
+        "appName": "Mi Dinero",
+        "monthlyGoal": 0,
+        "theme": "dark",
+        "currency": "USD",
+        "currencyLocale": "es-EC",
+        "onboardingCompleted": true
+      }
+    ]
+  },
+  "steps": [
+    {
+      "op": "linkLegacyCardLoans",
+      "args": {},
+      "result": null
+    },
+    {
+      "op": "getCardCycleSummary",
+      "args": {
+        "cardId": "card-1"
+      },
+      "result": {
+        "lastCutOff": "2026-11-15",
+        "nextDueDate": "2026-12-05",
+        "dueAmount": 625,
+        "activeDebt": 0,
+        "totalPending": 625,
+        "available": 4000,
+        "hasOverdue": true,
+        "purchases": [
+          {
+            "loanId": "l-a",
+            "expenseId": "e-a",
+            "title": "Nevera",
+            "pending": 515,
+            "isPaid": false
+          },
+          {
+            "loanId": "l-c",
+            "expenseId": null,
+            "title": "Pizza",
+            "pending": 30,
+            "isPaid": false
+          },
+          {
+            "loanId": "l-d",
+            "expenseId": "e-d",
+            "title": "Sushi",
+            "pending": 80,
+            "isPaid": false
+          }
+        ]
+      }
+    },
+    {
+      "op": "getCardCycleSummary",
+      "args": {
+        "cardId": "card-2"
+      },
+      "result": {
+        "lastCutOff": "2026-10-20",
+        "nextDueDate": "2026-12-10",
+        "dueAmount": 100,
+        "activeDebt": 400,
+        "totalPending": 500,
+        "available": null,
+        "hasOverdue": false,
+        "purchases": [
+          {
+            "loanId": "l-b",
+            "expenseId": "e-b",
+            "title": "Celular",
+            "pending": 500,
+            "isPaid": false
+          }
+        ]
+      }
+    },
+    {
+      "op": "linkLegacyCardLoans",
+      "args": {},
+      "result": null
+    },
+    {
+      "op": "getUpcomingPayments",
+      "args": {
+        "horizonDays": 60
+      },
+      "result": [
+        {
+          "id": "loan-l-a",
+          "kind": "loan",
+          "title": "TC Visa Oro: Nevera",
+          "amount": 515,
+          "dueDate": "2026-10-05",
+          "daysLeft": -43
+        },
+        {
+          "id": "loan-l-c",
+          "kind": "loan",
+          "title": "TC Visa Oro: Pizza",
+          "amount": 30,
+          "dueDate": "2026-11-05",
+          "daysLeft": -12
+        },
+        {
+          "id": "loan-l-d",
+          "kind": "loan",
+          "title": "TC Visa Oro: Sushi",
+          "amount": 80,
+          "dueDate": "2026-11-05",
+          "daysLeft": -12
+        },
+        {
+          "id": "loan-l-f",
+          "kind": "loan",
+          "title": "Préstamo normal",
+          "amount": 100,
+          "dueDate": "2026-12-01",
+          "daysLeft": 14
+        },
+        {
+          "id": "loan-l-g",
+          "kind": "loan",
+          "title": "Diferido: Sin compra",
+          "amount": 100,
+          "dueDate": "2026-12-01",
+          "daysLeft": 14
+        },
+        {
+          "id": "card-card-1",
+          "kind": "card",
+          "title": "Tarjeta Visa Oro",
+          "amount": 375,
+          "dueDate": "2026-12-05",
+          "daysLeft": 18
+        },
+        {
+          "id": "loan-l-b",
+          "kind": "loan",
+          "title": "Diferido: Celular",
+          "amount": 100,
+          "dueDate": "2026-12-10",
+          "daysLeft": 23
+        },
+        {
+          "id": "card-card-2",
+          "kind": "card",
+          "title": "Tarjeta Mastercard",
+          "amount": 200,
+          "dueDate": "2026-12-10",
+          "daysLeft": 23
+        }
+      ]
+    }
+  ],
+  "final": {
+    "salary": [],
+    "expenses": [
+      {
+        "id": "e-a",
+        "amount": 500,
+        "date": "2026-09-10",
+        "category": "Vivienda",
+        "detail": "Nevera",
+        "paymentMethod": "Crédito",
+        "createdAt": "2026-09-10T15:00:00.000Z",
+        "cardName": "Visa Oro",
+        "time": "15:00"
+      },
+      {
+        "id": "e-a-tax",
+        "amount": 15,
+        "date": "2026-09-10",
+        "category": "Vivienda",
+        "detail": "Nevera (Impuestos/Comisiones)",
+        "paymentMethod": "Crédito",
+        "createdAt": "2026-09-10T15:00:00.050Z",
+        "cardName": "Visa Oro",
+        "parentExpenseId": "e-a"
+      },
+      {
+        "id": "e-b",
+        "amount": 600,
+        "date": "2026-10-01",
+        "category": "Tecnología",
+        "detail": "Celular",
+        "paymentMethod": "Crédito",
+        "createdAt": "2026-10-01T09:00:00.000Z",
+        "cardName": "Mastercard",
+        "isDeferred": true,
+        "deferredMonths": 6
+      },
+      {
+        "id": "e-c1",
+        "amount": 30,
+        "date": "2026-10-05",
+        "category": "Alimentación",
+        "detail": "Pizza",
+        "paymentMethod": "Crédito",
+        "createdAt": "2026-10-05T20:00:00.000Z",
+        "cardName": "Visa Oro"
+      },
+      {
+        "id": "e-c2",
+        "amount": 30,
+        "date": "2026-10-06",
+        "category": "Alimentación",
+        "detail": "Pizza",
+        "paymentMethod": "Crédito",
+        "createdAt": "2026-10-06T20:00:00.000Z",
+        "cardName": "Visa Oro"
+      },
+      {
+        "id": "e-d",
+        "amount": 80,
+        "date": "2026-10-07",
+        "category": "Alimentación",
+        "detail": "Sushi",
+        "paymentMethod": "Crédito",
+        "createdAt": "2026-10-07T20:00:00.000Z",
+        "cardName": "Visa Oro"
+      },
+      {
+        "id": "e-e",
+        "amount": 40,
+        "date": "2026-10-08",
+        "category": "Salud",
+        "detail": "Vitaminas",
+        "paymentMethod": "Débito",
+        "createdAt": "2026-10-08T20:00:00.000Z",
+        "accountName": "Ahorros"
+      }
+    ],
+    "income": [],
+    "loans": [
+      {
+        "id": "l-a",
+        "name": "TC Visa Oro: Nevera",
+        "totalAmount": 515,
+        "installments": 1,
+        "paidInstallments": 0,
+        "monthlyQuota": 515,
+        "interestRate": 0,
+        "status": "active",
+        "createdAt": "2026-09-10T15:00:00.200Z",
+        "nextPaymentDate": "2026-10-05",
+        "cardId": "card-1",
+        "sourceExpenseId": "e-a",
+        "cardOutstanding": 515
+      },
+      {
+        "id": "l-b",
+        "name": "Diferido: Celular",
+        "totalAmount": 600,
+        "installments": 6,
+        "paidInstallments": 1,
+        "monthlyQuota": 100,
+        "interestRate": 0,
+        "status": "active",
+        "createdAt": "2026-10-01T09:00:00.300Z",
+        "nextPaymentDate": "2026-12-10",
+        "cardId": "card-2",
+        "sourceExpenseId": "e-b",
+        "cardOutstanding": 600
+      },
+      {
+        "id": "l-c",
+        "name": "TC Visa Oro: Pizza",
+        "totalAmount": 30,
+        "installments": 1,
+        "paidInstallments": 0,
+        "monthlyQuota": 30,
+        "interestRate": 0,
+        "status": "active",
+        "createdAt": "2026-10-05T21:30:00.000Z",
+        "nextPaymentDate": "2026-11-05",
+        "cardId": "card-1",
+        "cardOutstanding": 30
+      },
+      {
+        "id": "l-d",
+        "name": "TC Visa Oro: Sushi",
+        "totalAmount": 80,
+        "installments": 1,
+        "paidInstallments": 0,
+        "monthlyQuota": 80,
+        "interestRate": 0,
+        "status": "active",
+        "createdAt": "2026-10-07T20:00:30.000Z",
+        "nextPaymentDate": "2026-11-05",
+        "cardId": "card-1",
+        "sourceExpenseId": "e-d",
+        "cardOutstanding": 80
+      },
+      {
+        "id": "l-e",
+        "name": "TC Desconocida: Algo",
+        "totalAmount": 99,
+        "installments": 1,
+        "paidInstallments": 0,
+        "monthlyQuota": 99,
+        "interestRate": 0,
+        "status": "active",
+        "createdAt": "2026-10-07T20:00:30.000Z"
+      },
+      {
+        "id": "l-f",
+        "name": "Préstamo normal",
+        "totalAmount": 1000,
+        "installments": 10,
+        "paidInstallments": 2,
+        "monthlyQuota": 100,
+        "interestRate": 0,
+        "status": "active",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "nextPaymentDate": "2026-12-01"
+      },
+      {
+        "id": "l-g",
+        "name": "Diferido: Sin compra",
+        "totalAmount": 200,
+        "installments": 2,
+        "paidInstallments": 0,
+        "monthlyQuota": 100,
+        "interestRate": 0,
+        "status": "active",
+        "createdAt": "2026-10-09T00:00:00.000Z",
+        "nextPaymentDate": "2026-12-01"
+      }
+    ],
+    "creditCards": [
+      {
+        "id": "card-1",
+        "name": "Visa Oro",
+        "bankName": "Banco X",
+        "cutOffDay": 15,
+        "paymentDueDay": 5,
+        "creditLimit": 5000,
+        "currentBalance": 1000,
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "card-2",
+        "name": "Mastercard",
+        "bankName": "Banco Y",
+        "cutOffDay": 20,
+        "paymentDueDay": 10,
+        "creditLimit": 0,
+        "currentBalance": 800,
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "reminders": [],
+    "accounts": [],
+    "categories": [],
+    "investments": [],
+    "settings": [
+      {
+        "id": "default",
+        "appName": "Mi Dinero",
+        "monthlyGoal": 0,
+        "theme": "dark",
+        "currency": "USD",
+        "currencyLocale": "es-EC",
+        "onboardingCompleted": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- SummaryWidget.tsx -> PALETTE.dark.bg -->
+    <color name="widget_background">#1E293B</color>
+</resources>

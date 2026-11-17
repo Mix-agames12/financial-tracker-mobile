@@ -1,0 +1,345 @@
+{
+  "name": "card-pay-all-installments",
+  "description": "Una compra a 3 cuotas se paga completa: la última cuota libera lo pendiente de la tarjeta y el préstamo queda pagado",
+  "clock": "2026-11-17T12:00:00",
+  "seed": {
+    "accounts": [
+      {
+        "id": "acc-1",
+        "name": "Ahorros",
+        "bankName": "Banco Pichincha",
+        "accountType": "Ahorro",
+        "initialBalance": 3000,
+        "referenceNumber": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "creditCards": [
+      {
+        "id": "card-1",
+        "name": "Visa Oro",
+        "bankName": "Banco X",
+        "cutOffDay": 10,
+        "paymentDueDay": 30,
+        "creditLimit": 2000,
+        "currentBalance": 0,
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "settings": [
+      {
+        "id": "default",
+        "appName": "Mi Dinero",
+        "monthlyGoal": 0,
+        "theme": "dark",
+        "currency": "USD",
+        "currencyLocale": "es-EC",
+        "onboardingCompleted": true
+      }
+    ]
+  },
+  "steps": [
+    {
+      "op": "saveExpense",
+      "args": {
+        "as": "e1",
+        "editingId": null,
+        "taxesConfig": null,
+        "form": {
+          "amountStr": "100",
+          "categoryType": "Otros",
+          "detail": "Compra en tres",
+          "paymentMethod": "Crédito",
+          "selectedDebit": "",
+          "selectedCredit": "Visa Oro",
+          "isDeferred": true,
+          "deferredMonths": "3",
+          "dateStr": "2026-01-31",
+          "timeStr": "12:00",
+          "tags": "",
+          "isRecurring": false,
+          "recurringFrequency": "monthly",
+          "recurringDay": "",
+          "recurringDate": "",
+          "subscriptionType": ""
+        }
+      },
+      "result": {
+        "saved": true
+      }
+    },
+    {
+      "op": "payInstallment",
+      "args": {
+        "loanOfExpense": "$e1",
+        "paymentAccount": "Ahorros",
+        "taxesConfig": null
+      },
+      "result": {
+        "alert": [
+          "Éxito",
+          "Cuota de $33,33 descontada del balance general y del saldo de la tarjeta"
+        ]
+      }
+    },
+    {
+      "op": "loanDerived",
+      "args": {
+        "loanOfExpense": "$e1"
+      },
+      "result": {
+        "outstanding": 66.67,
+        "remainingDebt": 66.66
+      }
+    },
+    {
+      "op": "payInstallment",
+      "args": {
+        "loanOfExpense": "$e1",
+        "paymentAccount": "Ahorros",
+        "taxesConfig": null
+      },
+      "result": {
+        "alert": [
+          "Éxito",
+          "Cuota de $33,33 descontada del balance general y del saldo de la tarjeta"
+        ]
+      }
+    },
+    {
+      "op": "payInstallment",
+      "args": {
+        "loanOfExpense": "$e1",
+        "paymentAccount": "Ahorros",
+        "taxesConfig": null
+      },
+      "result": {
+        "alert": [
+          "Éxito",
+          "Cuota de $33,33 descontada del balance general y del saldo de la tarjeta"
+        ]
+      }
+    },
+    {
+      "op": "loanDerived",
+      "args": {
+        "loanOfExpense": "$e1"
+      },
+      "result": {
+        "outstanding": 0,
+        "remainingDebt": 0
+      }
+    },
+    {
+      "op": "getCardCycleSummary",
+      "args": {
+        "cardId": "card-1"
+      },
+      "result": {
+        "lastCutOff": "2026-11-10",
+        "nextDueDate": "2026-11-30",
+        "dueAmount": 0,
+        "activeDebt": 0,
+        "totalPending": 0,
+        "available": 2000,
+        "hasOverdue": false,
+        "purchases": [
+          {
+            "loanId": "gen-2",
+            "expenseId": "gen-1",
+            "title": "Compra en tres",
+            "pending": 0,
+            "isPaid": true
+          }
+        ]
+      }
+    },
+    {
+      "op": "getAccountBalances",
+      "args": {},
+      "result": {
+        "acc-1": 2900.01
+      }
+    },
+    {
+      "op": "saveExpense",
+      "args": {
+        "editingId": "$e1",
+        "taxesConfig": null,
+        "form": {
+          "amountStr": "150",
+          "categoryType": "Otros",
+          "detail": "Compra en tres",
+          "paymentMethod": "Crédito",
+          "selectedDebit": "",
+          "selectedCredit": "Visa Oro",
+          "isDeferred": true,
+          "deferredMonths": "3",
+          "dateStr": "2026-01-31",
+          "timeStr": "12:00",
+          "tags": "",
+          "isRecurring": false,
+          "recurringFrequency": "monthly",
+          "recurringDay": "",
+          "recurringDate": "",
+          "subscriptionType": ""
+        }
+      },
+      "result": {
+        "saved": true
+      }
+    },
+    {
+      "op": "getCardCycleSummary",
+      "args": {
+        "cardId": "card-1"
+      },
+      "result": {
+        "lastCutOff": "2026-11-10",
+        "nextDueDate": "2026-11-30",
+        "dueAmount": 50,
+        "activeDebt": 0,
+        "totalPending": 50,
+        "available": 1950,
+        "hasOverdue": true,
+        "purchases": [
+          {
+            "loanId": "gen-2",
+            "expenseId": "gen-1",
+            "title": "Compra en tres",
+            "pending": 50,
+            "isPaid": false
+          }
+        ]
+      }
+    }
+  ],
+  "final": {
+    "salary": [],
+    "expenses": [
+      {
+        "amount": 150,
+        "category": "Otros",
+        "detail": "Compra en tres",
+        "paymentMethod": "Crédito",
+        "accountName": "",
+        "cardName": "Visa Oro",
+        "isDeferred": true,
+        "deferredMonths": 3,
+        "date": "2026-01-31",
+        "time": "12:00",
+        "tags": [],
+        "isRecurring": false,
+        "subscriptionType": "",
+        "id": "gen-1",
+        "createdAt": "<createdAt>"
+      },
+      {
+        "amount": 33.33,
+        "category": "Préstamo",
+        "detail": "Cuota 1/3 — Diferido: Compra en tres",
+        "accountName": "Ahorros",
+        "paymentMethod": "Débito",
+        "date": "2026-11-17",
+        "isLoanPayment": true,
+        "loanId": "gen-2",
+        "time": "12:00",
+        "tags": [
+          "préstamo",
+          "cuota"
+        ],
+        "id": "gen-3",
+        "createdAt": "<createdAt>"
+      },
+      {
+        "amount": 33.33,
+        "category": "Préstamo",
+        "detail": "Cuota 2/3 — Diferido: Compra en tres",
+        "accountName": "Ahorros",
+        "paymentMethod": "Débito",
+        "date": "2026-11-17",
+        "isLoanPayment": true,
+        "loanId": "gen-2",
+        "time": "12:00",
+        "tags": [
+          "préstamo",
+          "cuota"
+        ],
+        "id": "gen-4",
+        "createdAt": "<createdAt>"
+      },
+      {
+        "amount": 33.33,
+        "category": "Préstamo",
+        "detail": "Cuota 3/3 — Diferido: Compra en tres",
+        "accountName": "Ahorros",
+        "paymentMethod": "Débito",
+        "date": "2026-11-17",
+        "isLoanPayment": true,
+        "loanId": "gen-2",
+        "time": "12:00",
+        "tags": [
+          "préstamo",
+          "cuota"
+        ],
+        "id": "gen-5",
+        "createdAt": "<createdAt>"
+      }
+    ],
+    "income": [],
+    "loans": [
+      {
+        "name": "Diferido: Compra en tres",
+        "totalAmount": 150,
+        "installments": 4,
+        "paidInstallments": 3,
+        "monthlyQuota": 50,
+        "interestRate": 0,
+        "nextPaymentDate": "2026-03-30",
+        "status": "active",
+        "cardId": "card-1",
+        "sourceExpenseId": "gen-1",
+        "cardOutstanding": 50,
+        "id": "gen-2",
+        "createdAt": "<createdAt>"
+      }
+    ],
+    "creditCards": [
+      {
+        "id": "card-1",
+        "name": "Visa Oro",
+        "bankName": "Banco X",
+        "cutOffDay": 10,
+        "paymentDueDay": 30,
+        "creditLimit": 2000,
+        "currentBalance": 50,
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "reminders": [],
+    "accounts": [
+      {
+        "id": "acc-1",
+        "name": "Ahorros",
+        "bankName": "Banco Pichincha",
+        "accountType": "Ahorro",
+        "initialBalance": 3000,
+        "referenceNumber": "",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "categories": [],
+    "investments": [],
+    "settings": [
+      {
+        "id": "default",
+        "appName": "Mi Dinero",
+        "monthlyGoal": 0,
+        "theme": "dark",
+        "currency": "USD",
+        "currencyLocale": "es-EC",
+        "onboardingCompleted": true
+      }
+    ]
+  }
+}
