@@ -25,6 +25,7 @@ import com.mixagames666.trackerrntemp.util.JsCompat
 import com.mixagames666.trackerrntemp.util.Time
 import com.mixagames666.trackerrntemp.util.formatCurrency
 import com.mixagames666.trackerrntemp.util.formatDate
+import com.mixagames666.trackerrntemp.util.formatPercentLocalized
 import com.mixagames666.trackerrntemp.util.jsDate
 import com.mixagames666.trackerrntemp.util.orZero
 import com.mixagames666.trackerrntemp.util.toLocalDateStr
@@ -116,7 +117,7 @@ class PaymentNotifications(private val context: Context, private val repos: Repo
         }
     }
 
-    /** Avisa una sola vez por mes y nivel cuando el gasto del mes llega al 90 % de la meta o la supera. */
+    /** Avisa una sola vez por mes y nivel cuando el gasto del mes llega al 90 % del límite de gastos mensual o lo supera. */
     suspend fun checkBudgetAlert() = queue.withLock {
         val settings = repos.settings.get()
         val goal = settings.monthlyGoal.orZero()
@@ -136,11 +137,11 @@ class PaymentNotifications(private val context: Context, private val repos: Repo
         showNotification(
             context = context,
             id = "budget-$marker",
-            title = if (level == "over") "¡Presupuesto superado!" else "Atención al presupuesto",
+            title = if (level == "over") "¡Superaste tu límite de gastos!" else "Cerca de tu límite de gastos",
             body = if (level == "over") {
-                "Has gastado ${formatCurrency(totalSpent)} y superado tu límite de ${formatCurrency(goal)}."
+                "Llevas ${formatCurrency(totalSpent)} gastados este mes y superaste tu límite mensual de ${formatCurrency(goal)}."
             } else {
-                "Has gastado el ${JsCompat.toFixed(totalSpent / goal * 100, 1)}% de tu límite de ${formatCurrency(goal)}."
+                "Has usado el ${formatPercentLocalized(totalSpent / goal)} de tu límite de gastos mensual (${formatCurrency(goal)})."
             },
         )
         repos.settings.save { it.copy(lastBudgetAlert = marker) }

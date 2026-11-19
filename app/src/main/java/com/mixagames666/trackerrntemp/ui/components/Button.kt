@@ -47,7 +47,7 @@ fun AppButton(
             ButtonVariant.Filled -> colors.primary
             ButtonVariant.Outlined -> Color.Transparent
             ButtonVariant.Tonal -> colors.primaryContainer
-            ButtonVariant.Danger -> colors.error
+            ButtonVariant.Danger -> colors.errorStrong // texto blanco 4,7:1 (el rojo base sólo 3,7:1)
         }
     }
     val textColor = if (disabled) {
@@ -55,7 +55,7 @@ fun AppButton(
     } else {
         when (variant) {
             ButtonVariant.Filled -> colors.onPrimary
-            ButtonVariant.Outlined -> colors.primary
+            ButtonVariant.Outlined -> colors.primaryText
             ButtonVariant.Tonal -> colors.onPrimaryContainer
             ButtonVariant.Danger -> colors.onError
         }
@@ -69,7 +69,7 @@ fun AppButton(
 
     Box(
         modifier = modifier
-            .defaultMinSize(minHeight = 44.dp)
+            .defaultMinSize(minHeight = 48.dp) // objetivo táctil mínimo recomendado (48 dp)
             .clip(shape)
             .background(background, shape)
             .then(if (variant == ButtonVariant.Outlined) Modifier.border(1.5.dp, borderColor, shape) else Modifier)

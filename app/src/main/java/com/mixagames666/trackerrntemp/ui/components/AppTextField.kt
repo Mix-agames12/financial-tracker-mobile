@@ -35,14 +35,17 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.error
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mixagames666.trackerrntemp.ui.theme.AppTheme
@@ -77,6 +80,9 @@ fun AppTextField(
     maxLength: Int? = null,
     autoFocus: Boolean = false,
     onPress: (() -> Unit)? = null,
+    prefix: String? = null,
+    suffix: String? = null,
+    supportingText: String? = null,
 ) {
     val colors = AppTheme.colors
     var isFocused by remember { mutableStateOf(false) }
@@ -99,7 +105,7 @@ fun AppTextField(
         .border(1.5.dp, borderColor, shape)
         .padding(horizontal = 16.dp, vertical = 12.dp)
 
-    Column(modifier.padding(bottom = 16.dp)) {
+    Column(modifier.padding(bottom = LocalFieldBottomPadding.current)) {
         Row(
             Modifier.padding(bottom = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -111,8 +117,8 @@ fun AppTextField(
                 fontWeight = FontWeight.Medium,
                 fontFamily = FontFamily.SansSerif,
                 color = when {
-                    error != null -> colors.error
-                    isFocused -> colors.primaryLight
+                    error != null -> colors.errorText
+                    isFocused -> colors.primaryText
                     else -> colors.onSurfaceVariant
                 },
                 modifier = Modifier.weight(1f, fill = false),
@@ -167,15 +173,27 @@ fun AppTextField(
 
             else -> {
                 LaunchedEffect(autoFocus) { if (autoFocus) focusRequester.requestFocus() }
+                // Se usa TextFieldValue para controlar la selección: si el campo se abre con foco automático y un valor
+                // previo (p. ej. editar el límite mensual), el texto queda seleccionado y escribir lo reemplaza. Con el
+                // cursor al principio, «borrar» no hacía nada y el dígito nuevo se anteponía al antiguo.
+                var fieldValue by remember {
+                    mutableStateOf(
+                        TextFieldValue(value, if (autoFocus && value.isNotEmpty()) TextRange(0, value.length) else TextRange(value.length)),
+                    )
+                }
+                // El valor del llamador manda: si lo cambia por su cuenta (reinicio, saneado) se refleja aquí.
+                if (fieldValue.text != value) fieldValue = fieldValue.copy(text = value, selection = TextRange(value.length))
                 BasicTextField(
-                    value = value,
-                    onValueChange = { text ->
+                    value = fieldValue,
+                    onValueChange = { next ->
                         val sanitized = when (keyboard) {
-                            FieldKeyboard.Decimal -> sanitizeDecimalInput(text)
-                            FieldKeyboard.Number -> sanitizeIntegerInput(text)
-                            FieldKeyboard.Default -> text
+                            FieldKeyboard.Decimal -> sanitizeDecimalInput(next.text)
+                            FieldKeyboard.Number -> sanitizeIntegerInput(next.text)
+                            FieldKeyboard.Default -> next.text
                         }
-                        onValueChange(if (maxLength != null) sanitized.take(maxLength) else sanitized)
+                        val limited = if (maxLength != null) sanitized.take(maxLength) else sanitized
+                        fieldValue = if (limited == next.text) next else next.copy(text = limited, selection = TextRange(minOf(next.selection.end, limited.length)))
+                        onValueChange(limited)
                     },
                     singleLine = true,
                     textStyle = inputStyle,
@@ -191,13 +209,23 @@ fun AppTextField(
                     keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
                     modifier = Modifier
                         .focusRequester(focusRequester)
-                        .onFocusChanged { isFocused = it.isFocused },
+                        .onFocusChanged { isFocused = it.isFocused }
+                        .semantics { if (error != null) this.error(error) },
                     decorationBox = { inner ->
-                        Box(inputModifier) {
-                            if (value.isEmpty() && placeholder != null) {
-                                Text(placeholder, style = inputStyle.copy(color = colors.onSurfaceVariant))
+                        Row(inputModifier, verticalAlignment = Alignment.CenterVertically) {
+                            // Heurística 6 (reconocer antes que recordar): la unidad (moneda, %) va dentro del campo.
+                            if (prefix != null) {
+                                Text(prefix, style = inputStyle.copy(color = colors.onSurfaceVariant), modifier = Modifier.padding(end = 8.dp))
                             }
-                            inner()
+                            Box(Modifier.weight(1f)) {
+                                if (value.isEmpty() && placeholder != null) {
+                                    Text(placeholder, style = inputStyle.copy(color = colors.onSurfaceVariant))
+                                }
+                                inner()
+                            }
+                            if (suffix != null) {
+                                Text(suffix, style = inputStyle.copy(color = colors.onSurfaceVariant), modifier = Modifier.padding(start = 8.dp))
+                            }
                         }
                     },
                 )
@@ -229,10 +257,13 @@ fun AppTextField(
         }
 
         if (error != null) {
+            FieldError(error) // heurística 9: el error se explica junto al campo (ícono + texto)
+        } else if (!supportingText.isNullOrEmpty()) {
             Text(
-                text = error,
+                text = supportingText,
                 fontSize = 12.sp,
-                color = colors.error,
+                lineHeight = 16.sp,
+                color = colors.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp),
             )
         }

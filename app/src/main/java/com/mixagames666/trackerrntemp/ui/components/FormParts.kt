@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -15,6 +16,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontFamily
@@ -25,10 +29,40 @@ import androidx.compose.ui.unit.sp
 import com.mixagames666.trackerrntemp.data.TaxesConfig
 import com.mixagames666.trackerrntemp.domain.TaxBreakdown
 import com.mixagames666.trackerrntemp.ui.theme.AppTheme
+import com.mixagames666.trackerrntemp.ui.theme.MoneyStyle
 import com.mixagames666.trackerrntemp.util.JsCompat
 import com.mixagames666.trackerrntemp.util.formatCurrency
 
 // Piezas de formulario que se repiten en las pantallas (mismos estilos que los `style` inline del original).
+
+/** Margen inferior que añade cada [AppTextField] (16 dp suelto; 0 dentro de un [FormColumn], que ya separa los bloques). */
+val LocalFieldBottomPadding = compositionLocalOf { 16.dp }
+
+/**
+ * Columna de formulario: separa todos los bloques (campos, grupos de chips, botones) con el mismo [spacing].
+ * Sin esto cada campo sumaba su propio margen al `spacedBy` de la tarjeta y los espacios dobles (~32 dp) alargaban
+ * el formulario y obligaban a desplazarse más de la cuenta (heurística 8: diseño minimalista).
+ */
+@Composable
+fun FormColumn(modifier: Modifier = Modifier, spacing: Dp = 16.dp, content: @Composable ColumnScope.() -> Unit) {
+    CompositionLocalProvider(LocalFieldBottomPadding provides 0.dp) {
+        Column(modifier, verticalArrangement = Arrangement.spacedBy(spacing), content = content)
+    }
+}
+
+/** Mensaje de error junto al campo: ícono + texto, para no depender sólo del color (heurística 9). */
+@Composable
+fun FieldError(text: String, modifier: Modifier = Modifier) {
+    val colors = AppTheme.colors
+    Row(
+        modifier.padding(top = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Ionicon("alert-circle", 14, colors.errorText)
+        Text(text = text, fontSize = 12.sp, color = colors.errorText, modifier = Modifier.weight(1f, fill = false))
+    }
+}
 
 /** Etiqueta de grupo de opciones: 12 sp, onSurfaceVariant, margen inferior 8, 'sans-serif-medium'. */
 @Composable
@@ -101,7 +135,7 @@ fun TaxBreakdownBox(
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(totalLabel, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = colors.onSurface)
-                Text(formatCurrency(breakdown.totalCharge), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = colors.primary)
+                Text(formatCurrency(breakdown.totalCharge), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = colors.primaryText, style = MoneyStyle)
             }
         }
     }

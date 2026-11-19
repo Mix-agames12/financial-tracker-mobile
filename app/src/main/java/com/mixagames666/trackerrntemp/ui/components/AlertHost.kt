@@ -7,6 +7,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import com.mixagames666.trackerrntemp.ui.theme.AppTheme
@@ -54,12 +55,14 @@ fun AlertHost() {
 
     @Composable
     fun ButtonView(button: AlertButton) {
+        // Heurística 5 (prevención de errores): la acción destructiva se distingue también por el color.
+        val tint = if (button.style == AlertButtonStyle.Destructive) colors.errorText else colors.primaryText
         TextButton(
             onClick = {
                 Alerts.dismiss()
                 button.onPress?.invoke()
             },
-        ) { Text(button.text, color = colors.primary, fontSize = 14.sp) }
+        ) { Text(button.text, color = tint, fontSize = 14.sp, fontWeight = if (button.style == AlertButtonStyle.Destructive) FontWeight.SemiBold else null) }
     }
 
     AlertDialog(

@@ -74,6 +74,31 @@ fun formatCurrency(amount: Number?): String = formatCurrencyValue(amount?.toDoub
 
 fun formatCurrency(amount: String?): String = formatCurrencyValue(JsCompat.parseFloat(amount))
 
+/**
+ * Porcentaje con el separador decimal de la moneda activa ("43,8%"; sin decimales sobrantes: 0.9 → "90%").
+ * [ratio] va de 0 a 1 (puede superar 1: 2.044 → "204,4%"). A diferencia de [formatPercent] (puerto de
+ * formatters.ts, siempre con punto), éste sigue el mismo formato regional que [formatCurrency], de modo que
+ * "$1.430,99" y "204,4%" no mezclen separadores en una misma pantalla (heurística 4: consistencia).
+ */
+fun formatPercentLocalized(ratio: Double, maxDecimals: Int = 1): String {
+    val value = if (ratio.isFinite()) ratio * 100 else 0.0
+    val locale = CurrencyState.config.locale
+    val text = if (useIcu) {
+        val nf = android.icu.text.NumberFormat.getInstance(ULocale.forLanguageTag(locale))
+        nf.minimumFractionDigits = 0
+        nf.maximumFractionDigits = maxDecimals
+        nf.isGroupingUsed = false
+        nf.format(value)
+    } else {
+        val nf = java.text.NumberFormat.getInstance(Locale.forLanguageTag(locale))
+        nf.minimumFractionDigits = 0
+        nf.maximumFractionDigits = maxDecimals
+        nf.isGroupingUsed = false
+        nf.format(value)
+    }
+    return "$text%"
+}
+
 private val SYMBOL_STRIP = Regex("[0-9\\s\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000\\uFEFF.,-]")
 
 /** Símbolo de la moneda activa (p. ej. "$", "€", "S/"). */
