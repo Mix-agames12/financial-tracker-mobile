@@ -3,6 +3,7 @@ package com.mixagames666.trackerrntemp.ui.components
 import android.graphics.Color as AndroidColor
 import android.graphics.drawable.ColorDrawable
 import android.os.Build
+import android.view.Gravity
 import android.view.ViewGroup
 import android.view.WindowManager
 import androidx.compose.animation.core.Animatable
@@ -10,6 +11,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -22,16 +24,18 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -83,6 +87,11 @@ import kotlin.math.roundToInt
 
 // Port de components/BottomSheet.tsx: hoja inferior arrastrable con dos alturas (media = 60 % del espacio
 // útil y completa), cierre arrastrando hacia abajo, ajuste al teclado y cierre al tocar el fondo.
+//
+// Geometría (sin huecos): la ventana del diálogo se ancla arriba y ocupa toda la pantalla, de modo que el fondo
+// oscuro cubre también las barras y el área del teclado. La hoja llega hasta el borde inferior y reserva el
+// espacio del teclado DENTRO de sí misma; así nunca queda una franja entre la hoja y el borde inferior o el
+// teclado, aunque el IME reserve espacio sin dibujar nada (teclado físico, emulador) o se esté animando.
 
 private const val HALF_RATIO = 0.6f
 private const val DISMISS_VELOCITY = 1.5f // dp/ms, como el vy de PanResponder
@@ -99,11 +108,15 @@ private class GestureState {
     var onClose: () -> Unit = {}
 }
 
+/**
+ * [scrollState] permite al llamador desplazar el contenido (p. ej. volver arriba para mostrar un error de validación).
+ */
 @Composable
 fun BottomSheet(
     visible: Boolean,
     onClose: () -> Unit,
     title: String,
+    scrollState: ScrollState = rememberScrollState(),
     content: @Composable ColumnScope.() -> Unit,
 ) {
     // Se mantiene compuesta durante la animación de salida (RN: Modal animationType="slide").
@@ -111,6 +124,7 @@ fun BottomSheet(
     val slide = remember { Animatable(if (visible) 0f else 1f) }
     LaunchedEffect(visible) {
         if (visible) {
+            scrollState.scrollTo(0) // el estado de scroll vive fuera del diálogo: cada apertura empieza arriba
             rendered = true
             slide.snapTo(1f)
             slide.animateTo(0f, tween(300, easing = FastOutSlowInEasing))
@@ -131,7 +145,7 @@ fun BottomSheet(
         ),
     ) {
         ConfigureSheetWindow()
-        SheetLayout(slideFraction = slide.value, title = title, onClose = onClose, content = content)
+        SheetLayout(slideFraction = slide.value, title = title, onClose = onClose, scrollState = scrollState, content = content)
     }
 }
 
@@ -145,6 +159,10 @@ private fun ConfigureSheetWindow() {
         window.setDimAmount(0f)
         window.setBackgroundDrawable(ColorDrawable(AndroidColor.TRANSPARENT))
         window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        // Con ADJUST_RESIZE el sistema encoge el marco padre al abrirse el teclado y, como Compose fija el tamaño de
+        // la ventana al de su contenido, un diálogo con gravedad centrada se desplazaba hacia arriba: el fondo
+        // oscuro dejaba de cubrir la parte baja de la pantalla. Anclada arriba, la ventana no se mueve nunca.
+        window.setGravity(Gravity.TOP or Gravity.CENTER_HORIZONTAL)
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         // statusBarTranslucent + navigationBarTranslucent del Modal: la hoja y su fondo cubren también las barras.
         window.addFlags(
@@ -176,6 +194,7 @@ private fun SheetLayout(
     slideFraction: Float,
     title: String,
     onClose: () -> Unit,
+    scrollState: ScrollState,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Box(Modifier.fillMaxSize()) {
@@ -187,7 +206,7 @@ private fun SheetLayout(
                 .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.6f * (1f - slideFraction)))
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClose),
         )
-        SheetBody(slideFraction, title, onClose, content)
+        SheetBody(slideFraction, title, onClose, scrollState, content)
     }
 }
 
@@ -197,6 +216,7 @@ private fun SheetBody(
     slideFraction: Float,
     title: String,
     onClose: () -> Unit,
+    scrollState: ScrollState,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val colors = AppTheme.colors
@@ -214,14 +234,9 @@ private fun SheetBody(
     var snap by remember { mutableStateOf(Snap.Half) }
     val gesture = remember { GestureState() }
     val dragY = remember { Animatable(0f) }
-    val scrollState = rememberScrollState()
 
-    BoxWithConstraints(
-        Modifier
-            .fillMaxSize()
-            .imePadding(),
-    ) {
-        // Altura útil dentro del modal: imePadding la reduce cuando el teclado está abierto.
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        // Altura de toda la ventana (no se resta el teclado: su espacio se reserva dentro de la hoja).
         val availablePx = constraints.maxHeight.toFloat()
         val fullPx = max(availablePx - topInsetPx - topGapPx, 0f)
         val halfPx = min(fullPx, availablePx * HALF_RATIO)
@@ -396,6 +411,10 @@ private fun SheetBody(
                     .padding(bottom = if (keyboardVisible) 16.dp else 24.dp + bottomInset()),
                 content = content,
             )
+
+            // Espacio del teclado: la hoja llega hasta el borde de la pantalla y deja libre la franja que ocupa
+            // el IME (vale 0 con el teclado oculto y sigue su animación al abrirse o cerrarse).
+            Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.ime))
         }
     }
 }
