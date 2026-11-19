@@ -14,8 +14,10 @@ import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import java.io.File
-import java.time.LocalDateTime
-import java.time.ZoneId
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.Clock
 
 /**
  * Pruebas diferenciales: cada escenario de src/test/resources/golden se generó ejecutando la lógica
@@ -30,8 +32,8 @@ class GoldenTest(private val file: File) {
 
     @After
     fun resetClock() {
-        Time.nowProvider = { LocalDateTime.now() }
-        Time.zoneProvider = { ZoneId.systemDefault() }
+        Time.nowProvider = { Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()) }
+        Time.zoneProvider = { TimeZone.currentSystemDefault() }
     }
 
     @Test

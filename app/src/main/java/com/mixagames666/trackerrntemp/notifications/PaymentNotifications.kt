@@ -19,38 +19,28 @@ import androidx.work.WorkManager
 import com.mixagames666.trackerrntemp.MainActivity
 import com.mixagames666.trackerrntemp.R
 import com.mixagames666.trackerrntemp.data.Repos
-import com.mixagames666.trackerrntemp.domain.UpcomingPayment
-import com.mixagames666.trackerrntemp.domain.getUpcomingPayments
-import com.mixagames666.trackerrntemp.util.JsCompat
+import com.mixagames666.trackerrntemp.domain.pendingBudgetAlert
+import com.mixagames666.trackerrntemp.domain.planPaymentReminders
+import com.mixagames666.trackerrntemp.platform.NotificationService
 import com.mixagames666.trackerrntemp.util.Time
-import com.mixagames666.trackerrntemp.util.formatCurrency
-import com.mixagames666.trackerrntemp.util.formatDate
-import com.mixagames666.trackerrntemp.util.formatPercentLocalized
-import com.mixagames666.trackerrntemp.util.jsDate
-import com.mixagames666.trackerrntemp.util.orZero
-import com.mixagames666.trackerrntemp.util.toLocalDateStr
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.time.LocalDateTime
-import java.time.LocalTime
+import kotlinx.datetime.toInstant
 import java.util.concurrent.TimeUnit
 
 // Port de src/hooks/useNotifications.ts (+ localNotifications.ts)
 
 private const val CHANNEL_ID = "payments"
 private const val REMINDER_KIND = "payment-reminder"
-private const val REMINDER_HOUR = 9
-private const val REMINDER_HORIZON_DAYS = 60
-private const val MAX_SCHEDULED = 50
 
 /** Recordatorios de pagos próximos y alerta de presupuesto, como notificaciones locales. */
-class PaymentNotifications(private val context: Context, private val repos: Repos) {
+class PaymentNotifications(private val context: Context, private val repos: Repos) : NotificationService {
 
     // Ejecuta las llamadas una detrás de otra para que dos reprogramaciones no se intercalen.
     private val queue = Mutex()
 
     /** En Android 13+ el canal debe existir antes de pedir el permiso para que se muestre el diálogo. */
-    fun ensureChannel() {
+    override fun ensureChannel() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val channel = NotificationChannel(CHANNEL_ID, context.getString(R.string.notification_channel_name), NotificationManager.IMPORTANCE_HIGH).apply {
             vibrationPattern = longArrayOf(0, 250, 250, 250)
@@ -62,27 +52,13 @@ class PaymentNotifications(private val context: Context, private val repos: Repo
     }
 
     /** `getPermissionsAsync().status === 'granted'` */
-    fun hasPermission(): Boolean {
+    override fun hasPermission(): Boolean {
         if (Build.VERSION.SDK_INT >= 33 &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
         ) {
             return false
         }
         return NotificationManagerCompat.from(context).areNotificationsEnabled()
-    }
-
-    /** El día anterior a las 09:00; si ya pasó, el mismo día a las 09:00; si también pasó, ninguno. */
-    private fun reminderDateFor(payment: UpcomingPayment): Pair<LocalDateTime, Boolean>? {
-        val parts = payment.dueDate.split('-').map { JsCompat.number(it) }
-        val y = parts.getOrNull(0)?.takeIf { it.isFinite() && it != 0.0 }?.toInt() ?: return null
-        val m = parts.getOrNull(1)?.takeIf { it.isFinite() && it != 0.0 }?.toInt() ?: return null
-        val d = parts.getOrNull(2)?.takeIf { it.isFinite() && it != 0.0 }?.toInt() ?: return null
-        val now = Time.now()
-        val dayBefore = LocalDateTime.of(jsDate(y, m - 1, d - 1), LocalTime.of(REMINDER_HOUR, 0))
-        if (dayBefore.isAfter(now)) return dayBefore to false
-        val dueDay = LocalDateTime.of(jsDate(y, m - 1, d), LocalTime.of(REMINDER_HOUR, 0))
-        if (dueDay.isAfter(now)) return dueDay to true
-        return null
     }
 
     /** Reprograma los recordatorios de pagos próximos: préstamos, tarjetas y gastos recurrentes. */
@@ -92,59 +68,29 @@ class PaymentNotifications(private val context: Context, private val repos: Repo
         val work = WorkManager.getInstance(context)
         work.cancelAllWorkByTag(REMINDER_KIND)
 
-        val payments = getUpcomingPayments(repos, REMINDER_HORIZON_DAYS).filter { it.daysLeft >= 0 }
-        var count = 0
-        for (payment in payments) {
-            if (count >= MAX_SCHEDULED) break
-            val (date, isDueDay) = reminderDateFor(payment) ?: continue
-            val delay = date.atZone(Time.zone()).toInstant().toEpochMilli() - Time.nowMillis()
+        for (reminder in planPaymentReminders(repos)) {
+            val delay = reminder.fireAt.toInstant(Time.zone()).toEpochMilliseconds() - Time.nowMillis()
             val request = OneTimeWorkRequestBuilder<ReminderWorker>()
                 .setInitialDelay(delay.coerceAtLeast(0), TimeUnit.MILLISECONDS)
                 .addTag(REMINDER_KIND)
                 .setInputData(
                     Data.Builder()
-                        .putString(ReminderWorker.KEY_TITLE, if (isDueDay) "Hoy vence un pago" else "Pago próximo")
-                        .putString(
-                            ReminderWorker.KEY_BODY,
-                            "${if (isDueDay) "Hoy" else "Mañana"} vence ${payment.title}: ${formatCurrency(payment.amount)} (${formatDate(payment.dueDate)}).",
-                        )
-                        .putString(ReminderWorker.KEY_ID, "$REMINDER_KIND-${payment.id}")
+                        .putString(ReminderWorker.KEY_TITLE, reminder.title)
+                        .putString(ReminderWorker.KEY_BODY, reminder.body)
+                        .putString(ReminderWorker.KEY_ID, reminder.id)
                         .build(),
                 )
                 .build()
-            work.enqueueUniqueWork("$REMINDER_KIND-${payment.id}", ExistingWorkPolicy.REPLACE, request)
-            count++
+            work.enqueueUniqueWork(reminder.id, ExistingWorkPolicy.REPLACE, request)
         }
     }
 
     /** Avisa una sola vez por mes y nivel cuando el gasto del mes llega al 90 % del límite de gastos mensual o lo supera. */
     suspend fun checkBudgetAlert() = queue.withLock {
-        val settings = repos.settings.get()
-        val goal = settings.monthlyGoal.orZero()
-        if (goal <= 0 || !hasPermission()) return@withLock
-
-        val now = Time.today()
-        val start = toLocalDateStr(jsDate(now.year, now.monthValue - 1, 1))
-        val end = toLocalDateStr(jsDate(now.year, now.monthValue, 0))
-        val expenses = repos.expenses.getByDateRange(start, end)
-        val totalSpent = expenses.fold(0.0) { sum, e -> sum + e.amount.orZero() }
-
-        val level = if (totalSpent > goal) "over" else if (totalSpent >= goal * 0.9) "near" else null
-        if (level == null) return@withLock
-        val marker = "${start.substring(0, 7)}:$level"
-        if (settings.lastBudgetAlert == marker) return@withLock
-
-        showNotification(
-            context = context,
-            id = "budget-$marker",
-            title = if (level == "over") "¡Superaste tu límite de gastos!" else "Cerca de tu límite de gastos",
-            body = if (level == "over") {
-                "Llevas ${formatCurrency(totalSpent)} gastados este mes y superaste tu límite mensual de ${formatCurrency(goal)}."
-            } else {
-                "Has usado el ${formatPercentLocalized(totalSpent / goal)} de tu límite de gastos mensual (${formatCurrency(goal)})."
-            },
-        )
-        repos.settings.save { it.copy(lastBudgetAlert = marker) }
+        if (!hasPermission()) return@withLock
+        val alert = pendingBudgetAlert(repos) ?: return@withLock
+        showNotification(context = context, id = alert.id, title = alert.title, body = alert.body)
+        repos.settings.save { it.copy(lastBudgetAlert = alert.marker) }
     }
 
     companion object {

@@ -1,9 +1,9 @@
 package com.mixagames666.trackerrntemp.util
 
-import java.math.BigDecimal
-import java.math.RoundingMode
 import kotlin.math.abs
+import kotlin.math.floor
 import kotlin.math.max
+import kotlin.math.min
 
 /**
  * Reproduce la semántica de JavaScript que usa la app React Native (números como `double`, `toFixed`,
@@ -17,7 +17,7 @@ object JsCompat {
         if (value.isNaN()) return "NaN"
         if (value.isInfinite()) return if (value > 0) "Infinity" else "-Infinity"
         if (abs(value) >= 1e21) return numberToString(value)
-        val magnitude = BigDecimal(abs(value)).setScale(digits, RoundingMode.HALF_UP).toPlainString()
+        val magnitude = exactToFixedMagnitude(abs(value), digits)
         return if (value < 0) "-$magnitude" else magnitude
     }
 
@@ -27,10 +27,10 @@ object JsCompat {
         if (value == 0.0) return "0"
         if (value.isInfinite()) return if (value > 0) "Infinity" else "-Infinity"
         val sign = if (value < 0) "-" else ""
-        val decimal = BigDecimal(java.lang.Double.toString(abs(value))).stripTrailingZeros()
-        val digits = decimal.unscaledValue().toString()
+        val shortest = shortestDigits(abs(value))
+        val digits = shortest.digits
         val k = digits.length
-        val n = k - decimal.scale() // el punto decimal queda tras n dígitos
+        val n = shortest.pointPosition // el punto decimal queda tras n dígitos
         val body = when {
             n in k..21 -> digits + "0".repeat(n - k)
             n in 1..21 -> digits.substring(0, n) + "." + digits.substring(n)
@@ -66,9 +66,9 @@ object JsCompat {
         val sign = if (match.groupValues[1] == "-") -1.0 else 1.0
         val body = match.groupValues[2]
         val magnitude = if (body.startsWith("0x") || body.startsWith("0X")) {
-            body.substring(2).toBigInteger(16).toDouble()
+            hexMagnitude(body.substring(2))
         } else {
-            BigDecimal(body).toDouble()
+            decimalMagnitude(body)
         }
         return sign * magnitude
     }
@@ -84,7 +84,11 @@ object JsCompat {
     }
 
     /** `Math.round`: el entero más cercano; los empates van hacia +∞ (distinto de `kotlin.math.round`). */
-    fun round(value: Double): Double = if (value.isNaN() || value.isInfinite()) value else Math.round(value).toDouble()
+    fun round(value: Double): Double {
+        if (value.isNaN() || value.isInfinite()) return value
+        val floor = floor(value)
+        return if (value - floor >= 0.5) floor + 1 else floor
+    }
 
     fun toIntClamped(value: Double): Int = when {
         value.isNaN() -> 0
@@ -94,8 +98,26 @@ object JsCompat {
     }
 
     /** `Math.min(Math.max(Math.trunc(n) || 1, 1), 31)` */
-    fun clampDay(day: Int): Int = Math.min(max(if (day == 0) 1 else day, 1), 31)
+    fun clampDay(day: Int): Int = min(max(if (day == 0) 1 else day, 1), 31)
 }
 
 /** Atajo para `Number(x) || 0` sobre un `Double`. */
 fun Double.orZero(): Double = if (this.isNaN() || this == 0.0) 0.0 else this
+
+/** Dígitos significativos más cortos de un double positivo y posición del punto decimal (ver [JsCompat.numberToString]). */
+class ShortestDigits(val digits: String, val pointPosition: Int)
+
+/**
+ * Expansión decimal exacta del double [magnitude] (>= 0, < 1e21) redondeada a [digits] decimales con empate hacia
+ * arriba, como `toFixed` de JavaScript. Android usa BigDecimal; iOS usa [ExactDecimal] (aritmética propia).
+ */
+internal expect fun exactToFixedMagnitude(magnitude: Double, digits: Int): String
+
+/** Dígitos más cortos que identifican el double [magnitude] (> 0, finito), sin ceros finales. */
+internal expect fun shortestDigits(magnitude: Double): ShortestDigits
+
+/** Valor (como double) de un entero decimal escrito con dígitos ASCII. */
+internal expect fun decimalMagnitude(digits: String): Double
+
+/** Valor (como double) de un entero hexadecimal escrito con dígitos ASCII. */
+internal expect fun hexMagnitude(digits: String): Double

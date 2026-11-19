@@ -1,6 +1,6 @@
 package com.mixagames666.trackerrntemp.domain
 
-import android.util.Log
+import com.mixagames666.trackerrntemp.util.AppLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -23,7 +23,7 @@ class DataSync(private val scope: CoroutineScope) {
                 try {
                     task()
                 } catch (e: Exception) {
-                    Log.d(TAG, "Error en $name", e)
+                    AppLog.d(TAG, "Error en $name", e)
                 }
             }
         }

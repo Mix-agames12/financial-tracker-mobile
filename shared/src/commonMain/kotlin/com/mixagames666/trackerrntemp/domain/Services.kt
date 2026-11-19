@@ -1,6 +1,6 @@
 package com.mixagames666.trackerrntemp.domain
 
-import android.util.Log
+import com.mixagames666.trackerrntemp.util.AppLog
 import com.mixagames666.trackerrntemp.data.Aggregates
 import com.mixagames666.trackerrntemp.data.CreditCard
 import com.mixagames666.trackerrntemp.data.Expense
@@ -57,7 +57,7 @@ fun calcTaxes(config: TaxesConfig?, amount: Double, appliesTo: (TaxesConfig) -> 
     return TaxBreakdown(applies, comision, iva, isd, totalTax, amount + totalTax)
 }
 
-private fun nowHHmm(): String = Time.now().let { "%02d:%02d".format(it.hour, it.minute) }
+private fun nowHHmm(): String = Time.now().let { "${it.hour.toString().padStart(2, '0')}:${it.minute.toString().padStart(2, '0')}" }
 
 // ===================================================================================================
 // Gastos
@@ -220,7 +220,7 @@ class ExpenseService(
             }
             return ServiceResult.Done()
         } catch (e: Exception) {
-            Log.e("ExpenseService", "No se pudo guardar el gasto", e)
+            AppLog.e("ExpenseService", "No se pudo guardar el gasto", e)
             return ServiceResult.Alert("Error", "No se pudo guardar el gasto")
         }
     }
@@ -289,7 +289,7 @@ class LoanService(
             }
             ServiceResult.Done()
         } catch (e: Exception) {
-            Log.e("LoanService", "No se pudo guardar el préstamo", e)
+            AppLog.e("LoanService", "No se pudo guardar el préstamo", e)
             ServiceResult.Alert("Error", "No se pudo guardar el préstamo")
         }
     }
@@ -377,7 +377,7 @@ class LoanService(
                 },
             )
         } catch (e: Exception) {
-            Log.e("LoanService", "No se pudo registrar la cuota", e)
+            AppLog.e("LoanService", "No se pudo registrar la cuota", e)
             ServiceResult.Alert("Error", "No se pudo registrar la cuota")
         }
     }

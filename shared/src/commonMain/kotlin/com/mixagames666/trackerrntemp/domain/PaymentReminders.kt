@@ -8,7 +8,7 @@ import com.mixagames666.trackerrntemp.util.nextDateForDay
 import com.mixagames666.trackerrntemp.util.nextDateForMonthDay
 import com.mixagames666.trackerrntemp.util.orZero
 import com.mixagames666.trackerrntemp.util.roundMoney
-import java.time.LocalDate
+import kotlinx.datetime.LocalDate
 
 // Port de src/utils/paymentReminders.ts
 

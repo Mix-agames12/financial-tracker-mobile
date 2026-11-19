@@ -1,12 +1,14 @@
 package com.mixagames666.trackerrntemp.data
 
-import android.util.Log
+import com.mixagames666.trackerrntemp.util.AppLog
 import com.mixagames666.trackerrntemp.util.Time
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
+import kotlin.concurrent.Volatile
+import kotlin.random.Random
 
 // Port de la capa de repositorios de src/db/storage.ts (getAll/get/add/update/delete + consultas).
 
@@ -16,7 +18,7 @@ private const val BASE36 = "0123456789abcdefghijklmnopqrstuvwxyz"
 
 /** `Date.now().toString() + Math.random().toString(36).substring(7)` */
 fun generateId(): String {
-    val suffix = buildString { repeat(5) { append(BASE36[(Math.random() * BASE36.length).toInt().coerceIn(0, BASE36.length - 1)]) } }
+    val suffix = buildString { repeat(5) { append(BASE36[(Random.nextDouble() * BASE36.length).toInt().coerceIn(0, BASE36.length - 1)]) } }
     return Time.nowMillis().toString() + suffix
 }
 
@@ -46,14 +48,14 @@ class StoreCollection<T : Stored<T>>(
                 try {
                     items.add(AppJson.decodeFromJsonElement(serializer, item))
                 } catch (e: Exception) {
-                    Log.w(TAG, "Registro ilegible en $name, se conserva sin cambios", e)
+                    AppLog.w(TAG, "Registro ilegible en $name, se conserva sin cambios", e)
                     skipped.add(item)
                 }
             }
             unreadable = skipped
             items
         } catch (e: Exception) {
-            Log.e(TAG, "Error loading $name", e)
+            AppLog.e(TAG, "Error loading $name", e)
             mutableListOf()
         }
     }

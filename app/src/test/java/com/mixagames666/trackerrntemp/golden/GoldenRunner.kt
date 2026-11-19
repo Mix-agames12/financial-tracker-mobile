@@ -73,10 +73,13 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
+import okio.Path.Companion.toOkioPath
 import java.io.File
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.ZoneId
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.Clock
 
 /**
  * Reproduce un escenario dorado (ver tools/golden) contra la versión Kotlin: siembra las colecciones,
@@ -84,7 +87,7 @@ import java.time.ZoneId
  * misma regla que run.js (ids generados → gen-N, createdAt de los nuevos → "<createdAt>").
  */
 class GoldenRunner(directory: File) {
-    private val store = JsonStore(directory)
+    private val store = JsonStore(directory.toOkioPath())
     private val repos = Repos(store)
     private val aggregates = Aggregates(repos)
     private val cardPurchases = CardPurchases(repos)
@@ -136,7 +139,7 @@ class GoldenRunner(directory: File) {
     private fun setClock(text: String) {
         val now = LocalDateTime.parse(text)
         Time.nowProvider = { now }
-        Time.zoneProvider = { ZoneId.of("America/Guayaquil") }
+        Time.zoneProvider = { TimeZone.of("America/Guayaquil") }
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -222,7 +225,7 @@ class GoldenRunner(directory: File) {
 
     private fun resultJson(result: ServiceResult): JsonElement = when (result) {
         is ServiceResult.Alert -> alertJson(result.title, result.message)
-        is ServiceResult.Done -> if (result.successAlert != null) alertJson("Éxito", result.successAlert) else buildJsonObject { put("saved", true) }
+        is ServiceResult.Done -> result.successAlert?.let { alertJson("Éxito", it) } ?: buildJsonObject { put("saved", true) }
     }
 
     private fun summaryJson(summary: CardCycleSummary) = buildJsonObject {

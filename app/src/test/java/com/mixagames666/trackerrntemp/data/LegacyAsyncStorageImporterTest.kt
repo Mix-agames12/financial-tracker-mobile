@@ -7,6 +7,7 @@ import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import okio.Path.Companion.toOkioPath
 import java.io.File
 
 class LegacyAsyncStorageImporterTest {
@@ -14,7 +15,7 @@ class LegacyAsyncStorageImporterTest {
     @get:Rule
     val tmp = TemporaryFolder()
 
-    private fun importer(dir: File) = LegacyAsyncStorageImporter(File(tmp.root, "no-existe/RKStorage"), dir, JsonStore(dir))
+    private fun importer(dir: File) = LegacyAsyncStorageImporter(File(tmp.root, "no-existe/RKStorage"), dir, JsonStore(dir.toOkioPath()))
 
     @Test
     fun copiaLasColeccionesConocidasTalCual() = runBlocking {
@@ -65,7 +66,7 @@ class LegacyAsyncStorageImporterTest {
         File(dir, "settings.json").writeText("""[{"id":"default"}]""")
         // Aunque la base exista, el almacén propio ya tiene datos: no se importa nada.
         val db = tmp.newFile("RKStorage")
-        val result = LegacyAsyncStorageImporter(db, dir, JsonStore(dir)).importIfNeeded()
+        val result = LegacyAsyncStorageImporter(db, dir, JsonStore(dir.toOkioPath())).importIfNeeded()
         assertEquals(0, result)
     }
 }

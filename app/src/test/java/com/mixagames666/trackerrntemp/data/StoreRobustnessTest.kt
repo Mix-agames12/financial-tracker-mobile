@@ -15,6 +15,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import okio.Path.Companion.toOkioPath
 import java.io.File
 
 /** Casos límite del almacén JSON y de los serializadores tolerantes (datos de AsyncStorage o de un backup ajeno). */
@@ -29,7 +30,7 @@ class StoreRobustnessTest {
     @Before
     fun setUp() {
         dir = tmp.newFolder("stores")
-        repos = Repos(JsonStore(dir))
+        repos = Repos(JsonStore(dir.toOkioPath()))
     }
 
     private fun file(name: String) = File(dir, "$name.json")

@@ -11,7 +11,7 @@ import com.mixagames666.trackerrntemp.util.nextDateForDay
 import com.mixagames666.trackerrntemp.util.orZero
 import com.mixagames666.trackerrntemp.util.roundMoney
 import com.mixagames666.trackerrntemp.util.toLocalDateStr
-import java.time.LocalDate
+import kotlinx.datetime.LocalDate
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -371,7 +371,7 @@ fun calculateCreditCardNextPaymentDate(expenseDate: String, cutOffDay: Int, paym
         return ""
     }
     val expDay = date.dayOfMonth
-    var dueMonth = date.monthValue - 1 + 1 // getUTCMonth() + 1
+    var dueMonth = date.monthNumber - 1 + 1 // getUTCMonth() + 1
     var dueYear = date.year
 
     if (expDay > cutOffDay) dueMonth += 1

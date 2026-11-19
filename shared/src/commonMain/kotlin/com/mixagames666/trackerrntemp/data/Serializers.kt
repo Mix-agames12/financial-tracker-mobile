@@ -13,6 +13,7 @@ import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
 import kotlin.math.abs
+import kotlin.math.round
 
 /**
  * Configuración JSON compartida: los mismos documentos que escribe AsyncStorage (`JSON.stringify`).
@@ -52,7 +53,7 @@ object LenientDoubleSerializer : KSerializer<Double> {
 
     /** Los enteros se escriben sin ".0" (`1500`), como hace `JSON.stringify`. */
     override fun serialize(encoder: Encoder, value: Double) {
-        if (value.isFinite() && value == Math.rint(value) && abs(value) < 1e15) {
+        if (value.isFinite() && value == round(value) && abs(value) < 1e15) {
             encoder.encodeLong(value.toLong())
         } else if (value.isFinite()) {
             encoder.encodeDouble(value)

@@ -13,7 +13,10 @@ import com.mixagames666.trackerrntemp.util.getWeekNumber
 import com.mixagames666.trackerrntemp.util.jsDate
 import com.mixagames666.trackerrntemp.util.jsDayOfWeek
 import com.mixagames666.trackerrntemp.util.toLocalDateStr
-import java.time.LocalDate
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 
 // Cálculos de AnalyticsScreen (loadData y handleComparison) sin la UI ni los apaños de chart-kit.
 
@@ -49,7 +52,7 @@ fun computeAnalytics(
     today: LocalDate = Time.today(),
 ): AnalyticsData {
     val year = today.year
-    val month = today.monthValue
+    val month = today.monthNumber
 
     val labels = mutableListOf<String>()
     val expData = mutableListOf<Double>()
@@ -65,9 +68,9 @@ fun computeAnalytics(
 
     when (period) {
         AnalyticsPeriod.DAILY -> for (i in 29 downTo 0) {
-            val d = today.minusDays(i.toLong())
+            val d = today.minus(i, DateTimeUnit.DAY)
             val dateStr = toLocalDateStr(d)
-            labels.add("${d.dayOfMonth}/${d.monthValue}")
+            labels.add("${d.dayOfMonth}/${d.monthNumber}")
             val dayExp = allExpenses.filter { it.date == dateStr }.fold(0.0) { s, e -> s + e.amount }
             val dayInc = allIncomes.filter { it.date == dateStr }.fold(0.0) { s, inc -> s + inc.amount }
             expData.add(dayExp); incData.add(dayInc)
@@ -76,8 +79,8 @@ fun computeAnalytics(
 
         AnalyticsPeriod.WEEKLY -> for (i in 11 downTo 0) {
             // setDate(getDate() - (i * 7) - getDay() + 1): en domingo la "semana" empieza mañana
-            val weekStart = today.plusDays((-(i * 7) - today.jsDayOfWeek() + 1).toLong())
-            val weekEnd = weekStart.plusDays(6)
+            val weekStart = today.plus(-(i * 7) - today.jsDayOfWeek() + 1, DateTimeUnit.DAY)
+            val weekEnd = weekStart.plus(6, DateTimeUnit.DAY)
             val startStr = toLocalDateStr(weekStart)
             val endStr = toLocalDateStr(weekEnd)
             labels.add("S${getWeekNumber(weekStart)}")
@@ -89,7 +92,7 @@ fun computeAnalytics(
 
         AnalyticsPeriod.MONTHLY -> for (i in 11 downTo 0) {
             val d = jsDate(year, month - 1 - i, 1)
-            val m = d.monthValue
+            val m = d.monthNumber
             val y = d.year
             labels.add(getMonthName(m).take(3))
             val mm = m.toString().padStart(2, '0')

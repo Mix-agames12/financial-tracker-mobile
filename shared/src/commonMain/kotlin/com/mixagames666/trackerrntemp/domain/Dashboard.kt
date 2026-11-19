@@ -10,7 +10,7 @@ import com.mixagames666.trackerrntemp.data.TotalBalance
 import com.mixagames666.trackerrntemp.util.JsCompat
 import com.mixagames666.trackerrntemp.util.Time
 import com.mixagames666.trackerrntemp.util.daysInMonthOf
-import java.time.LocalDateTime
+import kotlinx.datetime.LocalDateTime
 import kotlin.math.min
 
 // Lógica de carga de DashboardScreen (loadData) sin la UI.
@@ -45,7 +45,7 @@ class DashboardLoader(private val repos: Repos, private val aggregates: Aggregat
 
     suspend fun load(now: LocalDateTime = Time.now()): DashboardData {
         val year = now.year
-        val month = now.monthValue
+        val month = now.monthNumber
 
         val balance = aggregates.getTotalBalance()
         val monthly = aggregates.getMonthlySummary(year, month)
@@ -65,7 +65,7 @@ class DashboardLoader(private val repos: Repos, private val aggregates: Aggregat
             .take(8)
 
         val categories = repos.categories.getAll()
-        val upcoming = getUpcomingPayments(repos, 30, now.toLocalDate())
+        val upcoming = getUpcomingPayments(repos, 30, now.date)
 
         // Primer inicio: la hoja de bienvenida (moneda) va antes que cualquier otro aviso.
         val needsWelcome = settings.onboardingCompleted != true

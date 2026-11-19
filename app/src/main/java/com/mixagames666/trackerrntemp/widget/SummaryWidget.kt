@@ -31,49 +31,12 @@ import androidx.glance.unit.ColorProvider
 import com.mixagames666.trackerrntemp.MainActivity
 import com.mixagames666.trackerrntemp.R
 import com.mixagames666.trackerrntemp.TrackerApp
-import com.mixagames666.trackerrntemp.util.formatCurrency
-import com.mixagames666.trackerrntemp.util.formatDateShort
-import com.mixagames666.trackerrntemp.util.getMonthName
-import com.mixagames666.trackerrntemp.util.Time
-import com.mixagames666.trackerrntemp.util.applySavedCurrency
-import com.mixagames666.trackerrntemp.domain.getUpcomingPayments
+import com.mixagames666.trackerrntemp.domain.WidgetSummary
 
 // Port de src/widgets/*: widget "Resumen financiero" (balance total, ingresos y gastos del mes, próximo pago).
 
-/** Datos del widget ya formateados (WidgetSummary de widgetData.ts). */
-data class WidgetSummary(
-    val appName: String,
-    val monthLabel: String,
-    val balance: String,
-    val isNegative: Boolean,
-    val monthIncome: String,
-    val monthExpenses: String,
-    val nextPayment: String?,
-    val updatedAt: String,
-)
-
-suspend fun loadWidgetSummary(app: TrackerApp): WidgetSummary {
-    val container = app.container
-    container.legacyMigration.await() // el widget puede dibujarse antes que la app al arrancar el proceso
-    applySavedCurrency(container.repos)
-    val now = Time.now()
-    val settings = container.repos.settings.get()
-    val totals = container.aggregates.getTotalBalance()
-    val monthly = container.aggregates.getMonthlySummary(now.year, now.monthValue)
-    val upcoming = getUpcomingPayments(container.repos, 30)
-    val next = upcoming.firstOrNull { it.daysLeft >= 0 }
-
-    return WidgetSummary(
-        appName = settings.appName.ifEmpty { "Mi Dinero" },
-        monthLabel = "${getMonthName(now.monthValue)} ${now.year}",
-        balance = formatCurrency(totals.balance),
-        isNegative = totals.balance < 0,
-        monthIncome = formatCurrency(monthly.totalIncome),
-        monthExpenses = formatCurrency(monthly.totalExpenses),
-        nextPayment = next?.let { "${it.title} · ${formatDateShort(it.dueDate)} · ${formatCurrency(it.amount)}" },
-        updatedAt = "%02d:%02d".format(now.hour, now.minute),
-    )
-}
+suspend fun loadWidgetSummary(app: TrackerApp): WidgetSummary =
+    com.mixagames666.trackerrntemp.domain.loadWidgetSummary(app.container, app.container.legacyMigration)
 
 // Paleta clara/oscura del widget (SummaryWidget.tsx -> PALETTE)
 private fun palette(light: Long, dark: Long): ColorProvider = dayNightColorProvider(day = Color(light), night = Color(dark))
