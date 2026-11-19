@@ -22,3 +22,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "tracker-de-gastos"
 include(":app")
+include(":shared") // código Kotlin Multiplatform compartido con iOS
