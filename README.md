@@ -4,12 +4,12 @@
 
 # Mi Dinero
 
-**Mi Dinero** es una app Android para llevar tus finanzas personales sin cuentas ni servidores: registras gastos e
+**Mi Dinero** es una app Android (con una versión para iOS en desarrollo) para llevar tus finanzas personales sin cuentas ni servidores: registras gastos e
 ingresos, controlas tarjetas de crédito y préstamos, ves en qué se te va el dinero y fijas un **límite de gastos
 mensual** para ahorrar más. Funciona sin conexión (ni siquiera pide acceso a internet) y tus datos se quedan en el
 teléfono, con backup manual en JSON.
 
-Está hecha con Kotlin y Jetpack Compose (ver [Proyecto y stack](#proyecto-y-stack)). Las capturas de este documento
+Está hecha con Kotlin y Compose (Jetpack Compose en Android, Compose Multiplatform compartido con iOS; ver [Proyecto y stack](#proyecto-y-stack)). Las capturas de este documento
 son de un emulador (Pixel 7a, Android 15) con datos de demostración ficticios.
 
 ## Qué puedes hacer
@@ -169,13 +169,63 @@ La paleta de los dos temas se comprueba con pruebas automáticas de contraste (W
 
 ## Proyecto y stack
 
-Proyecto Android nativo que se abre y compila con Android Studio. Es el traslado 1:1 de la antigua app
+Proyecto Kotlin Multiplatform. La app Android se abre y compila con Android Studio; la lógica y la interfaz viven en el módulo compartido `shared` (ver [Kotlin Multiplatform](#kotlin-multiplatform-android--ios)). Es el traslado 1:1 de la antigua app
 Expo / React Native, que ya se eliminó del repositorio (sigue disponible en el historial de git, p. ej. en el
 commit `2fb0d12` o en la rama `main`).
 
 - Paquete: `com.mixagames666.trackerrntemp` (el mismo que la app React Native).
-- `minSdk` 24 · `compileSdk`/`targetSdk` 35 · Kotlin 2.0.21 · AGP 8.6.1 · Gradle 8.8 · Compose BOM 2024.12.01.
+- `minSdk` 24 · `compileSdk`/`targetSdk` 35 · Kotlin 2.0.21 · AGP 8.6.1 · Gradle 8.14.3 · Compose BOM 2024.12.01 · Compose Multiplatform 1.7.3 (en `shared`).
 - Sin Hilt ni Room: inyección manual (`AppContainer`) y datos en documentos JSON (ver [Datos](#datos)).
+
+### Kotlin Multiplatform (Android + iOS)
+
+La lógica y la interfaz se comparten entre Android e iOS con Kotlin Multiplatform y Compose Multiplatform. El código
+que no depende de la plataforma vive en el módulo `:shared`; `:app` (Android) e `iosApp/` (iOS) son el envoltorio de
+cada plataforma.
+
+```
+.
+├── app/                     # Android: Activity, Application, AppContainer, WorkManager, widget Glance, PDF, importador RN
+├── shared/                  # Kotlin Multiplatform (Kotlin 2.0.21, Compose Multiplatform 1.7.3)
+│   ├── src/commonMain/      # datos, dominio, utilidades, reportes (modelo y CSV), UI, recursos (composeResources)
+│   ├── src/androidMain/     # actuals de Android (ICU, archivos, logs, hojas de diálogo, locale del dispositivo)
+│   ├── src/iosMain/         # actuals de iOS (Foundation, notificaciones, PDF) y MainViewController
+│   └── src/commonTest/      # pruebas comunes (se ejecutan en el simulador de iOS)
+└── iosApp/                  # app SwiftUI «MiDinero» + widget WidgetKit; el .xcodeproj se genera con XcodeGen
+```
+
+| Área | Compartido (`shared/commonMain`) | Específico de plataforma |
+|---|---|---|
+| Datos y dominio | Modelos, `JsonStore` (escritura atómica), repositorios, agregados, backup JSON, servicios, dashboard, análisis, recordatorios | Ruta de almacenamiento y candado (`expect/actual`); importador de RKStorage sólo en Android |
+| Utilidades | Formateadores, moneda, fechas, semántica de JavaScript | ICU (`android.icu`) en Android; Foundation en iOS |
+| Reportes | Modelo del PDF, generador CSV, `CoreContainer` | Dibujo del PDF (`PdfDocument` en Android, `IosPdfWriter` en iOS) |
+| Interfaz | Pantallas, componentes, tema, navegación, gráficos | Hojas de diálogo, métricas de ventana, selector de documentos, íconos, `AppServices` |
+| Notificaciones y widget | Planes de notificación (`NotificationPlans`), resumen del widget (`WidgetSummary`) | WorkManager y Glance en Android; `UNUserNotificationCenter` y WidgetKit en iOS |
+
+**Android** (sin cambios en los comandos; ver [Abrir y compilar](#abrir-y-compilar)):
+
+```bash
+./gradlew assembleDebug
+```
+
+El wrapper usa Gradle 8.14.3: el plugin Multiplatform de Kotlin 2.0.21 no funciona con Gradle 9.
+
+**iOS**: hace falta un Mac con Xcode 15 o superior, porque Kotlin/Native no compila los destinos de iOS en Windows ni en
+Linux. Los pasos completos (XcodeGen, firma, App Group del widget y TestFlight) están en
+[`iosApp/README.md`](iosApp/README.md).
+
+**Estado de iOS: sin compilar todavía.** El código de `iosMain` y de `iosApp/` nunca se ha compilado, porque los destinos
+de iOS no se pueden compilar en Windows. Lo verificado en esta rama es la parte común y la de Android (ver
+[Verificado y pendiente](#verificado-y-pendiente)). La primera compilación real será la de un Mac,
+y es probable que haga falta algún ajuste de interoperabilidad. Compose Multiplatform 1.7 marca iOS como *Beta*; la 1.8
+(estable en iOS) requiere Kotlin 2.1 o superior.
+
+Pendientes conocidos en iOS:
+
+- El color de la barra de estado no sigue al tema de la app (`SystemBarsEffect` en `AppServices.ios.kt`).
+- `screenWidthDp` no se actualiza al girar el iPad; el iPhone va fijo en vertical.
+- El PDF simplifica el de Android (líneas sólidas en vez de punteadas, texto en una sola línea en la cabecera).
+- Hace falta un Mac con Xcode 15 o superior y una cuenta de Apple Developer para dispositivos y TestFlight.
 
 ## Resumen de funciones
 
@@ -222,19 +272,20 @@ El build *debug* usa el sufijo `.debug` (`com.mixagames666.trackerrntemp.debug`)
 
 ## Mapa React Native → Kotlin
 
-Raíz del código: `app/src/main/java/com/mixagames666/trackerrntemp/`.
+Raíz del código compartido: `shared/src/commonMain/kotlin/com/mixagames666/trackerrntemp/`; raíz de Android:
+`app/src/main/java/com/mixagames666/trackerrntemp/`. Las rutas de la tabla están en `shared`, salvo las marcadas *(Android)*, que están en `app`.
 
 | React Native | Kotlin |
 |---|---|
-| `index.ts`, `App.tsx` | `MainActivity`, `TrackerApp` (Application), `AppContainer` (dependencias), `ui/AppRoot` (init de moneda/categorías/préstamos legacy, splash animado, sincronización al volver a primer plano) |
+| `index.ts`, `App.tsx` | `MainActivity`, `TrackerApp` (Application), `AppContainer` (dependencias) *(Android)*; `ui/AppRoot` (init de moneda/categorías/préstamos legacy, splash animado, sincronización al volver a primer plano) |
 | `src/types/index.ts` | `data/Models.kt` (`@Serializable`, mismos campos opcionales que los JSON) |
-| `src/db/storage.ts` | `data/JsonStore`, `data/Repositories`, `data/Aggregates`, `data/Backup`, `data/BackupFiles` |
+| `src/db/storage.ts` | `data/JsonStore`, `data/Repositories`, `data/Aggregates`, `data/Backup`, `data/BackupFiles` *(Android)* |
 | `utils/formatters.ts`, `currency.ts` | `util/Formatters`, `util/Currency`, `util/JsCompat` (semántica de JavaScript), `util/Time` |
 | `utils/cardPurchases.ts`, `paymentReminders.ts`, `dataSync.ts` | `domain/CardPurchases`, `domain/PaymentReminders`, `domain/DataSync` |
 | lógica dentro de las pantallas (guardar gasto, pagar cuota, análisis…) | `domain/Services` (gastos, préstamos, tarjetas, inversiones), `domain/Dashboard`, `domain/Analytics` |
-| `utils/localNotifications.ts`, `hooks/useNotifications.ts` | `notifications/PaymentNotifications`, `notifications/ReminderWorker` |
-| `utils/reportGenerator.ts` | `reports/ReportGenerator` (rango, CSV), `reports/PdfReport` (PDF), `reports/ShareFile` |
-| `src/widgets/*` | `widget/SummaryWidget` (Jetpack Glance) + `res/xml/summary_widget_info.xml` |
+| `utils/localNotifications.ts`, `hooks/useNotifications.ts` | `notifications/PaymentNotifications`, `notifications/ReminderWorker` *(Android)* |
+| `utils/reportGenerator.ts` | `reports/ReportGenerator` (rango, CSV), `reports/PdfReport` (PDF) *(Android)*, `reports/ShareFile` *(Android)* |
+| `src/widgets/*` | `widget/SummaryWidget` *(Android, Jetpack Glance)* + `res/xml/summary_widget_info.xml` |
 | `theme/colors.ts`, `ThemeContext.tsx` | `ui/theme/Colors`, `Theme`, `ThemeController` |
 | `components/*` | `ui/components/*` (`BottomSheet`, `Button`, `Card`, `Chip`, `ProgressBar`, `AppTextField`, `DatePickerSheet`, `CurrencyPicker`, `WelcomeSheet`, `ActionFeedback`) + `Ionicon`, `AlertHost` (≙ `Alert.alert`), `AutoSizeText` (≙ `adjustsFontSizeToFit`) |
 | `navigation/*` | `ui/navigation/AppNavigation` |
@@ -346,8 +397,8 @@ misma clave (EAS la guarda: `eas credentials` permite descargarla):
 
 ## Verificado y pendiente
 
-Verificado en esta rama: compilación *debug* y *release* sin errores, 29 pruebas JVM en verde (18 escenarios
-dorados + 11 de almacén e importador), `lintDebug` sin errores, y recorrido en un emulador Pixel 7a con Android 15 de: Inicio
+Verificado en esta rama: compilación *debug* y *release* sin errores, 50 pruebas unitarias en verde (46 en `app`, con los 18 escenarios dorados, y 4 en `shared`); además,
+`:shared:compileCommonMainKotlinMetadata` confirma que el código común no usa APIs de Android ni de JVM, `lintDebug` sin errores, y recorrido en un emulador Pixel 7a con Android 15 de: Inicio
 (incl. aviso de sueldo), Gastos (alta, detalle, borrado), Ingresos, Préstamos (grupos de tarjeta, pago de cuota con
 impuestos), Análisis, Configuración (tema, reportes PDF y CSV con el selector de compartir, exportar/importar
 backup, borrar todo), notificaciones (canal, permiso, recordatorios programados, alerta de presupuesto), widget en el
@@ -359,3 +410,4 @@ No se pudo comprobar aquí:
 - La actualización sobre un APK firmado por EAS (requiere el *keystore*); la migración de datos se probó con una base SQLite del mismo esquema que AsyncStorage.
 - Android 7–12 (sólo se probó API 35): en ellos no hay permiso de notificaciones en tiempo de ejecución y el widget usa el diseño por defecto de Glance.
 - Pruebas instrumentadas de UI (no hay).
+- iOS: el código de `iosMain` y de `iosApp/` nunca se ha compilado (ver [Kotlin Multiplatform](#kotlin-multiplatform-android--ios)).
