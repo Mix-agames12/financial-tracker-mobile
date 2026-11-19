@@ -1,0 +1,121 @@
+# Proyecto de Xcode definido con XcodeGen: no se versiona MiDinero.xcodeproj, se genera con `xcodegen generate`.
+# La app aloja la UI de Compose Multiplatform del módulo :shared (framework estático "Shared", integración directa
+# de KMP: un script previo a la compilación ejecuta Gradle y deja el framework en shared/build/xcode-frameworks).
+name: MiDinero
+
+options:
+  bundleIdPrefix: com.mixagames666
+  deploymentTarget:
+    iOS: "15.0"
+  createIntermediateGroups: true
+  developmentLanguage: es
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    # Equipo de firma: dejarlo vacío y elegirlo en Xcode (Signing & Capabilities) o pasar DEVELOPMENT_TEAM=XXXX.
+    DEVELOPMENT_TEAM: ""
+    # Necesario para que el script de Gradle pueda leer/escribir fuera de la caja de seguridad de Xcode.
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+
+targets:
+  MiDinero:
+    type: application
+    platform: iOS
+    sources:
+      - path: MiDinero
+        excludes:
+          - Info.plist
+          - MiDinero.entitlements
+    info:
+      path: MiDinero/Info.plist
+      properties:
+        CFBundleDisplayName: Mi Dinero
+        CFBundleDevelopmentRegion: es
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UILaunchScreen: {}
+        # Compose Multiplatform: permite 120 Hz en iPhone con ProMotion.
+        CADisableMinimumFrameDurationOnPhone: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        ITSAppUsesNonExemptEncryption: false
+    entitlements:
+      path: MiDinero/MiDinero.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.mixagames666.trackerrntemp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mixagames666.trackerrntemp
+        PRODUCT_NAME: MiDinero
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # Integración directa de KMP: framework estático "Shared" generado por Gradle.
+        FRAMEWORK_SEARCH_PATHS:
+          - $(inherited)
+          - $(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)
+        OTHER_LDFLAGS:
+          - $(inherited)
+          - -framework
+          - Shared
+    preBuildScripts:
+      - name: Compilar el framework de Kotlin (Gradle)
+        basedOnDependencyAnalysis: false
+        script: |
+          if [ "YES" = "$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED" ]; then
+            echo "Se omite Gradle: OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED=YES"
+            exit 0
+          fi
+          cd "$SRCROOT/.."
+          ./gradlew :shared:embedAndSignAppleFrameworkForXcode
+    dependencies:
+      - target: MiDineroWidget
+        embed: true
+
+  MiDineroWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: MiDineroWidget
+        excludes:
+          - Info.plist
+          - MiDineroWidget.entitlements
+    info:
+      path: MiDineroWidget/Info.plist
+      properties:
+        CFBundleDisplayName: Mi Dinero
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: MiDineroWidget/MiDineroWidget.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.mixagames666.trackerrntemp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mixagames666.trackerrntemp.widget
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SKIP_INSTALL: YES
+
+schemes:
+  MiDinero:
+    build:
+      targets:
+        MiDinero: all
+        MiDineroWidget: all
+    run:
+      config: Debug
+    archive:
+      config: Release
