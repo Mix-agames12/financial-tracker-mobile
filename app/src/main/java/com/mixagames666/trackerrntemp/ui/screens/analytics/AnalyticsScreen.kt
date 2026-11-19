@@ -46,6 +46,7 @@ import com.mixagames666.trackerrntemp.ui.components.AppCard
 import com.mixagames666.trackerrntemp.ui.components.AppTextField
 import com.mixagames666.trackerrntemp.ui.components.AutoSizeText
 import com.mixagames666.trackerrntemp.ui.components.BottomSheet
+import com.mixagames666.trackerrntemp.ui.components.FormColumn
 import com.mixagames666.trackerrntemp.ui.components.Ionicon
 import com.mixagames666.trackerrntemp.ui.components.touchableOpacity
 import com.mixagames666.trackerrntemp.ui.screens.appViewModel
@@ -195,9 +196,9 @@ fun AnalyticsScreen(container: AppContainer) {
 
                 // Overview Stats
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    StatCard("Gastado", formatCurrency(totalSpent), colors.error, onInfo = { showInfo("spent") }, modifier = Modifier.weight(1f))
-                    StatCard("Ahorrado", formatCurrency(saved), if (saved < 0) colors.error else colors.secondary, onInfo = { showInfo("saved") }, modifier = Modifier.weight(1f))
-                    StatCard("Promedio/día", formatCurrency(avgSpent), colors.tertiary, onInfo = { showInfo("avg") }, modifier = Modifier.weight(1f))
+                    StatCard("Gastado", formatCurrency(totalSpent), colors.errorText, onInfo = { showInfo("spent") }, modifier = Modifier.weight(1f))
+                    StatCard("Ahorrado", formatCurrency(saved), if (saved < 0) colors.errorText else colors.successText, onInfo = { showInfo("saved") }, modifier = Modifier.weight(1f))
+                    StatCard("Promedio/día", formatCurrency(avgSpent), colors.warningText, onInfo = { showInfo("avg") }, modifier = Modifier.weight(1f))
                 }
 
                 // Charts
@@ -278,46 +279,49 @@ fun AnalyticsScreen(container: AppContainer) {
                     SectionTitle("swap-horizontal", "Comparativa mensual")
 
                     AppCard {
-                        Row(Modifier.fillMaxWidth().padding(bottom = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Box(Modifier.weight(1f)) {
-                                AppTextField("Período 1", compareP1, {}, placeholder = "YYYY-MM", onPress = {
-                                    showPicker("Seleccionar Período 1", recentMonthsList, compareP1) { compareP1 = it }
-                                })
+                        // Cada fila ya separa 16 dp: el campo no debe sumar su propio margen (espacios dobles).
+                        FormColumn(spacing = 0.dp) {
+                            Row(Modifier.fillMaxWidth().padding(bottom = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Box(Modifier.weight(1f)) {
+                                    AppTextField("Período 1", compareP1, {}, placeholder = "YYYY-MM", onPress = {
+                                        showPicker("Seleccionar Período 1", recentMonthsList, compareP1) { compareP1 = it }
+                                    })
+                                }
+                                Box(Modifier.weight(1f)) {
+                                    AppTextField("Período 2", compareP2, {}, placeholder = "YYYY-MM", onPress = {
+                                        showPicker("Seleccionar Período 2", recentMonthsList, compareP2) { compareP2 = it }
+                                    })
+                                }
                             }
-                            Box(Modifier.weight(1f)) {
-                                AppTextField("Período 2", compareP2, {}, placeholder = "YYYY-MM", onPress = {
-                                    showPicker("Seleccionar Período 2", recentMonthsList, compareP2) { compareP2 = it }
-                                })
+                            Row(Modifier.fillMaxWidth().padding(bottom = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Box(Modifier.weight(1f)) {
+                                    AppTextField("Filtro Categoría", compCategory.ifEmpty { "Todas" }, {}, placeholder = "Todas", onPress = {
+                                        showPicker("Seleccionar Categoría", listOf("Todas") + (data?.optCategories.orEmpty()), compCategory.ifEmpty { "Todas" }) {
+                                            compCategory = if (it == "Todas") "" else it
+                                        }
+                                    })
+                                }
+                                Box(Modifier.weight(1f)) {
+                                    AppTextField("Filtro de Pago", compMethod.ifEmpty { "Todos" }, {}, placeholder = "Todos", onPress = {
+                                        showPicker("Seleccionar Método", listOf("Todos") + (data?.optMethods.orEmpty()), compMethod.ifEmpty { "Todos" }) {
+                                            compMethod = if (it == "Todos") "" else it
+                                        }
+                                    })
+                                }
                             }
-                        }
-                        Row(Modifier.fillMaxWidth().padding(bottom = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Box(Modifier.weight(1f)) {
-                                AppTextField("Filtro Categoría", compCategory.ifEmpty { "Todas" }, {}, placeholder = "Todas", onPress = {
-                                    showPicker("Seleccionar Categoría", listOf("Todas") + (data?.optCategories.orEmpty()), compCategory.ifEmpty { "Todas" }) {
-                                        compCategory = if (it == "Todas") "" else it
-                                    }
-                                })
+                            Row(Modifier.fillMaxWidth().padding(bottom = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Box(Modifier.weight(1f)) {
+                                    AppTextField("Filtro de Ingresos", compIncomeSource.ifEmpty { "Todas" }, {}, placeholder = "Todas las fuentes", onPress = {
+                                        showPicker("Seleccionar Ingreso", listOf("Todas") + (data?.optIncomeSources.orEmpty()), compIncomeSource.ifEmpty { "Todas" }) {
+                                            compIncomeSource = if (it == "Todas") "" else it
+                                        }
+                                    })
+                                }
                             }
-                            Box(Modifier.weight(1f)) {
-                                AppTextField("Filtro de Pago", compMethod.ifEmpty { "Todos" }, {}, placeholder = "Todos", onPress = {
-                                    showPicker("Seleccionar Método", listOf("Todos") + (data?.optMethods.orEmpty()), compMethod.ifEmpty { "Todos" }) {
-                                        compMethod = if (it == "Todos") "" else it
-                                    }
-                                })
-                            }
-                        }
-                        Row(Modifier.fillMaxWidth().padding(bottom = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Box(Modifier.weight(1f)) {
-                                AppTextField("Filtro de Ingresos", compIncomeSource.ifEmpty { "Todas" }, {}, placeholder = "Todas las fuentes", onPress = {
-                                    showPicker("Seleccionar Ingreso", listOf("Todas") + (data?.optIncomeSources.orEmpty()), compIncomeSource.ifEmpty { "Todas" }) {
-                                        compIncomeSource = if (it == "Todas") "" else it
-                                    }
-                                })
-                            }
-                        }
-                        AppButton("Comparar", onClick = { handleComparison() }, modifier = Modifier.fillMaxWidth(), icon = "analytics")
+                            AppButton("Comparar", onClick = { handleComparison() }, modifier = Modifier.fillMaxWidth(), icon = "analytics")
 
-                        comparisonResult?.let { r -> ComparisonSummary(r) }
+                            comparisonResult?.let { r -> ComparisonSummary(r) }
+                        }
                     }
                 }
             }
@@ -445,7 +449,7 @@ private fun ComparisonSummary(r: ComparisonResult) {
             )
             Text(
                 "${if (r.diff > 0) "+" else ""}${formatCurrency(r.diff)}",
-                fontSize = 24.sp, fontWeight = FontWeight.Bold, color = if (r.diff > 0) colors.error else colors.secondary,
+                fontSize = 24.sp, fontWeight = FontWeight.Bold, color = if (r.diff > 0) colors.errorText else colors.successText,
             )
         }
     }
@@ -462,7 +466,7 @@ private fun MonthBox(modifier: Modifier, title: String, expenses: Double, income
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(title, fontSize = 12.sp, color = colors.onSurfaceVariant)
-        Text(formatCurrency(expenses), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = colors.error, modifier = Modifier.padding(vertical = 4.dp))
+        Text(formatCurrency(expenses), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = colors.errorText, modifier = Modifier.padding(vertical = 4.dp))
         Text("Ingreso: ${formatCurrency(income)}", fontSize = 10.sp, color = colors.onSurfaceVariant)
     }
 }

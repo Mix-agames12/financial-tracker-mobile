@@ -2,6 +2,8 @@ package com.mixagames666.trackerrntemp.ui.navigation
 
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -15,7 +17,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -23,6 +27,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -130,7 +136,14 @@ private fun BottomTabBar(nav: NavHostController) {
         ) {
             MainTab.entries.forEach { tab ->
                 val focused = current == tab.route
-                val tint = if (focused) colors.primary else colors.onSurfaceVariant
+                // Texto/ícono de la pestaña activa con contraste ≥ 4,5:1 y, además del color y del ícono relleno, un
+                // indicador en píldora (no depender sólo del color para mostrar el estado).
+                val tint = if (focused) colors.primaryText else colors.onSurfaceVariant
+                val pill by animateColorAsState(
+                    targetValue = if (focused) colors.primary.copy(alpha = 0.18f) else Color.Transparent,
+                    animationSpec = tween(200),
+                    label = "tabIndicator",
+                )
                 Column(
                     Modifier
                         .weight(1f)
@@ -149,11 +162,18 @@ private fun BottomTabBar(nav: NavHostController) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
-                    Ionicon(if (focused) tab.iconFocused else tab.icon, 24, tint)
+                    Box(
+                        Modifier
+                            .size(width = 56.dp, height = 30.dp)
+                            .clip(RoundedCornerShape(15.dp))
+                            .background(pill, RoundedCornerShape(15.dp)),
+                        contentAlignment = Alignment.Center,
+                    ) { Ionicon(if (focused) tab.iconFocused else tab.icon, 24, tint) }
                     Text(
                         text = tab.label,
                         color = tint,
                         fontSize = 12.sp,
+                        fontWeight = if (focused) FontWeight.SemiBold else FontWeight.Normal,
                         fontFamily = FontFamily.SansSerif,
                         modifier = Modifier.padding(top = 2.dp),
                     )

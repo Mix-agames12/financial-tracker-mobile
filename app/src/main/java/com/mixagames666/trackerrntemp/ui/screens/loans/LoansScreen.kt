@@ -34,6 +34,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -62,8 +64,10 @@ import com.mixagames666.trackerrntemp.ui.components.ChipScrollRow
 import com.mixagames666.trackerrntemp.ui.components.DatePickerSheet
 import com.mixagames666.trackerrntemp.ui.components.DetailGrid
 import com.mixagames666.trackerrntemp.ui.components.DetailItem
+import com.mixagames666.trackerrntemp.ui.components.EmptyState
 import com.mixagames666.trackerrntemp.ui.components.FieldKeyboard
 import com.mixagames666.trackerrntemp.ui.components.FieldLabel
+import com.mixagames666.trackerrntemp.ui.components.FormColumn
 import com.mixagames666.trackerrntemp.ui.components.Ionicon
 import com.mixagames666.trackerrntemp.ui.components.ProgressVariant
 import com.mixagames666.trackerrntemp.ui.components.TaxBreakdownBox
@@ -78,6 +82,7 @@ import com.mixagames666.trackerrntemp.util.daysUntil
 import com.mixagames666.trackerrntemp.util.formatCurrency
 import com.mixagames666.trackerrntemp.util.formatDate
 import com.mixagames666.trackerrntemp.util.formatDateShort
+import com.mixagames666.trackerrntemp.util.getCurrencySymbol
 import com.mixagames666.trackerrntemp.util.orZero
 import com.mixagames666.trackerrntemp.util.toAmountInput
 import kotlinx.coroutines.launch
@@ -220,7 +225,7 @@ fun LoansScreen(container: AppContainer) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Column {
                             Text("Deuda pendiente", fontSize = 12.sp, color = colors.onSurfaceVariant)
-                            Text(formatCurrency(totalDebt), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = colors.tertiary)
+                            Text(formatCurrency(totalDebt), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = colors.warningText)
                         }
                         Column(horizontalAlignment = Alignment.End) {
                             Text("Activos", fontSize = 12.sp, color = colors.onSurfaceVariant)
@@ -238,16 +243,16 @@ fun LoansScreen(container: AppContainer) {
                         .padding(PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 100.dp)),
                 ) {
                     if (loans.isEmpty()) {
-                        Column(
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 60.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            Ionicon("business-outline", 48, colors.outline)
-                            Text("Sin préstamos", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = colors.onSurfaceVariant, modifier = Modifier.padding(top = 16.dp))
-                            Text("Toca el botón + para registrar uno", fontSize = 14.sp, color = colors.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
-                        }
+                        // Heurísticas 7 y 10: el estado vacío ofrece directamente la acción siguiente.
+                        EmptyState(
+                            icon = "business-outline",
+                            title = "Sin préstamos",
+                            message = "Toca el botón + para registrar uno",
+                            modifier = Modifier.padding(top = 24.dp),
+                            action = {
+                                AppButton("Registrar préstamo", onClick = { openForm(null) }, variant = ButtonVariant.Tonal, icon = "add")
+                            },
+                        )
                     } else {
                         if (cardGroups.isNotEmpty()) SectionLabel("TARJETAS DE CRÉDITO")
                         cardGroups.forEach { (card, summary) ->
@@ -285,8 +290,9 @@ fun LoansScreen(container: AppContainer) {
                 .shadow(4.dp, CircleShape)
                 .size(56.dp)
                 .clip(CircleShape)
-                .background(colors.tertiary, CircleShape)
-                .touchableOpacity(activeOpacity = 0.8f) { openForm(null) },
+                .background(colors.tertiaryDark, CircleShape)
+                .touchableOpacity(activeOpacity = 0.8f, onClickLabel = "Nuevo préstamo") { openForm(null) }
+                .semantics { contentDescription = "Nuevo préstamo" },
             contentAlignment = Alignment.Center,
         ) { Ionicon("add", 32, colors.onTertiary) }
     }
@@ -319,10 +325,13 @@ fun LoansScreen(container: AppContainer) {
 
     // ==== FORM MODAL ====
     BottomSheet(visible = isFormOpen, onClose = { isFormOpen = false }, title = if (editingData != null) "Editar préstamo" else "Nuevo préstamo") {
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        FormColumn {
             AppTextField("Nombre / Descripción *", name, { name = it }, placeholder = "Ej. Préstamo Auto")
 
-            AppTextField("Monto total original *", totalAmount, { totalAmount = it }, placeholder = "Ej. 15000", keyboard = FieldKeyboard.Decimal)
+            AppTextField(
+                "Monto total original *", totalAmount, { totalAmount = it },
+                placeholder = "Ej. 15000", keyboard = FieldKeyboard.Decimal, prefix = getCurrencySymbol(),
+            )
 
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Box(Modifier.weight(1f)) {
@@ -338,7 +347,7 @@ fun LoansScreen(container: AppContainer) {
                     Text("Total a pagar con interés", fontSize = 12.sp, color = colors.onSurfaceVariant)
                     Text(
                         formatCurrency(pTotalWithInterest), fontSize = 24.sp, fontWeight = FontWeight.Bold,
-                        color = colors.primary, modifier = Modifier.padding(bottom = 8.dp),
+                        color = colors.primaryText, modifier = Modifier.padding(bottom = 8.dp),
                     )
                     Text("Cuota mensual estimada", fontSize = 12.sp, color = colors.onSurfaceVariant)
                     Text(formatCurrency(pInstallmentAm), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = colors.onSurface)
@@ -402,13 +411,13 @@ private fun CardGroup(card: CreditCard, summary: CardCycleSummary, onClick: () -
     val colors = AppTheme.colors
     val pendingCount = summary.purchases.count { !it.isPaid }
     val dueDays = summary.nextDueDate?.let { daysUntil(it) }
-    var statusColor = colors.secondary
+    var statusColor = colors.successText
     var statusText = if (summary.totalPending > 0) "Al día" else "Sin deuda"
     if (summary.hasOverdue) {
-        statusColor = colors.error
+        statusColor = colors.errorText
         statusText = "Vencido"
     } else if (summary.dueAmount > 0 && dueDays != null && dueDays <= 5) {
-        statusColor = colors.tertiary
+        statusColor = colors.warningText
         statusText = "Próximo a vencer"
     }
     val availableRatio = summary.available?.let { it / card.creditLimit }
@@ -449,11 +458,11 @@ private fun CardGroup(card: CreditCard, summary: CardCycleSummary, onClick: () -
                         if (summary.nextDueDate != null) "Por pagar el ${formatDateShort(summary.nextDueDate)}" else "Por pagar",
                         fontSize = 12.sp, color = colors.onSurfaceVariant,
                     )
-                    Text(formatCurrency(summary.dueAmount), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = colors.error)
+                    Text(formatCurrency(summary.dueAmount), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = colors.errorText)
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text("Deuda activa", fontSize = 12.sp, color = colors.onSurfaceVariant)
-                    Text(formatCurrency(summary.activeDebt), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = colors.tertiary)
+                    Text(formatCurrency(summary.activeDebt), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = colors.warningText)
                 }
             }
 
@@ -481,15 +490,15 @@ private fun LoanCard(loan: Loan, onClick: () -> Unit) {
     val days = nextPDate?.let { daysUntil(it) }
     val isPaid = loan.status == "paid"
 
-    var statusColor = Color(0xFF10B981) // Green for success
+    var statusColor = colors.successText // Green for success
     var statusText = "Al día"
     if (isPaid) {
         statusText = "Pagado"
     } else if (days != null && days < 0) {
-        statusColor = colors.error
+        statusColor = colors.errorText
         statusText = "Vencido"
     } else if (days != null && days <= 5) {
-        statusColor = colors.tertiary
+        statusColor = colors.warningText
         statusText = "Próximo a vencer"
     }
 
@@ -526,7 +535,7 @@ private fun LoanCard(loan: Loan, onClick: () -> Unit) {
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text("Restante:", fontSize = 12.sp, color = colors.onSurfaceVariant)
-                    Text(formatCurrency(remaining), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = colors.error)
+                    Text(formatCurrency(remaining), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = colors.errorText)
                 }
                 if (loan.totalWithInterest != null) {
                     Column {
@@ -572,7 +581,7 @@ private fun LoanDetail(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Ionicon("chevron-back", 18, colors.primary)
-                Text("Volver a ${selectedCard.name}", color = colors.primary, fontWeight = FontWeight.SemiBold)
+                Text("Volver a ${selectedCard.name}", color = colors.primaryText, fontWeight = FontWeight.SemiBold)
             }
         }
         Column(
@@ -582,7 +591,7 @@ private fun LoanDetail(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text("Monto Original", color = colors.onSurfaceVariant)
-            Text(formatCurrency(loan.totalAmount), fontSize = 32.sp, fontWeight = FontWeight.Bold, color = colors.primary)
+            Text(formatCurrency(loan.totalAmount), fontSize = 32.sp, fontWeight = FontWeight.Bold, color = colors.primaryText)
         }
 
         DetailGrid {
@@ -657,11 +666,11 @@ private fun CardDetail(card: CreditCard, summary: CardCycleSummary, onOpenLoan: 
                     if (summary.nextDueDate != null) "Por pagar el ${formatDateShort(summary.nextDueDate)}" else "Por pagar",
                     fontSize = 12.sp, color = colors.onSurfaceVariant,
                 )
-                Text(formatCurrency(summary.dueAmount), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = colors.error)
+                Text(formatCurrency(summary.dueAmount), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = colors.errorText)
             }
             Column(item) {
                 Text("Deuda activa", fontSize = 12.sp, color = colors.onSurfaceVariant)
-                Text(formatCurrency(summary.activeDebt), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = colors.tertiary)
+                Text(formatCurrency(summary.activeDebt), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = colors.warningText)
             }
             DetailItem("Último corte", summary.lastCutOff?.let { formatDate(it) } ?: "-", item)
             DetailItem("Cupo disponible", summary.available?.let { formatCurrency(it) } ?: "-", item)
@@ -706,7 +715,7 @@ private fun CardDetail(card: CreditCard, summary: CardCycleSummary, onOpenLoan: 
                             Text(
                                 if (p.isPaid) "Pagada" else formatCurrency(p.pending),
                                 fontSize = 15.sp, fontWeight = FontWeight.Bold,
-                                color = if (p.isPaid) colors.secondary else colors.error,
+                                color = if (p.isPaid) colors.successText else colors.errorText,
                             )
                             if (!p.isPaid && !p.loan.nextPaymentDate.isNullOrEmpty()) {
                                 Text("Vence ${formatDateShort(p.loan.nextPaymentDate)}", fontSize = 11.sp, color = colors.onSurfaceVariant)

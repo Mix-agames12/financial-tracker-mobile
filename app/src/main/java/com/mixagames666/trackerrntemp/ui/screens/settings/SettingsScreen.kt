@@ -34,9 +34,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -61,6 +63,7 @@ import com.mixagames666.trackerrntemp.ui.components.Chip
 import com.mixagames666.trackerrntemp.ui.components.ChipFlow
 import com.mixagames666.trackerrntemp.ui.components.CurrencyPicker
 import com.mixagames666.trackerrntemp.ui.components.FieldKeyboard
+import com.mixagames666.trackerrntemp.ui.components.FormColumn
 import com.mixagames666.trackerrntemp.ui.components.Ionicon
 import com.mixagames666.trackerrntemp.ui.components.ToastManager
 import com.mixagames666.trackerrntemp.ui.components.touchableOpacity
@@ -104,8 +107,11 @@ fun SettingsScreen(container: AppContainer) {
 
     var isNameSheetOpen by remember { mutableStateOf(false) }
     var tempName by remember { mutableStateOf("") }
+    var nameError by remember { mutableStateOf<String?>(null) }
+    // Límite de gastos mensual (internamente `monthlyGoal`: el dato guardado conserva su nombre).
     var isGoalSheetOpen by remember { mutableStateOf(false) }
     var tempGoal by remember { mutableStateOf("") }
+    var goalError by remember { mutableStateOf<String?>(null) }
     var isWipeSheetOpen by remember { mutableStateOf(false) }
 
     // Taxes
@@ -136,7 +142,7 @@ fun SettingsScreen(container: AppContainer) {
         settings = s
         currencyConfig = getCurrencyConfig()
         tempName = s.appName
-        tempGoal = JsCompat.numberToString(s.monthlyGoal)
+        tempGoal = if (s.monthlyGoal > 0) JsCompat.numberToString(s.monthlyGoal) else ""
         s.taxes?.let { t ->
             taxesEnabled = t.enabled
             ivaRate = JsCompat.numberToString(t.ivaRate)
@@ -215,7 +221,12 @@ fun SettingsScreen(container: AppContainer) {
             SettingsRow(
                 icon = "pencil", iconBackground = colors.primaryContainer, iconColor = colors.primary,
                 title = "Nombre de la app", subtitle = settings.appName,
-                onClick = { isNameSheetOpen = true }, chevron = true,
+                onClick = {
+                    tempName = settings.appName
+                    nameError = null
+                    isNameSheetOpen = true
+                },
+                chevron = true,
             )
             SettingsRow(
                 icon = "cash", iconBackground = colors.primaryContainer, iconColor = colors.primary,
@@ -225,10 +236,19 @@ fun SettingsScreen(container: AppContainer) {
                 onClick = { isCurrencySheetOpen = true }, chevron = true,
             )
             SettingsRow(
-                icon = "flag", iconBackground = colors.primaryContainer, iconColor = colors.primary,
-                title = "Meta de gasto mensual",
-                subtitle = if (settings.monthlyGoal != 0.0) formatCurrency(settings.monthlyGoal) else "No definida",
-                onClick = { isGoalSheetOpen = true }, chevron = true, last = true,
+                icon = "speedometer", iconBackground = colors.primaryContainer, iconColor = colors.primary,
+                title = "Límite de gastos mensual",
+                subtitle = if (settings.monthlyGoal > 0) {
+                    "${formatCurrency(settings.monthlyGoal)} · Te avisamos al 90% y al superarlo"
+                } else {
+                    "Sin definir · Fija un tope para cuidar tu ahorro"
+                },
+                onClick = {
+                    tempGoal = if (settings.monthlyGoal > 0) JsCompat.numberToString(settings.monthlyGoal) else ""
+                    goalError = null
+                    isGoalSheetOpen = true
+                },
+                chevron = true, last = true,
             )
         }
 
@@ -304,13 +324,13 @@ fun SettingsScreen(container: AppContainer) {
         // DANGER ZONE
         Column(Modifier.padding(bottom = 24.dp)) {
             Text(
-                "ZONA DE PELIGRO", fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp, color = colors.error,
+                "ZONA DE PELIGRO", fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp, color = colors.errorText,
                 modifier = Modifier.padding(start = 8.dp, bottom = 8.dp),
             )
             AppCard(contentPadding = 0.dp, borderColor = colors.error, borderWidth = 1.dp) {
                 SettingsRow(
                     icon = "warning", iconBackground = colors.errorContainer, iconColor = colors.error,
-                    title = "Eliminar todos los datos", titleColor = colors.error, subtitle = "No se puede deshacer",
+                    title = "Eliminar todos los datos", titleColor = colors.errorText, subtitle = "No se puede deshacer",
                     onClick = { isWipeSheetOpen = true }, trailingIcon = "trash-outline", trailingColor = colors.error, last = true,
                 )
             }
@@ -323,40 +343,78 @@ fun SettingsScreen(container: AppContainer) {
     BottomSheet(visible = isNameSheetOpen, onClose = { isNameSheetOpen = false }, title = "Nombre de la app") {
         AppTextField(
             label = "Nombre (máx. 30 caracteres)", placeholder = "Ej. Mi Dinero", value = tempName,
-            onValueChange = { tempName = it }, maxLength = 30, autoFocus = true,
+            onValueChange = {
+                tempName = it
+                nameError = null
+            },
+            maxLength = 30, autoFocus = true, error = nameError,
         )
         AppButton("Guardar", modifier = Modifier.fillMaxWidth(), onClick = {
             scope.launch {
                 if (tempName.trim().isEmpty()) {
-                    Alerts.alert("Error", "Ingresa un nombre válido")
+                    nameError = "Escribe un nombre para tu app"
                     return@launch
                 }
                 repos.settings.save { it.copy(appName = tempName.trim()) }
                 isNameSheetOpen = false
                 loadSettings()
                 syncAfterChange()
+                ToastManager.show("Nombre actualizado")
             }
         })
     }
 
-    BottomSheet(visible = isGoalSheetOpen, onClose = { isGoalSheetOpen = false }, title = "Meta mensual") {
-        AppTextField(
-            label = "Monto máximo (${getCurrencySymbol()})", placeholder = "Ej. 1000.00", value = tempGoal,
-            onValueChange = { tempGoal = it }, keyboard = FieldKeyboard.Decimal, autoFocus = true,
+    BottomSheet(visible = isGoalSheetOpen, onClose = { isGoalSheetOpen = false }, title = "Límite de gastos mensual") {
+        val hasLimit = settings.monthlyGoal > 0
+        Text(
+            text = "Fija el tope máximo que quieres gastar cada mes para cuidar tu ahorro. Te avisaremos al llegar al 90% y cuando lo superes.",
+            fontSize = 14.sp,
+            lineHeight = 20.sp,
+            color = colors.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 16.dp),
         )
-        AppButton("Guardar", modifier = Modifier.fillMaxWidth(), onClick = {
-            scope.launch {
-                val parsed = JsCompat.parseFloat(tempGoal)
-                if (parsed.isNaN() || parsed < 0) {
-                    Alerts.alert("Error", "Monto inválido")
-                    return@launch
-                }
-                repos.settings.save { it.copy(monthlyGoal = parsed) }
-                isGoalSheetOpen = false
-                loadSettings()
-                syncAfterChange()
+        AppTextField(
+            label = "Tope máximo mensual", placeholder = "Ej. 800.00", value = tempGoal,
+            onValueChange = {
+                tempGoal = it
+                goalError = null
+            },
+            keyboard = FieldKeyboard.Decimal, autoFocus = true, prefix = getCurrencySymbol(), error = goalError,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            if (hasLimit) {
+                AppButton(
+                    "Quitar límite", variant = ButtonVariant.Outlined, modifier = Modifier.weight(1f),
+                    onClick = {
+                        scope.launch {
+                            repos.settings.save { it.copy(monthlyGoal = 0.0) }
+                            isGoalSheetOpen = false
+                            loadSettings()
+                            syncAfterChange()
+                            ToastManager.show("Límite de gastos mensual eliminado")
+                        }
+                    },
+                )
             }
-        })
+            AppButton("Guardar", modifier = Modifier.weight(1f), onClick = {
+                scope.launch {
+                    val parsed = JsCompat.parseFloat(tempGoal)
+                    if (parsed.isNaN()) {
+                        goalError = "Ingresa el monto máximo que quieres gastar al mes"
+                        return@launch
+                    }
+                    if (parsed <= 0) {
+                        goalError = if (hasLimit) "Debe ser mayor a 0. Usa «Quitar límite» para desactivarlo" else "Debe ser mayor a 0"
+                        return@launch
+                    }
+                    repos.settings.save { it.copy(monthlyGoal = parsed) }
+                    isGoalSheetOpen = false
+                    loadSettings()
+                    syncAfterChange()
+                    ToastManager.show("Límite de gastos mensual actualizado")
+                }
+            })
+        }
     }
 
     BottomSheet(visible = isTaxesSheetOpen, onClose = { isTaxesSheetOpen = false }, title = "Motor de Impuestos") {
@@ -364,19 +422,20 @@ fun SettingsScreen(container: AppContainer) {
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .touchableOpacity(role = null) { taxesEnabled = !taxesEnabled }
+                    .touchableOpacity(role = Role.Switch) { taxesEnabled = !taxesEnabled }
+                    .semantics { stateDescription = if (taxesEnabled) "Activado" else "Desactivado" } // el ícono es decorativo
                     .padding(vertical = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text("Habilitar Cálculo de Impuestos", color = colors.onSurface, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                Ionicon(if (taxesEnabled) "toggle" else "toggle-outline", 32, if (taxesEnabled) colors.primary else colors.onSurfaceVariant)
+                Ionicon(if (taxesEnabled) "toggle" else "toggle-outline", 32, if (taxesEnabled) colors.primaryText else colors.onSurfaceVariant)
             }
             HorizontalDivider(thickness = 1.dp, color = colors.outlineVariant)
             Spacer(Modifier.height(16.dp))
 
             if (taxesEnabled) {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                FormColumn(spacing = 12.dp) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Box(Modifier.weight(1f)) { AppTextField("Comisión (%)", comisionRate, { comisionRate = it }, keyboard = FieldKeyboard.Decimal) }
                         Box(Modifier.weight(1f)) { AppTextField("IVA (%)", ivaRate, { ivaRate = it }, keyboard = FieldKeyboard.Decimal) }
@@ -419,6 +478,7 @@ fun SettingsScreen(container: AppContainer) {
                     }
                     isTaxesSheetOpen = false
                     loadSettings()
+                    ToastManager.show("Impuestos actualizados")
                 }
             })
         }
@@ -617,7 +677,7 @@ fun SettingsScreen(container: AppContainer) {
             Text("• Gastos e ingresos", color = colors.onSurfaceVariant)
             Text("• Todas las cuentas y tarjetas", color = colors.onSurfaceVariant)
             Text("• Préstamos e inversiones", color = colors.onSurfaceVariant)
-            Text("Los datos NO se podrán recuperar.", color = colors.error, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
+            Text("Los datos NO se podrán recuperar.", color = colors.errorText, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
         }
         Row(Modifier.padding(top = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             AppButton("Cancelar", onClick = { isWipeSheetOpen = false }, modifier = Modifier.weight(1f), variant = ButtonVariant.Outlined)
@@ -753,7 +813,9 @@ private fun TaxPill(label: String, active: Boolean, onClick: () -> Unit) {
 private fun FormatBox(modifier: Modifier, icon: String, label: String, selected: Boolean, onClick: () -> Unit) {
     val colors = AppTheme.colors
     val shape = RoundedCornerShape(12.dp)
-    val tint = if (selected) colors.primary else colors.onSurfaceVariant
+    // Seleccionado: fondo pastel (primaryContainer) → texto oscuro `onPrimaryContainer` (≥ 4,5:1). `primaryText` es
+    // claro en el tema oscuro y sobre el pastel casi no se vería.
+    val tint = if (selected) colors.onPrimaryContainer else colors.onSurfaceVariant
     Column(
         modifier
             .clip(shape)

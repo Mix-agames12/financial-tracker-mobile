@@ -10,6 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -63,7 +64,9 @@ fun MdiPiggyBank(size: Int, color: Color, modifier: Modifier = Modifier) {
 
 @Composable
 private fun IconGlyph(glyph: String, family: FontFamily, size: Int, color: Color, modifier: Modifier) {
-    Box(modifier.size(size.dp), contentAlignment = Alignment.Center) {
+    // Decorativo: el glifo es un carácter de la fuente de íconos y el lector de pantalla lo leería como un símbolo
+    // sin sentido. Quien necesite un nombre accesible lo pone en el contenedor (contentDescription / onClickLabel).
+    Box(modifier.size(size.dp).clearAndSetSemantics { }, contentAlignment = Alignment.Center) {
         Text(
             text = glyph,
             color = color,

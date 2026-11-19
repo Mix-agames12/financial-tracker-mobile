@@ -53,6 +53,7 @@ import com.mixagames666.trackerrntemp.ui.components.AppProgressBar
 import com.mixagames666.trackerrntemp.ui.components.AutoSizeText
 import com.mixagames666.trackerrntemp.ui.components.BottomSheet
 import com.mixagames666.trackerrntemp.ui.components.ButtonVariant
+import com.mixagames666.trackerrntemp.ui.components.EmptyState
 import com.mixagames666.trackerrntemp.ui.components.Ionicon
 import com.mixagames666.trackerrntemp.ui.components.MdiPiggyBank
 import com.mixagames666.trackerrntemp.ui.components.ProgressVariant
@@ -60,13 +61,14 @@ import com.mixagames666.trackerrntemp.ui.components.WelcomeSheet
 import com.mixagames666.trackerrntemp.ui.components.touchableOpacity
 import com.mixagames666.trackerrntemp.ui.screens.appViewModel
 import com.mixagames666.trackerrntemp.ui.theme.AppTheme
+import com.mixagames666.trackerrntemp.ui.theme.MoneyStyle
 import com.mixagames666.trackerrntemp.ui.theme.hexColor
 import com.mixagames666.trackerrntemp.ui.theme.hexColorWithAlpha
 import com.mixagames666.trackerrntemp.ui.theme.topInset
-import com.mixagames666.trackerrntemp.util.JsCompat
 import com.mixagames666.trackerrntemp.util.Time
 import com.mixagames666.trackerrntemp.util.formatCurrency
 import com.mixagames666.trackerrntemp.util.formatDate
+import com.mixagames666.trackerrntemp.util.formatPercentLocalized
 import com.mixagames666.trackerrntemp.util.getMonthName
 import kotlin.math.abs
 import kotlin.math.max
@@ -123,7 +125,7 @@ fun DashboardScreen(container: AppContainer, onOpenSettings: () -> Unit) {
 
     // Feedback visual: el ahorro negativo se muestra en rojo.
     val balance = data?.balance
-    val savingsColor = if ((balance?.balance ?: 0.0) < 0) colors.error else colors.secondary
+    val savingsColor = if ((balance?.balance ?: 0.0) < 0) colors.errorText else colors.successText
     val upcoming = data?.upcoming.orEmpty()
     val hasUrgentPayments = upcoming.any { it.daysLeft <= 3 }
 
@@ -171,13 +173,13 @@ fun DashboardScreen(container: AppContainer, onOpenSettings: () -> Unit) {
             BottomSheet(visible = true, onClose = { vm.dismissSalaryPrompt() }, title = "¡Día de Sueldo!") {
                 Column(Modifier.padding(vertical = 8.dp)) {
                     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        Ionicon("cash-outline", 48, colors.secondary)
+                        Ionicon("cash-outline", 48, colors.successText)
                     }
                     Spacer(Modifier.height(12.dp))
                     Text(
                         text = buildAnnotatedString {
                             append("Parece que ya llegó tu fecha de cobro. ¿Ya recibiste el abono de ")
-                            withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = colors.secondary)) { append(formatCurrency(prompt.amount)) }
+                            withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = colors.successText)) { append(formatCurrency(prompt.amount)) }
                             append(" en tu cuenta de ")
                             withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(prompt.account) }
                             append("?")
@@ -221,33 +223,16 @@ fun DashboardScreen(container: AppContainer, onOpenSettings: () -> Unit) {
 
         BottomSheet(visible = isPaymentsOpen, onClose = { isPaymentsOpen = false }, title = "Próximos pagos") {
             if (upcoming.isEmpty()) {
-                Column(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 40.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Ionicon("checkmark-circle-outline", 48, colors.outline)
-                    Text(
-                        "No tienes pagos próximos",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = colors.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 16.dp),
-                    )
-                    Text(
-                        "Aquí verás cuotas de préstamos, tarjetas y gastos recurrentes de los próximos 30 días",
-                        fontSize = 14.sp,
-                        color = colors.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(top = 4.dp),
-                    )
-                }
+                EmptyState(
+                    icon = "checkmark-circle-outline",
+                    title = "No tienes pagos próximos",
+                    message = "Aquí verás cuotas de préstamos, tarjetas y gastos recurrentes de los próximos 30 días",
+                )
             } else {
                 upcoming.forEachIndexed { i, payment ->
                     val statusColor = when {
-                        payment.daysLeft < 0 -> colors.error
-                        payment.daysLeft <= 3 -> colors.tertiary
+                        payment.daysLeft < 0 -> colors.errorText
+                        payment.daysLeft <= 3 -> colors.warningText
                         else -> colors.onSurfaceVariant
                     }
                     TxRow(
@@ -284,13 +269,14 @@ fun DashboardScreen(container: AppContainer, onOpenSettings: () -> Unit) {
                 ) {
                     // Balance Card
                     AppCard(gradient = true) {
-                        Text("Balance total", color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
+                        Text("Balance total", color = Color.White.copy(alpha = 0.85f), fontSize = 14.sp, letterSpacing = 0.2.sp)
                         AutoSizeText(
                             text = formatCurrency(data.balance.balance),
-                            fontSize = 36.sp,
+                            fontSize = 38.sp,
                             color = Color.White,
                             fontWeight = FontWeight.Bold,
                             minimumScale = 0.5f,
+                            style = MoneyStyle,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 8.dp),
@@ -299,17 +285,11 @@ fun DashboardScreen(container: AppContainer, onOpenSettings: () -> Unit) {
                             Modifier
                                 .fillMaxWidth()
                                 .padding(top = 8.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Ionicon("arrow-down-circle", 16, Color.White.copy(alpha = 0.8f))
-                                Text("Ingresos: ${formatCurrency(data.balance.totalIncome)}", color = Color.White.copy(alpha = 0.9f), fontSize = 12.sp)
-                            }
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Ionicon("arrow-up-circle", 16, Color.White.copy(alpha = 0.8f))
-                                Text("Gastos: ${formatCurrency(data.balance.totalExpenses)}", color = Color.White.copy(alpha = 0.9f), fontSize = 12.sp)
-                            }
+                            BalancePill("arrow-down-circle", "Ingresos: ${formatCurrency(data.balance.totalIncome)}")
+                            BalancePill("arrow-up-circle", "Gastos: ${formatCurrency(data.balance.totalExpenses)}")
                         }
                     }
 
@@ -320,50 +300,22 @@ fun DashboardScreen(container: AppContainer, onOpenSettings: () -> Unit) {
                             .padding(bottom = 16.dp),
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
-                        AppCard(Modifier.weight(1f), contentPadding = 0.dp, bottomMargin = 0.dp) {
-                            Column(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 16.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                            ) {
-                                MdiPiggyBank(28, savingsColor)
-                                Text("Ahorro", fontSize = 12.sp, color = colors.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
-                                AutoSizeText(
-                                    text = formatCurrency(data.balance.balance),
-                                    fontSize = 18.sp,
-                                    color = savingsColor,
-                                    fontWeight = FontWeight.Bold,
-                                    minimumScale = 0.6f,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(top = 4.dp),
-                                )
-                            }
-                        }
-                        AppCard(Modifier.weight(1f), contentPadding = 0.dp, bottomMargin = 0.dp) {
-                            Column(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 16.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                            ) {
-                                Ionicon("card", 28, colors.tertiary)
-                                Text("Deuda activa", fontSize = 12.sp, color = colors.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
-                                AutoSizeText(
-                                    text = formatCurrency(data.totalLoanDebt),
-                                    fontSize = 18.sp,
-                                    color = colors.tertiary,
-                                    fontWeight = FontWeight.Bold,
-                                    minimumScale = 0.6f,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(top = 4.dp),
-                                )
-                            }
-                        }
+                        StatTile(
+                            modifier = Modifier.weight(1f),
+                            icon = { MdiPiggyBank(26, savingsColor) },
+                            tint = savingsColor,
+                            label = "Ahorro",
+                            value = formatCurrency(data.balance.balance),
+                            valueColor = savingsColor,
+                        )
+                        StatTile(
+                            modifier = Modifier.weight(1f),
+                            icon = { Ionicon("card", 26, colors.warningText) },
+                            tint = colors.warningText,
+                            label = "Deuda activa",
+                            value = formatCurrency(data.totalLoanDebt),
+                            valueColor = colors.warningText,
+                        )
                     }
 
                     // Monthly Summary
@@ -376,9 +328,10 @@ fun DashboardScreen(container: AppContainer, onOpenSettings: () -> Unit) {
                                 AutoSizeText(
                                     text = formatCurrency(data.monthly.totalIncome),
                                     fontSize = 18.sp,
-                                    color = colors.secondary,
+                                    color = colors.successText,
                                     fontWeight = FontWeight.Bold,
                                     minimumScale = 0.6f,
+                                    style = MoneyStyle,
                                     modifier = Modifier.fillMaxWidth(),
                                 )
                             }
@@ -387,12 +340,27 @@ fun DashboardScreen(container: AppContainer, onOpenSettings: () -> Unit) {
                                 AutoSizeText(
                                     text = formatCurrency(data.monthly.totalExpenses),
                                     fontSize = 18.sp,
-                                    color = colors.error,
+                                    color = colors.errorText,
                                     fontWeight = FontWeight.Bold,
                                     minimumScale = 0.6f,
+                                    style = MoneyStyle,
                                     textAlign = TextAlign.End,
                                     modifier = Modifier.fillMaxWidth(),
                                 )
+                            }
+                        }
+
+                        if (monthlyGoal > 0) {
+                            // El objetivo es ahorrar: la barra mide cuánto del tope máximo de gasto ya se usó.
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text("Límite de gastos mensual", fontSize = 12.sp, color = colors.onSurfaceVariant)
+                                Text(formatCurrency(monthlyGoal), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurface)
                             }
                         }
 
@@ -403,17 +371,18 @@ fun DashboardScreen(container: AppContainer, onOpenSettings: () -> Unit) {
                                 GoalStatus.Warning -> ProgressVariant.Warning
                                 GoalStatus.Danger -> ProgressVariant.Danger
                             },
-                            modifier = Modifier.padding(vertical = 12.dp),
+                            modifier = Modifier.padding(top = if (monthlyGoal > 0) 8.dp else 12.dp, bottom = 12.dp),
                         )
 
+                        val spent = data.monthly.totalExpenses
                         Text(
                             text = when {
+                                monthlyGoal > 0 && spent <= monthlyGoal ->
+                                    "Has usado el ${formatPercentLocalized(goalPercent)} de tu límite · Te quedan ${formatCurrency(max(0.0, monthlyGoal - spent))}"
                                 monthlyGoal > 0 ->
-                                    "${JsCompat.toFixed(goalPercent * 100, 1)}% de meta (${formatCurrency(monthlyGoal)} máx.) · Restante: ${
-                                        formatCurrency(max(0.0, monthlyGoal - data.monthly.totalExpenses))
-                                    }"
-                                data.monthly.totalIncome > 0 -> "${JsCompat.toFixed(goalPercent * 100, 1)}% del ingreso gastado"
-                                else -> "Sin ingresos registrados"
+                                    "Has usado el ${formatPercentLocalized(goalPercent)} de tu límite · Te pasaste por ${formatCurrency(spent - monthlyGoal)}"
+                                data.monthly.totalIncome > 0 -> "Has gastado el ${formatPercentLocalized(goalPercent)} de tus ingresos del mes"
+                                else -> "Aún no hay ingresos registrados este mes"
                             },
                             fontSize = 12.sp,
                             color = colors.onSurfaceVariant,
@@ -421,11 +390,15 @@ fun DashboardScreen(container: AppContainer, onOpenSettings: () -> Unit) {
                             modifier = Modifier.fillMaxWidth(),
                         )
 
+                        if (monthlyGoal <= 0) {
+                            // Heurísticas 6 y 10: sin límite definido, la propia tarjeta explica cómo establecerlo.
+                            LimitPrompt(onClick = onOpenSettings)
+                        }
                         if (goalStatus == GoalStatus.Danger && monthlyGoal > 0) {
-                            AlertBox(colors.errorContainer, "alert-circle", colors.error, "¡Has superado tu meta mensual!")
+                            AlertBox(colors.errorContainer, "alert-circle", colors.error, colors.onErrorContainer, "¡Superaste tu límite de gastos mensual!")
                         }
                         if (goalStatus == GoalStatus.Warning && monthlyGoal > 0) {
-                            AlertBox(colors.tertiaryContainer, "warning", colors.tertiary, "Estás muy cerca de tu meta mensual.")
+                            AlertBox(colors.tertiaryContainer, "warning", colors.tertiaryDark, colors.onTertiaryContainer, "Estás muy cerca de tu límite de gastos mensual.")
                         }
                     }
 
@@ -433,22 +406,11 @@ fun DashboardScreen(container: AppContainer, onOpenSettings: () -> Unit) {
                     SectionHeader(icon = "time-outline", title = "Últimas transacciones")
 
                     if (data.recentTx.isEmpty()) {
-                        Column(
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 40.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            Ionicon("receipt-outline", 48, colors.outline)
-                            Text(
-                                "Sin transacciones",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = colors.onSurfaceVariant,
-                                modifier = Modifier.padding(top = 16.dp),
-                            )
-                            Text("Agrega tu primer gasto o ingreso", fontSize = 14.sp, color = colors.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
-                        }
+                        EmptyState(
+                            icon = "receipt-outline",
+                            title = "Sin transacciones",
+                            message = "Agrega tu primer gasto o ingreso desde las pestañas Gastos e Ingresos",
+                        )
                     } else {
                         Column(Modifier.padding(bottom = 24.dp)) {
                             data.recentTx.forEachIndexed { i, tx ->
@@ -457,7 +419,7 @@ fun DashboardScreen(container: AppContainer, onOpenSettings: () -> Unit) {
                                 val category = if (isExpense) data.categories.firstOrNull { it.name == tx.expense!!.category } else null
                                 val iconName = category?.icon?.takeIf { it.isNotEmpty() } ?: if (isExpense) "arrow-up-outline" else "arrow-down-outline"
                                 val iconColor = category?.color?.takeIf { it.isNotEmpty() }?.let { hexColor(it) }
-                                    ?: if (isExpense) colors.error else colors.secondary
+                                    ?: if (isExpense) colors.onErrorContainer else colors.onSecondaryContainer
                                 val iconBg = category?.color?.takeIf { it.isNotEmpty() }?.let { hexColorWithAlpha(it, 0x20) }
                                     ?: if (isExpense) colors.errorContainer else colors.secondaryContainer
                                 val title = if (isExpense) {
@@ -477,7 +439,7 @@ fun DashboardScreen(container: AppContainer, onOpenSettings: () -> Unit) {
                                     subtitle = "$sub · ${formatDate(date)}",
                                     subtitleColor = colors.onSurfaceVariant,
                                     amount = "${if (isExpense) "-" else "+"}${formatCurrency(amount)}",
-                                    amountColor = if (isExpense) colors.error else colors.secondary,
+                                    amountColor = if (isExpense) colors.errorText else colors.successText,
                                 )
                             }
                         }
@@ -498,12 +460,12 @@ private fun HeaderButton(icon: String, description: String, onClick: () -> Unit,
             .touchableOpacity(onClick = onClick)
             .semantics { contentDescription = description },
     ) {
-        Box(Modifier.padding(10.dp)) { Ionicon(icon, 24, colors.onSurface) }
+        Box(Modifier.padding(12.dp)) { Ionicon(icon, 24, colors.onSurface) } // 48 dp: objetivo táctil recomendado
         if (showBadge) {
             Box(
                 Modifier
                     .align(Alignment.TopEnd)
-                    .padding(top = 8.dp, end = 8.dp)
+                    .padding(top = 10.dp, end = 10.dp)
                     .size(10.dp)
                     .clip(CircleShape)
                     .background(colors.error, CircleShape)
@@ -522,12 +484,100 @@ private fun SectionHeader(icon: String, title: String) {
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Ionicon(icon, 20, colors.onSurfaceVariant)
-        Text(title.uppercase(), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurfaceVariant)
+        Text(title.uppercase(), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.8.sp, color = colors.onSurfaceVariant)
     }
 }
 
+/** Píldora translúcida sobre el degradado de la tarjeta de balance (ingresos / gastos totales). */
 @Composable
-private fun AlertBox(background: Color, icon: String, tint: Color, message: String) {
+private fun BalancePill(icon: String, text: String) {
+    val shape = RoundedCornerShape(20.dp)
+    Row(
+        Modifier
+            .clip(shape)
+            .background(Color.White.copy(alpha = 0.14f), shape)
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Ionicon(icon, 16, Color.White)
+        Text(text, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium, style = MoneyStyle)
+    }
+}
+
+/** Tarjeta de cifra clave: ícono en un círculo tintado, etiqueta y valor (con el color que corresponde al signo). */
+@Composable
+private fun StatTile(
+    modifier: Modifier,
+    icon: @Composable () -> Unit,
+    tint: Color,
+    label: String,
+    value: String,
+    valueColor: Color,
+) {
+    val colors = AppTheme.colors
+    AppCard(modifier, contentPadding = 0.dp, bottomMargin = 0.dp) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Box(
+                Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(tint.copy(alpha = 0.14f), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) { icon() }
+            Text(label, fontSize = 12.sp, color = colors.onSurfaceVariant, modifier = Modifier.padding(top = 10.dp))
+            AutoSizeText(
+                text = value,
+                fontSize = 18.sp,
+                color = valueColor,
+                fontWeight = FontWeight.Bold,
+                minimumScale = 0.6f,
+                textAlign = TextAlign.Center,
+                style = MoneyStyle,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 2.dp),
+            )
+        }
+    }
+}
+
+/** Invitación a fijar el límite de gastos mensual cuando aún no hay uno (abre Configuración). */
+@Composable
+private fun LimitPrompt(onClick: () -> Unit) {
+    val colors = AppTheme.colors
+    val shape = RoundedCornerShape(12.dp)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp)
+            .clip(shape)
+            .background(colors.primaryContainer, shape)
+            .touchableOpacity(onClickLabel = "Definir límite de gastos mensual", onClick = onClick)
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Ionicon("speedometer", 20, colors.primary)
+        Text(
+            text = "Define un límite de gastos mensual para cuidar tu ahorro",
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = colors.onPrimaryContainer,
+            modifier = Modifier.weight(1f),
+        )
+        Ionicon("chevron-forward", 18, colors.primary)
+    }
+}
+
+/** Aviso sobre un contenedor pastel: el ícono usa el tono fuerte y el texto un tono oscuro que se lee ≥ 4,5:1. */
+@Composable
+private fun AlertBox(background: Color, icon: String, tint: Color, textColor: Color, message: String) {
     val shape = RoundedCornerShape(8.dp)
     Row(
         Modifier
@@ -540,7 +590,7 @@ private fun AlertBox(background: Color, icon: String, tint: Color, message: Stri
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Ionicon(icon, 20, tint)
-        Text(message, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = tint)
+        Text(message, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = textColor)
     }
 }
 
@@ -580,7 +630,7 @@ private fun TxRow(
                 Text(title, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = colors.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(subtitle, fontSize = 12.sp, color = subtitleColor, modifier = Modifier.padding(top = 2.dp))
             }
-            Text(amount, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = amountColor)
+            Text(amount, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = amountColor, style = MoneyStyle)
         }
         if (!isLast) HorizontalDivider(thickness = 1.dp, color = colors.outlineVariant)
     }

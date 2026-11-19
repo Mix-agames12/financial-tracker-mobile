@@ -35,6 +35,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
@@ -66,8 +68,10 @@ import com.mixagames666.trackerrntemp.ui.components.ChipScrollRow
 import com.mixagames666.trackerrntemp.ui.components.DatePickerSheet
 import com.mixagames666.trackerrntemp.ui.components.DetailGrid
 import com.mixagames666.trackerrntemp.ui.components.DetailItem
+import com.mixagames666.trackerrntemp.ui.components.EmptyState
 import com.mixagames666.trackerrntemp.ui.components.FieldKeyboard
 import com.mixagames666.trackerrntemp.ui.components.FieldLabel
+import com.mixagames666.trackerrntemp.ui.components.FormColumn
 import com.mixagames666.trackerrntemp.ui.components.Ionicon
 import com.mixagames666.trackerrntemp.ui.components.ProgressVariant
 import com.mixagames666.trackerrntemp.ui.components.TaxBreakdownBox
@@ -76,11 +80,13 @@ import com.mixagames666.trackerrntemp.ui.components.toProgressVariant
 import com.mixagames666.trackerrntemp.ui.components.touchableOpacity
 import com.mixagames666.trackerrntemp.ui.screens.appViewModel
 import com.mixagames666.trackerrntemp.ui.theme.AppTheme
+import com.mixagames666.trackerrntemp.ui.theme.MoneyStyle
 import com.mixagames666.trackerrntemp.ui.theme.topInset
 import com.mixagames666.trackerrntemp.util.JsCompat
 import com.mixagames666.trackerrntemp.util.formatCurrency
 import com.mixagames666.trackerrntemp.util.formatDate
 import com.mixagames666.trackerrntemp.util.formatMonths
+import com.mixagames666.trackerrntemp.util.getCurrencySymbol
 import com.mixagames666.trackerrntemp.util.getToday
 import com.mixagames666.trackerrntemp.util.toAmountInput
 import kotlinx.coroutines.launch
@@ -317,7 +323,7 @@ fun IncomeScreen(container: AppContainer) {
                                         }
                                         Text(
                                             formatCurrency(ui.accountBalances[acc.id] ?: 0.0),
-                                            fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = colors.secondary,
+                                            fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = colors.successText,
                                         )
                                     }
                                 }
@@ -336,9 +342,9 @@ fun IncomeScreen(container: AppContainer) {
                             val available = if (hasLimit) max(0.0, cc.creditLimit - cc.currentBalance) else 0.0
                             val level = if (hasLimit) availabilityLevel(available / cc.creditLimit) else com.mixagames666.trackerrntemp.domain.AvailabilityLevel.SUCCESS
                             val levelColor = when (level) {
-                                com.mixagames666.trackerrntemp.domain.AvailabilityLevel.DANGER -> colors.error
-                                com.mixagames666.trackerrntemp.domain.AvailabilityLevel.WARNING -> colors.tertiary
-                                com.mixagames666.trackerrntemp.domain.AvailabilityLevel.SUCCESS -> colors.secondary
+                                com.mixagames666.trackerrntemp.domain.AvailabilityLevel.DANGER -> colors.errorText
+                                com.mixagames666.trackerrntemp.domain.AvailabilityLevel.WARNING -> colors.warningText
+                                com.mixagames666.trackerrntemp.domain.AvailabilityLevel.SUCCESS -> colors.successText
                             }
                             val danger = hasLimit && level == com.mixagames666.trackerrntemp.domain.AvailabilityLevel.DANGER
                             Box(Modifier.touchableOpacity(role = null) { openDetail(DetailType.CreditCard, cc) }) {
@@ -394,7 +400,7 @@ fun IncomeScreen(container: AppContainer) {
                                             Text(inv.detail, fontSize = 12.sp, color = colors.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp))
                                         }
                                         Column(horizontalAlignment = Alignment.End) {
-                                            Text("${formatCurrency(inv.monthlyDeposit)}/mes", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = colors.primary)
+                                            Text("${formatCurrency(inv.monthlyDeposit)}/mes", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = colors.primaryText)
                                             Text(
                                                 text = if (inv.remainingMonths > 0) {
                                                     "${formatMonths(inv.remainingMonths)} ${if (inv.remainingMonths == 1) "restante" else "restantes"}"
@@ -415,7 +421,7 @@ fun IncomeScreen(container: AppContainer) {
                                         Text(
                                             text = buildAnnotatedString {
                                                 append("Total depositado actualmente: ")
-                                                withStyle(SpanStyle(color = colors.secondary, fontWeight = FontWeight.SemiBold)) { append(formatCurrency(inv.totalDeposited)) }
+                                                withStyle(SpanStyle(color = colors.successText, fontWeight = FontWeight.SemiBold)) { append(formatCurrency(inv.totalDeposited)) }
                                             },
                                             fontSize = 12.sp,
                                             color = colors.onSurfaceVariant,
@@ -455,7 +461,7 @@ fun IncomeScreen(container: AppContainer) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Column {
                                 Text("Total extra", fontSize = 12.sp, color = colors.onSurfaceVariant)
-                                Text(formatCurrency(totalExtraIncome), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = colors.secondary)
+                                Text(formatCurrency(totalExtraIncome), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = colors.successText)
                             }
                             Column(horizontalAlignment = Alignment.End) {
                                 Text("Registros", fontSize = 12.sp, color = colors.onSurfaceVariant)
@@ -465,10 +471,11 @@ fun IncomeScreen(container: AppContainer) {
                     }
 
                     if (ui.incomes.isEmpty()) {
-                        Column(Modifier.fillMaxWidth().padding(vertical = 40.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Ionicon("wallet-outline", 48, colors.outline)
-                            Text("Sin ingresos extra", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = colors.onSurfaceVariant, modifier = Modifier.padding(top = 12.dp))
-                        }
+                        EmptyState(
+                            icon = "wallet-outline",
+                            title = "Sin ingresos extra",
+                            message = "Toca el botón + para registrar ventas, bonos u otros ingresos",
+                        )
                     } else {
                         Column(Modifier.padding(top = 16.dp)) {
                             ui.incomes.forEach { inc ->
@@ -486,7 +493,7 @@ fun IncomeScreen(container: AppContainer) {
                                                 .clip(RoundedCornerShape(12.dp))
                                                 .background(colors.secondaryContainer, RoundedCornerShape(12.dp)),
                                             contentAlignment = Alignment.Center,
-                                        ) { Ionicon("arrow-down", 20, colors.secondary) }
+                                        ) { Ionicon("arrow-down", 20, colors.onSecondaryContainer) }
                                         Column(Modifier.weight(1f).padding(start = 12.dp, end = 8.dp)) {
                                             Text(inc.source.ifEmpty { "Ingreso" }, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = colors.onSurface)
                                             Text(
@@ -495,7 +502,7 @@ fun IncomeScreen(container: AppContainer) {
                                             )
                                         }
                                         Column(horizontalAlignment = Alignment.End) {
-                                            Text("+${formatCurrency(inc.amount)}", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = colors.secondary)
+                                            Text("+${formatCurrency(inc.amount)}", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = colors.successText, style = MoneyStyle)
                                             Text(formatDate(inc.date), fontSize = 12.sp, color = colors.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
                                         }
                                     }
@@ -516,8 +523,9 @@ fun IncomeScreen(container: AppContainer) {
                 .shadow(4.dp, CircleShape)
                 .size(56.dp)
                 .clip(CircleShape)
-                .background(colors.secondary, CircleShape)
-                .touchableOpacity(activeOpacity = 0.8f) { openForm(IncomeSheet.Income) },
+                .background(colors.secondaryDark, CircleShape)
+                .touchableOpacity(activeOpacity = 0.8f, onClickLabel = "Nuevo ingreso extra") { openForm(IncomeSheet.Income) }
+                .semantics { contentDescription = "Nuevo ingreso extra" },
             contentAlignment = Alignment.Center,
         ) { Ionicon("add", 32, colors.onSecondary) }
     }
@@ -525,8 +533,8 @@ fun IncomeScreen(container: AppContainer) {
     // ================= MODALS: FORMS =================
 
     BottomSheet(visible = sheet == IncomeSheet.Salary, onClose = { closeCurrentSheet() }, title = "Configurar sueldo") {
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            AppTextField("Monto *", formAmount, { formAmount = it }, keyboard = FieldKeyboard.Decimal)
+        FormColumn {
+            AppTextField("Monto *", formAmount, { formAmount = it }, keyboard = FieldKeyboard.Decimal, prefix = getCurrencySymbol())
 
             Column {
                 FieldLabel("Tipo de día de pago")
@@ -595,7 +603,7 @@ fun IncomeScreen(container: AppContainer) {
         onClose = { closeCurrentSheet() },
         title = if (editingData != null) "Editar cuenta" else "Nueva cuenta",
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        FormColumn {
             AppTextField("Nombre de cuenta *", formName, { formName = it }, placeholder = "Ej. Ahorros Principales")
             AppTextField("Número de referencia", refNumber, { refNumber = it }, placeholder = "Ej. 123456789")
 
@@ -607,7 +615,7 @@ fun IncomeScreen(container: AppContainer) {
             AppTextField("Banco *", bankName, { bankName = it })
             AppTextField(
                 "Monto inicial actual (Opcional)", initialBalanceForm, { initialBalanceForm = it },
-                placeholder = "Ej. 1500.00", keyboard = FieldKeyboard.Decimal,
+                placeholder = "Ej. 1500.00", keyboard = FieldKeyboard.Decimal, prefix = getCurrencySymbol(),
             )
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 AppButton("Cancelar", onClick = { closeCurrentSheet() }, modifier = Modifier.weight(1f), variant = ButtonVariant.Outlined)
@@ -634,7 +642,7 @@ fun IncomeScreen(container: AppContainer) {
         onClose = { closeCurrentSheet() },
         title = if (editingData != null) "Editar tarjeta" else "Nueva tarjeta",
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        FormColumn {
             AppTextField("Nombre o Alias *", formName, { formName = it }, placeholder = "Ej. Visa Oro")
             AppTextField("Banco *", bankName, { bankName = it }, placeholder = "Ej. Santander")
             AppTextField(
@@ -644,6 +652,7 @@ fun IncomeScreen(container: AppContainer) {
                 value = creditLimit,
                 onValueChange = { creditLimit = it },
                 help = "Monto máximo que el banco te permite usar con esta tarjeta.",
+                prefix = getCurrencySymbol(),
             )
             AppTextField(
                 label = "Cupo disponible *",
@@ -652,6 +661,7 @@ fun IncomeScreen(container: AppContainer) {
                 value = formAmount,
                 onValueChange = { formAmount = it },
                 help = "Lo que aún puedes gastar hoy. Si no has usado la tarjeta es igual al límite; si ya no te queda cupo, escribe 0. No puede ser mayor al límite.",
+                prefix = getCurrencySymbol(),
             )
             run {
                 val limit = JsCompat.parseFloat(creditLimit).let { if (it.isNaN()) 0.0 else it }
@@ -701,9 +711,9 @@ fun IncomeScreen(container: AppContainer) {
         onClose = { closeCurrentSheet() },
         title = if (editingData != null) "Editar fondo" else "Nuevo fondo",
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        FormColumn {
             AppTextField("Entidad *", formName, { formName = it }, placeholder = "Ej. GBM+")
-            AppTextField("Depósito mensual *", formAmount, { formAmount = it }, placeholder = "Ej. 200.00", keyboard = FieldKeyboard.Decimal)
+            AppTextField("Depósito mensual *", formAmount, { formAmount = it }, placeholder = "Ej. 200.00", keyboard = FieldKeyboard.Decimal, prefix = getCurrencySymbol())
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Box(Modifier.weight(1f)) {
                     AppTextField("Plazo total (meses)", totalMonths, { totalMonths = it }, placeholder = "Ej. 24", keyboard = FieldKeyboard.Number)
@@ -713,7 +723,7 @@ fun IncomeScreen(container: AppContainer) {
                 }
             }
             AppTextField("Detalle", formDetail, { formDetail = it }, placeholder = "Ej. Fondo para retiro")
-            AppTextField("Total depositado actualmente", totalDeposited, { totalDeposited = it }, placeholder = "Ej. 2400.00", keyboard = FieldKeyboard.Decimal)
+            AppTextField("Total depositado actualmente", totalDeposited, { totalDeposited = it }, placeholder = "Ej. 2400.00", keyboard = FieldKeyboard.Decimal, prefix = getCurrencySymbol())
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 AppButton("Cancelar", onClick = { closeCurrentSheet() }, modifier = Modifier.weight(1f), variant = ButtonVariant.Outlined)
                 AppButton(
@@ -739,8 +749,8 @@ fun IncomeScreen(container: AppContainer) {
         onClose = { closeCurrentSheet() },
         title = if (editingData != null) "Editar ingreso" else "Nuevo ingreso",
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            AppTextField("Monto *", formAmount, { formAmount = it }, placeholder = "Ej. 550.00", keyboard = FieldKeyboard.Decimal)
+        FormColumn {
+            AppTextField("Monto *", formAmount, { formAmount = it }, placeholder = "Ej. 550.00", keyboard = FieldKeyboard.Decimal, prefix = getCurrencySymbol())
             AppTextField("Fuente", incomeSource, { incomeSource = it }, placeholder = "Ej. Venta garaje")
             AppTextField("Detalle *", formDetail, { formDetail = it }, placeholder = "Ej. Venta bicicleta")
 
@@ -850,7 +860,7 @@ fun IncomeScreen(container: AppContainer) {
                         borderColor = colors.primary,
                         borderWidth = 1.dp,
                     ) {
-                        Text("Registrar depósito mensual", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = colors.primary, modifier = Modifier.padding(bottom = 16.dp))
+                        Text("Registrar depósito mensual", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = colors.primaryText, modifier = Modifier.padding(bottom = 16.dp))
 
                         FieldLabel("Cuenta origen")
                         ChipScrollRow(bottomPadding = 16.dp) {

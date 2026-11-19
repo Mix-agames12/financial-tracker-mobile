@@ -2,8 +2,12 @@ package com.mixagames666.trackerrntemp.ui.theme
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.pow
 
-// Port de src/theme/colors.ts (mismos tokens y valores).
+// Port de src/theme/colors.ts (mismos tokens y valores), con los añadidos de accesibilidad que se indican abajo.
 
 @Immutable
 data class ThemeColors(
@@ -51,7 +55,63 @@ data class ThemeColors(
     // Extra semantic
     val incomeCard: Color,
     val savingsCard: Color,
-)
+
+    // ---- Añadidos de UI (no existen en colors.ts) ----
+    /** Borde de 1 dp de las tarjetas: las separa del fondo en ambos temas (en oscuro la sombra no se ve). */
+    val cardBorder: Color,
+    /** Extremo oscuro de los degradados de las tarjetas destacadas (texto blanco ≥ 5:1). */
+    val primaryDeep: Color,
+    val secondaryDeep: Color,
+    /** Ámbar fuerte para rellenos con ícono blanco (≥ 3:1; el ámbar base sólo llega a 2,2:1). */
+    val tertiaryDark: Color,
+    /** Rojo fuerte para rellenos con texto blanco (botón de peligro: 4,7:1 frente a 3,7:1 del rojo base). */
+    val errorStrong: Color,
+    /** Texto sobre los contenedores pastel de error y aviso (≥ 4,5:1). */
+    val onErrorContainer: Color,
+    val onTertiaryContainer: Color,
+) {
+    // Variantes para TEXTO: mismo tono que el color base, ajustado (si hace falta) hasta alcanzar 4,5:1 sobre la
+    // superficie más exigente (`surfaceContainerHighest`: la más clara en oscuro y la más oscura en claro). Los tonos
+    // base se conservan para rellenos, barras, bordes e íconos.
+    val primaryText: Color by lazy(LazyThreadSafetyMode.NONE) { primary.readableOn(surfaceContainerHighest) }
+    val successText: Color by lazy(LazyThreadSafetyMode.NONE) { secondary.readableOn(surfaceContainerHighest) }
+    val warningText: Color by lazy(LazyThreadSafetyMode.NONE) { tertiary.readableOn(surfaceContainerHighest) }
+    val errorText: Color by lazy(LazyThreadSafetyMode.NONE) { error.readableOn(surfaceContainerHighest) }
+}
+
+/** Luminancia relativa WCAG de un color sRGB opaco. */
+fun Color.relativeLuminance(): Double {
+    fun channel(c: Float): Double = if (c <= 0.03928f) c / 12.92 else ((c + 0.055) / 1.055).pow(2.4)
+    return 0.2126 * channel(red) + 0.7152 * channel(green) + 0.0722 * channel(blue)
+}
+
+/** Relación de contraste WCAG (de 1 a 21) entre dos colores opacos. */
+fun contrastRatio(a: Color, b: Color): Double {
+    val la = a.relativeLuminance()
+    val lb = b.relativeLuminance()
+    return (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
+}
+
+/**
+ * Este color, ajustado si hace falta para que un texto suyo alcance [minRatio] sobre [background]: se acerca a
+ * blanco (fondo oscuro) o a negro (fondo claro) en pasos del 4 %, conservando el tono. Si ya cumple, no cambia.
+ */
+fun Color.readableOn(background: Color, minRatio: Double = 4.5): Color {
+    if (contrastRatio(this, background) >= minRatio) return this
+    val target = if (background.relativeLuminance() < 0.5) Color.White else Color.Black
+    var step = 0.04f
+    while (step < 1f) {
+        val candidate = lerp(this, target, step)
+        if (contrastRatio(candidate, background) >= minRatio) return candidate
+        step += 0.04f
+    }
+    return target
+}
+
+private val InkColor = Color(0xFF0F172A)
+
+/** Texto (blanco o casi negro) que mejor se lee sobre un relleno de este color (p. ej. un chip de categoría). */
+fun Color.onFill(): Color = if (contrastRatio(Color.White, this) >= contrastRatio(InkColor, this)) Color.White else InkColor
 
 /** '#rrggbb' o '#rrggbbaa' (como en React Native: el alfa va al final) → Color. */
 fun hexColor(hex: String): Color {
@@ -76,7 +136,8 @@ fun hexColor(hex: String): Color {
 fun hexColorWithAlpha(hex: String, alphaByte: Int): Color = hexColor(hex).copy(alpha = alphaByte / 255f)
 
 val DarkColors = ThemeColors(
-    primary = Color(0xFF6366F1),
+    // indigo-500 (#6366F1) oscurecido ~3 %: el texto blanco de los botones pasa de 4,47:1 a 4,70:1 (mínimo AA = 4,5:1).
+    primary = Color(0xFF6063EA),
     primaryLight = Color(0xFF818CF8),
     primaryDark = Color(0xFF4F46E5),
     primaryContainer = Color(0xFFE0E7FF),
@@ -110,7 +171,8 @@ val DarkColors = ThemeColors(
     surfaceContainerHigh = Color(0xFF273548),
     surfaceContainerHighest = Color(0xFF334155),
     onSurface = Color(0xFFF1F5F9),
-    onSurfaceVariant = Color(0xFF94A3B8),
+    // slate-400 (#94A3B8) aclarado: el texto secundario sólo daba 4,1:1 sobre las superficies más claras del tema oscuro.
+    onSurfaceVariant = Color(0xFFA3B3C7),
     outline = Color(0xFF475569),
     outlineVariant = Color(0xFF334155),
 
@@ -119,6 +181,14 @@ val DarkColors = ThemeColors(
 
     incomeCard = Color(0xFF10B981),
     savingsCard = Color(0xFFF59E0B),
+
+    cardBorder = Color(0x14FFFFFF), // blanco 8 %
+    primaryDeep = Color(0xFF3730A3), // indigo-800
+    secondaryDeep = Color(0xFF065F46), // emerald-800
+    tertiaryDark = Color(0xFFD97706), // amber-600
+    errorStrong = Color(0xFFE11D48), // rose-600
+    onErrorContainer = Color(0xFF9F1239), // rose-800 sobre #FFE4E6
+    onTertiaryContainer = Color(0xFF78350F), // amber-900 sobre #FEF3C7
 )
 
 val LightColors = DarkColors.copy(
@@ -137,4 +207,5 @@ val LightColors = DarkColors.copy(
     outlineVariant = Color(0xFFE2E8F0),
     inverseSurface = Color(0xFF1E293B),
     inverseOnSurface = Color(0xFFF1F5F9),
+    cardBorder = Color(0x120F172A), // slate-900 7 %
 )

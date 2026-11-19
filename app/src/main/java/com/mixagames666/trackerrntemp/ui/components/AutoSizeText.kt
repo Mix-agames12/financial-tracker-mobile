@@ -1,5 +1,6 @@
 package com.mixagames666.trackerrntemp.ui.components
 
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -8,6 +9,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -26,6 +28,7 @@ fun AutoSizeText(
     fontWeight: FontWeight? = null,
     minimumScale: Float = 0.5f,
     textAlign: TextAlign? = null,
+    style: TextStyle = LocalTextStyle.current,
 ) {
     var scale by remember(text, fontSize) { mutableFloatStateOf(1f) }
     Text(
@@ -37,6 +40,7 @@ fun AutoSizeText(
         maxLines = 1,
         softWrap = false,
         overflow = TextOverflow.Clip,
+        style = style,
         modifier = modifier,
         onTextLayout = { layout ->
             if (layout.didOverflowWidth && scale > minimumScale) {

@@ -13,8 +13,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
@@ -31,7 +33,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -56,20 +61,26 @@ import com.mixagames666.trackerrntemp.ui.components.ChipScrollRow
 import com.mixagames666.trackerrntemp.ui.components.DatePickerSheet
 import com.mixagames666.trackerrntemp.ui.components.DetailGrid
 import com.mixagames666.trackerrntemp.ui.components.DetailItem
+import com.mixagames666.trackerrntemp.ui.components.EmptyState
+import com.mixagames666.trackerrntemp.ui.components.FieldError
 import com.mixagames666.trackerrntemp.ui.components.FieldKeyboard
 import com.mixagames666.trackerrntemp.ui.components.FieldLabel
+import com.mixagames666.trackerrntemp.ui.components.FormColumn
 import com.mixagames666.trackerrntemp.ui.components.Ionicon
 import com.mixagames666.trackerrntemp.ui.components.TaxBreakdownBox
 import com.mixagames666.trackerrntemp.ui.components.ToastManager
 import com.mixagames666.trackerrntemp.ui.components.touchableOpacity
 import com.mixagames666.trackerrntemp.ui.screens.appViewModel
 import com.mixagames666.trackerrntemp.ui.theme.AppTheme
+import com.mixagames666.trackerrntemp.ui.theme.MoneyStyle
 import com.mixagames666.trackerrntemp.ui.theme.hexColor
 import com.mixagames666.trackerrntemp.ui.theme.hexColorWithAlpha
 import com.mixagames666.trackerrntemp.ui.theme.topInset
 import com.mixagames666.trackerrntemp.util.JsCompat
 import com.mixagames666.trackerrntemp.util.formatCurrency
 import com.mixagames666.trackerrntemp.util.formatDate
+import com.mixagames666.trackerrntemp.util.formatDateShort
+import com.mixagames666.trackerrntemp.util.getCurrencySymbol
 import com.mixagames666.trackerrntemp.util.getNow
 import com.mixagames666.trackerrntemp.util.getToday
 import com.mixagames666.trackerrntemp.util.nextDateForMonthDay
@@ -88,6 +99,23 @@ private fun describeRecurrence(exp: Expense): String {
     }
     if (exp.recurringFrequency == "specific" && day != 0) return "Día $day"
     return "Mensual"
+}
+
+/** Resumen corto de los filtros aplicados ("Alimentación, Salud +1 · Efectivo · 01 nov – 17 nov"). */
+private fun describeFilters(f: ExpenseFilters): String {
+    val parts = mutableListOf<String>()
+    if (f.categories.isNotEmpty()) {
+        parts += if (f.categories.size <= 2) f.categories.joinToString(", ") else "${f.categories.take(2).joinToString(", ")} +${f.categories.size - 2}"
+    }
+    if (f.method.isNotEmpty()) parts += f.method
+    if (f.from.isNotEmpty() || f.to.isNotEmpty()) {
+        parts += when {
+            f.from.isNotEmpty() && f.to.isNotEmpty() -> "${formatDateShort(f.from)} – ${formatDateShort(f.to)}"
+            f.from.isNotEmpty() -> "Desde ${formatDateShort(f.from)}"
+            else -> "Hasta ${formatDateShort(f.to)}"
+        }
+    }
+    return parts.joinToString(" · ")
 }
 
 /** Estado del formulario de gasto: los mismos campos que los useState del original. */
@@ -110,7 +138,17 @@ private class ExpenseFormState {
     var recurringDate by mutableStateOf("") // cobro anual (YYYY-MM-DD)
     var subscriptionType by mutableStateOf("")
 
+    /** Se activa al intentar guardar: desde ahí cada campo obligatorio vacío muestra su error junto a él. */
+    var showErrors by mutableStateOf(false)
+
+    // Mismas reglas que ExpenseService.save (monto > 0, categoría y detalle), para avisar sin cerrar nada ni abrir un diálogo.
+    val amountInvalid: Boolean get() = JsCompat.parseFloat(amountStr.replace(',', '.')).let { it.isNaN() || it <= 0 }
+    val categoryMissing: Boolean get() = categoryType.isEmpty()
+    val detailMissing: Boolean get() = detail.trim().isEmpty()
+    val hasErrors: Boolean get() = amountInvalid || categoryMissing || detailMissing
+
     fun openNew() {
+        showErrors = false
         editingId = null
         amountStr = ""
         categoryType = ""
@@ -131,6 +169,7 @@ private class ExpenseFormState {
     }
 
     fun openEdit(exp: Expense) {
+        showErrors = false
         editingId = exp.id
         amountStr = toAmountInput(exp.amount)
         categoryType = exp.category
@@ -183,6 +222,7 @@ fun ExpensesScreen(container: AppContainer) {
     var isFormOpen by remember { mutableStateOf(false) }
     var isDatePickerOpen by remember { mutableStateOf(false) }
     val form = remember { ExpenseFormState() }
+    val formScroll = rememberScrollState()
 
     // useFocusEffect(…, [appliedFilters])
     LaunchedEffect(ui.appliedFilters) { vm.load() }
@@ -238,6 +278,12 @@ fun ExpensesScreen(container: AppContainer) {
     }
 
     fun saveExpense() {
+        form.showErrors = true
+        if (form.hasErrors) {
+            // Heurística 9: los errores se muestran junto a cada campo; se vuelve arriba para que se vean.
+            scope.launch { formScroll.animateScrollTo(0) }
+            return
+        }
         scope.launch {
             when (val result = vm.save(form.toForm(), form.editingId)) {
                 is ServiceResult.Alert -> Alerts.alert(result.title, result.message)
@@ -275,10 +321,11 @@ fun ExpensesScreen(container: AppContainer) {
                 Text("Gastos", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = colors.onSurface)
                 Box(
                     Modifier
-                        .size(40.dp)
+                        .size(48.dp) // objetivo táctil recomendado
                         .clip(CircleShape)
                         .background(if (activeFilters) colors.primaryContainer else androidx.compose.ui.graphics.Color.Transparent, CircleShape)
-                        .touchableOpacity(onClick = { openFilters() }),
+                        .touchableOpacity(onClickLabel = "Filtrar gastos", onClick = { openFilters() })
+                        .semantics { contentDescription = if (activeFilters) "Filtrar gastos, hay filtros activos" else "Filtrar gastos" },
                     contentAlignment = Alignment.Center,
                 ) {
                     Ionicon("filter", 24, if (activeFilters) colors.primary else colors.onSurface)
@@ -291,7 +338,7 @@ fun ExpensesScreen(container: AppContainer) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Column {
                             Text("Total gastado", fontSize = 12.sp, color = colors.onSurfaceVariant)
-                            Text(formatCurrency(totalSpent), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = colors.error)
+                            Text(formatCurrency(totalSpent), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = colors.errorText, style = MoneyStyle)
                         }
                         Column(horizontalAlignment = Alignment.End) {
                             Text("Transacciones", fontSize = 12.sp, color = colors.onSurfaceVariant)
@@ -301,19 +348,51 @@ fun ExpensesScreen(container: AppContainer) {
                 }
             }
 
+            // Heurísticas 1 y 3: se ve qué filtros están activos y se pueden quitar con un toque.
+            if (activeFilters) {
+                ActiveFiltersBar(
+                    summary = describeFilters(ui.appliedFilters),
+                    onEdit = { openFilters() },
+                    onClear = { vm.setAppliedFilters(ExpenseFilters()) },
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
+            }
+
             // List
             PullToRefreshBox(isRefreshing = ui.refreshing, onRefresh = { vm.refresh() }, modifier = Modifier.weight(1f)) {
                 if (ui.expenses.isEmpty()) {
-                    Column(
-                        Modifier
-                            .fillMaxSize()
-                            .padding(16.dp)
-                            .padding(vertical = 60.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Ionicon("receipt-outline", 48, colors.outline)
-                        Text("Sin gastos", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = colors.onSurfaceVariant, modifier = Modifier.padding(top = 16.dp))
-                        Text("Toca el botón + para registrar uno", fontSize = 14.sp, color = colors.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
+                    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = 24.dp)) {
+                        if (activeFilters) {
+                            // Con filtros activos el vacío no significa "no hay gastos": se explica y se ofrece salir.
+                            EmptyState(
+                                icon = "search-outline",
+                                title = "Sin resultados",
+                                message = "Ningún gasto coincide con los filtros aplicados",
+                                action = {
+                                    AppButton(
+                                        "Quitar filtros", onClick = { vm.setAppliedFilters(ExpenseFilters()) },
+                                        variant = ButtonVariant.Tonal, icon = "close-circle",
+                                    )
+                                },
+                            )
+                        } else {
+                            EmptyState(
+                                icon = "receipt-outline",
+                                title = "Sin gastos",
+                                message = "Toca el botón + para registrar uno",
+                                action = {
+                                    AppButton(
+                                        "Registrar gasto",
+                                        onClick = {
+                                            form.openNew()
+                                            isDetailOpen = false
+                                            isFormOpen = true
+                                        },
+                                        variant = ButtonVariant.Tonal, icon = "add",
+                                    )
+                                },
+                            )
+                        }
                     }
                 } else {
                     LazyColumn(
@@ -377,7 +456,7 @@ fun ExpensesScreen(container: AppContainer) {
                                         )
                                     }
                                     Column(horizontalAlignment = Alignment.End) {
-                                        Text("-${formatCurrency(exp.amount)}", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = colors.error)
+                                        Text("-${formatCurrency(exp.amount)}", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = colors.errorText, style = MoneyStyle)
                                         Text(exp.time.orEmpty(), fontSize = 12.sp, color = colors.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
                                     }
                                 }
@@ -397,12 +476,13 @@ fun ExpensesScreen(container: AppContainer) {
                 .shadow(4.dp, CircleShape)
                 .size(56.dp)
                 .clip(CircleShape)
-                .background(colors.error, CircleShape)
-                .touchableOpacity(activeOpacity = 0.8f) {
+                .background(colors.errorStrong, CircleShape)
+                .touchableOpacity(activeOpacity = 0.8f, onClickLabel = "Nuevo gasto") {
                     form.openNew()
                     isDetailOpen = false
                     isFormOpen = true
-                },
+                }
+                .semantics { contentDescription = "Nuevo gasto" },
             contentAlignment = Alignment.Center,
         ) { Ionicon("add", 32, colors.onError) }
     }
@@ -413,7 +493,7 @@ fun ExpensesScreen(container: AppContainer) {
             Column {
                 Column(Modifier.fillMaxWidth().padding(bottom = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("Monto", color = colors.onSurfaceVariant)
-                    Text("-${formatCurrency(exp.amount)}", fontSize = 36.sp, fontWeight = FontWeight.Bold, color = colors.error)
+                    Text("-${formatCurrency(exp.amount)}", fontSize = 36.sp, fontWeight = FontWeight.Bold, color = colors.errorText, style = MoneyStyle)
                 }
 
                 DetailGrid {
@@ -451,7 +531,7 @@ fun ExpensesScreen(container: AppContainer) {
 
     // ==== FILTER MODAL ====
     BottomSheet(visible = isFilterOpen, onClose = { isFilterOpen = false }, title = "Filtrar gastos") {
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        FormColumn {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Box(Modifier.weight(1f)) { AppTextField("Desde (opcional)", filterFrom, { filterFrom = it }, isDate = true) }
                 Box(Modifier.weight(1f)) { AppTextField("Hasta (opcional)", filterTo, { filterTo = it }, isDate = true) }
@@ -490,7 +570,12 @@ fun ExpensesScreen(container: AppContainer) {
     }
 
     // ==== FORM MODAL ====
-    BottomSheet(visible = isFormOpen, onClose = { isFormOpen = false }, title = if (form.editingId != null) "Editar gasto" else "Nuevo gasto") {
+    BottomSheet(
+        visible = isFormOpen,
+        onClose = { isFormOpen = false },
+        title = if (form.editingId != null) "Editar gasto" else "Nuevo gasto",
+        scrollState = formScroll,
+    ) {
         ExpenseFormContent(
             form = form,
             ui = ui,
@@ -508,6 +593,49 @@ fun ExpensesScreen(container: AppContainer) {
     )
 }
 
+/** Franja bajo el resumen que indica qué filtros están aplicados: tocarla los edita y «Quitar» los elimina. */
+@Composable
+private fun ActiveFiltersBar(summary: String, onEdit: () -> Unit, onClear: () -> Unit, modifier: Modifier = Modifier) {
+    val colors = AppTheme.colors
+    val shape = RoundedCornerShape(12.dp)
+    Row(
+        modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp)
+            .clip(shape)
+            .background(colors.primaryContainer, shape),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(
+            Modifier
+                .weight(1f)
+                .touchableOpacity(onClickLabel = "Editar filtros", onClick = onEdit)
+                .padding(start = 12.dp, top = 10.dp, bottom = 10.dp, end = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Ionicon("filter", 16, colors.primary)
+            Text(
+                text = "Filtrado: $summary",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                color = colors.onPrimaryContainer,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        Text(
+            text = "Quitar",
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Bold,
+            color = colors.onPrimaryContainer,
+            modifier = Modifier
+                .touchableOpacity(onClickLabel = "Quitar filtros", onClick = onClear)
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+        )
+    }
+}
+
 @Composable
 private fun ExpenseFormContent(
     form: ExpenseFormState,
@@ -517,13 +645,15 @@ private fun ExpenseFormContent(
     onSave: () -> Unit,
 ) {
     val colors = AppTheme.colors
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    FormColumn {
         AppTextField(
             label = "Monto *",
             placeholder = "Ej. 25.50",
             keyboard = FieldKeyboard.Decimal,
             value = form.amountStr,
             onValueChange = { form.amountStr = it },
+            prefix = getCurrencySymbol(),
+            error = if (form.showErrors && form.amountInvalid) "Ingresa un monto mayor a 0" else null,
         )
 
         run {
@@ -542,6 +672,7 @@ private fun ExpenseFormContent(
                     Chip(label = c.name, active = form.categoryType == c.name, onClick = { form.categoryType = c.name }, icon = c.icon, color = c.color)
                 }
             }
+            if (form.showErrors && form.categoryMissing) FieldError("Elige una categoría")
         }
 
         AppTextField(
@@ -549,6 +680,7 @@ private fun ExpenseFormContent(
             placeholder = "Ej. Compra supermercado",
             value = form.detail,
             onValueChange = { form.detail = it },
+            error = if (form.showErrors && form.detailMissing) "Escribe un detalle, por ejemplo «Supermercado»" else null,
         )
 
         Column {
